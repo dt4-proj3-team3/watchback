@@ -1,6 +1,5 @@
 sprint:
-  name: "스프린트 이름"
-  label: "SPRINT_LABEL"
+  milestone: "Sprint 1"
 
 issues:
   - title: "위험 변화 재검토"

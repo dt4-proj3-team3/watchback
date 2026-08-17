@@ -1,7 +1,8 @@
 name: "Task - DE"
 description: "수집, Bronze·Silver·Gold, Job과 데이터 품질 작업"
-title: "[DE][P0] "
-labels: ["task", "team:de", "priority:p0"]
+title: "[DE] "
+type: Task
+labels: ["team:de", "priority:p0"]
 body:
   - type: textarea
     id: task

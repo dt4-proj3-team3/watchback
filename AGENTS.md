@@ -32,6 +32,8 @@
 - 커밋은 한 목적씩 `type: 한국어 요약` 형식으로 작성한다.
 - 권장 type은 `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `spike`다.
 - PR은 `.github/pull_request_template.md`를 기준으로 작성한다.
+- PR 생성 전에 연결할 이슈의 완료 기준을 확인하고, 검증된 항목만 이슈에서 체크한다.
+- 완료 기준을 모두 충족한 경우에만 `Closes #번호`를 사용한다. 일부만 충족한 경우 `Related to #번호`를 사용하고 미완료 범위와 후속 계획을 PR에 기록한다.
 
 ## 이슈와 검증
 

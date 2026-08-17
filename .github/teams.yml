@@ -1,17 +1,17 @@
 teams:
   PRODUCT:
     name: Product
-    issue_title_prefix: "[PRODUCT][P0/P1/P2]"
+    issue_title_prefix: "[PRODUCT]"
     default_labels: ["team:product", "priority:p0"]
   DE:
     name: DE
-    issue_title_prefix: "[DE][P0/P1/P2]"
+    issue_title_prefix: "[DE]"
     default_labels: ["team:de", "priority:p0"]
   DS:
     name: DS
-    issue_title_prefix: "[DS][P0/P1/P2]"
+    issue_title_prefix: "[DS]"
     default_labels: ["team:ds", "priority:p0"]
   WEB:
     name: Web
-    issue_title_prefix: "[WEB][P0/P1/P2]"
+    issue_title_prefix: "[WEB]"
     default_labels: ["team:web", "priority:p0"]
