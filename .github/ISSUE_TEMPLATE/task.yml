@@ -1,7 +1,7 @@
 name: "Task"
 description: "팀 공통 작업 이슈"
-title: "[TASK] "
-labels: ["task"]
+title: ""
+type: Task
 body:
   - type: textarea
     id: task
@@ -31,4 +31,3 @@ body:
   - type: textarea
     id: reference
     attributes: {label: 참고, description: 상위 Story/Task, 관련 문서와 의존성을 적습니다.}
-

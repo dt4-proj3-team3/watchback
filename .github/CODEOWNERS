@@ -1,0 +1,23 @@
+# Default and repository operations
+* @Pexy99
+/.github/ @Pexy99
+/docs/product/ @Pexy99
+/tools/project/ @Pexy99
+
+# Web
+/apps/frontend/ @Pexy99
+/apps/backend/ @Pexy99
+/apps/dependabot-sync/ @Pexy99
+
+# Data Engineering
+/apps/kev-ingestor/ @bitnadata1106 @no-glass-otacku @yunalee-dev
+/fabric/workspace/ingestion/ @bitnadata1106 @no-glass-otacku @yunalee-dev
+/fabric/workspace/transformation/ @bitnadata1106 @no-glass-otacku @yunalee-dev
+/fabric/workspace/orchestration/ @bitnadata1106 @no-glass-otacku @yunalee-dev
+/infra/ @bitnadata1106 @no-glass-otacku @yunalee-dev
+
+# Data Science
+/fabric/workspace/analysis/ @ShinDuck @Justmagic46
+
+# Shared data validation
+/fabric/workspace/validation/ @bitnadata1106 @no-glass-otacku @yunalee-dev @ShinDuck @Justmagic46

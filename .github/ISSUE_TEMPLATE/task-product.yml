@@ -1,7 +1,8 @@
 name: "Task - Product"
 description: "제품 범위, Story, Sprint와 데모 흐름 작업"
-title: "[PRODUCT][P0] "
-labels: ["task", "team:product", "priority:p0"]
+title: "[PRODUCT] "
+type: Task
+labels: ["team:product", "priority:p0"]
 body:
   - type: textarea
     id: task

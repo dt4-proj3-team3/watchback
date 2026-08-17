@@ -1,7 +1,8 @@
 name: "Task - DS"
 description: "위험 신호, 시스템성 변동, 후보 규칙과 검증 작업"
-title: "[DS][P0] "
-labels: ["task", "team:ds", "priority:p0"]
+title: "[DS] "
+type: Task
+labels: ["team:ds", "priority:p0"]
 body:
   - type: textarea
     id: task

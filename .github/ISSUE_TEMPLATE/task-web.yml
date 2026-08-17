@@ -1,7 +1,8 @@
 name: "Task - Web"
 description: "Dependabot 동기화, Case, API·화면과 조치 자동화 작업"
-title: "[WEB][P0] "
-labels: ["task", "team:web", "priority:p0"]
+title: "[WEB] "
+type: Task
+labels: ["team:web", "priority:p0"]
 body:
   - type: textarea
     id: task

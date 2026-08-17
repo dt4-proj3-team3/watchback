@@ -40,13 +40,58 @@ def ensure_label(repo: str, label: str) -> None:
         run(["gh", "label", "create", label, "--repo", repo, "--color", "0075ca"])
 
 
-def create_issue(repo: str, title: str, body: str, labels: list[str], assignee: str | None) -> int:
-    command = ["gh", "issue", "create", "--repo", repo, "--title", title, "--body", body]
+def ensure_milestone(repo: str, title: str) -> None:
+    milestones = json.loads(
+        run(
+            [
+                "gh",
+                "api",
+                "--method",
+                "GET",
+                f"repos/{repo}/milestones",
+                "-f",
+                "state=all",
+                "-F",
+                "per_page=100",
+            ]
+        )
+    )
+    for milestone in milestones:
+        if milestone["title"] == title:
+            if milestone["state"] != "open":
+                raise RuntimeError(f"닫힌 Milestone은 사용할 수 없습니다: {title}")
+            return
+    run(["gh", "api", "--method", "POST", f"repos/{repo}/milestones", "-f", f"title={title}"])
+
+
+def create_issue(
+    repo: str,
+    title: str,
+    body: str,
+    labels: list[str],
+    assignee: str | None,
+    milestone: str,
+) -> int:
+    command = [
+        "gh",
+        "issue",
+        "create",
+        "--repo",
+        repo,
+        "--title",
+        title,
+        "--body",
+        body,
+        "--milestone",
+        milestone,
+    ]
     for label in labels:
         command.extend(["--label", label])
     if assignee:
         command.extend(["--assignee", assignee])
-    return int(run(command).rstrip("/").split("/")[-1])
+    number = int(run(command).rstrip("/").split("/")[-1])
+    run(["gh", "api", "--method", "PATCH", f"repos/{repo}/issues/{number}", "-f", "type=Task"])
+    return number
 
 
 def node_id(repo: str, number: int) -> str:
@@ -106,8 +151,7 @@ def load_plan(path: str) -> dict[str, Any]:
     sprint = config.get("sprint")
     if not isinstance(sprint, dict):
         raise ValueError("sprint는 객체여야 합니다.")
-    sprint_name = required_text(sprint.get("name"), "sprint.name")
-    sprint_label = required_text(sprint.get("label"), "sprint.label")
+    sprint_milestone = required_text(sprint.get("milestone"), "sprint.milestone")
 
     issues = config.get("issues")
     if not isinstance(issues, list) or not issues:
@@ -132,49 +176,57 @@ def load_plan(path: str) -> dict[str, Any]:
             titles.add(normalized_title)
         planned_issues.append(parent)
 
-    return {"sprint": {"name": sprint_name, "label": sprint_label}, "issues": planned_issues}
+    return {"sprint": {"milestone": sprint_milestone}, "issues": planned_issues}
 
 
 def issue_title(issue: dict[str, Any]) -> str:
-    return f"[{issue['team']}][{issue['priority'].upper()}] {issue['title']}"
+    return f"[{issue['team']}] {issue['title']}"
 
 
-def issue_labels(issue: dict[str, Any], sprint_label: str) -> list[str]:
-    return ["task", sprint_label, f"team:{issue['team'].lower()}", f"priority:{issue['priority']}"]
+def issue_labels(issue: dict[str, Any]) -> list[str]:
+    return [f"team:{issue['team'].lower()}", f"priority:{issue['priority']}"]
 
 
 def print_plan(plan: dict[str, Any]) -> None:
     sprint = plan["sprint"]
-    print(f"Sprint: {sprint['name']} ({sprint['label']})")
+    print(f"Milestone: {sprint['milestone']}")
     for parent in plan["issues"]:
         print(f"[Parent] {issue_title(parent)}")
-        print(f"  labels: {', '.join(issue_labels(parent, sprint['label']))}")
+        print(f"  labels: {', '.join(issue_labels(parent))}")
         if parent["assignee"]:
             print(f"  assignee: {parent['assignee']}")
         for child in parent["sub_issues"]:
             print(f"  [Sub] {issue_title(child)}")
-            print(f"    labels: {', '.join(issue_labels(child, sprint['label']))}")
+            print(f"    labels: {', '.join(issue_labels(child))}")
             if child["assignee"]:
                 print(f"    assignee: {child['assignee']}")
 
 
 def create_plan(plan: dict[str, Any]) -> None:
     repo = repository()
-    sprint_label = plan["sprint"]["label"]
+    milestone = plan["sprint"]["milestone"]
+    ensure_milestone(repo, milestone)
 
     for issue in plan["issues"]:
-        labels = issue_labels(issue, sprint_label)
+        labels = issue_labels(issue)
         for label in labels:
             ensure_label(repo, label)
-        parent = create_issue(repo, issue_title(issue), issue["body"], labels, issue["assignee"])
+        parent = create_issue(repo, issue_title(issue), issue["body"], labels, issue["assignee"], milestone)
         parent_id = node_id(repo, parent)
         print(f"Parent #{parent}")
 
         for child in issue["sub_issues"]:
-            child_labels = issue_labels(child, sprint_label)
+            child_labels = issue_labels(child)
             for label in child_labels:
                 ensure_label(repo, label)
-            number = create_issue(repo, issue_title(child), child["body"], child_labels, child["assignee"])
+            number = create_issue(
+                repo,
+                issue_title(child),
+                child["body"],
+                child_labels,
+                child["assignee"],
+                milestone,
+            )
             link_sub_issue(parent_id, node_id(repo, number))
             print(f"  Sub #{number}")
             time.sleep(0.5)
