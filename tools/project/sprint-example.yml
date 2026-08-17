@@ -1,0 +1,33 @@
+sprint:
+  name: "스프린트 이름"
+  label: "SPRINT_LABEL"
+
+issues:
+  - title: "위험 변화 재검토"
+    team: PRODUCT
+    priority: p0
+    body: |
+      ## 목적
+      실제 Alert 5건의 선정 근거부터 검토 활동 기록까지 시연한다.
+
+      ## 완료 기준
+      - [ ] US-01~US-04의 SP1 결과를 확인할 수 있다.
+    sub_issues:
+      - title: "Silver 분석 입력 제공"
+        team: DE
+        priority: p0
+        body: |
+          ## 목적
+          DS가 위험 변화를 분석할 Silver 입력을 제공한다.
+      - title: "재검토 후보와 근거 생성"
+        team: DS
+        priority: p0
+        body: |
+          ## 목적
+          시스템성 변동을 구분한 위험 변화 후보를 생성한다.
+      - title: "재검토 Case와 화면 연결"
+        team: WEB
+        priority: p0
+        body: |
+          ## 목적
+          후보와 실제 Dependabot Alert를 연결해 Case로 표시한다.
