@@ -44,6 +44,16 @@
 - 데이터 변경은 건수뿐 아니라 기준 시점, 샘플 내용, 키·필드 매핑, 누락·중복·타입, 재실행 결과를 확인한다.
 - 문서만 변경한 경우 링크, 경로, 용어와 문서 간 모순을 직접 검토한다.
 
+## Fabric 작업
+
+- Fabric Notebook이나 Data Pipeline을 생성·수정·실행할 때는 [Fabric API 개발 워크플로](docs/engineering/fabric-api-workflow.md)를 따른다.
+- GitHub의 로컬 파일을 코드 원본으로 사용하고 Fabric 워크스페이스는 실행·검증 환경으로 사용한다.
+- 원격 변경 전에 워크스페이스와 Item을 조회해 정확한 ID와 최신 정의를 확인한다.
+- API 배포의 Operation 상태와 원격 실행의 Job 상태·`failureReason`·`exitValue`를 확인한다.
+- Fabric 웹 편집 내용과 로컬 변경을 임의로 덮어쓰지 않으며, 공유 워크스페이스의 같은 Item을 동시에 변경하지 않는다.
+- 토큰과 자격 증명을 파일이나 로그에 남기지 않고, 환경별 ID를 Notebook 코드에 하드코딩하지 않는다.
+- Lakehouse 스키마 변경은 `fabric/workspace/migrations/`의 Migration Notebook으로 실행하고 관련 `docs/contracts/` 문서를 같은 변경에서 갱신한다.
+
 ## ADR와 계약
 
 - 아키텍처, 데이터 소유권, 스키마 경계, 외부 API, 보안·비용·성능에 영향을 주는 결정은 `docs/adr/`에 기록한다.
