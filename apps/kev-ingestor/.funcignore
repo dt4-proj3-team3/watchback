@@ -7,5 +7,5 @@ local.settings.json
 test
 .venv
 *.md
-__pycache__/
+__pycache__/*
 *.pyc

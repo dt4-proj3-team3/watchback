@@ -238,11 +238,21 @@ def write_to_bronze(events: list, commit_sha: str, run_at: str) -> None:
     logging.info(f"[Bronze 적재 완료] {len(events)}건 -> {BRONZE_DIR_PATH}/{_bronze_filename(commit_sha, run_at)}")
 
 
-def write_heartbeat(now: datetime, had_new_commit: bool, status: str) -> None:
+def write_heartbeat(
+    now: datetime,
+    had_new_commit: bool,
+    status: str,
+    total_fetched: int = None,
+    total_processed: int = None,
+    skipped_missing_cve_id: int = None,
+) -> None:
     """
     Files/bronze/kev/_heartbeat.json을 실행마다(성공/실패, 변화 유무와 무관하게) 덮어씁니다.
     "KEV에 변화가 없어 조용한 것"과 "Function이 죽어서 조용한 것"을 구분하기 위한 용도이므로,
     heartbeat 기록 자체가 실패해도 메인 로직(checkpoint 갱신 여부)에 영향을 주면 안 됩니다.
+
+    total_fetched/total_processed/skipped_missing_cve_id는 fetch_kev_catalog를 실제로 호출한
+    실행에서만 값이 있고, 새 커밋이 없어 fetch를 건너뛴 실행에서는 None으로 둡니다.
     """
     try:
         service_client = DataLakeServiceClient(account_url=ONELAKE_ENDPOINT, credential=DefaultAzureCredential())
@@ -251,10 +261,14 @@ def write_heartbeat(now: datetime, had_new_commit: bool, status: str) -> None:
             .get_directory_client(BRONZE_DIR_PATH)
             .get_file_client("_heartbeat.json")
         )
-        content = json.dumps(
-            {"last_run_at": now.isoformat(), "had_new_commit": had_new_commit, "status": status},
-            ensure_ascii=False,
-        ).encode("utf-8")
+        payload = {"last_run_at": now.isoformat(), "had_new_commit": had_new_commit, "status": status}
+        if total_fetched is not None:
+            payload["total_fetched"] = total_fetched
+        if total_processed is not None:
+            payload["total_processed"] = total_processed
+        if skipped_missing_cve_id is not None:
+            payload["skipped_missing_cve_id"] = skipped_missing_cve_id
+        content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         file_client.upload_data(content, overwrite=True)
         logging.info(f"[Heartbeat] had_new_commit={had_new_commit} status={status}")
     except Exception as e:
@@ -304,7 +318,24 @@ def run_poll_cycle(now: datetime) -> None:
             return
 
         catalog_version = snapshot.get("catalogVersion")
-        items_by_id = {v["cveID"]: v for v in snapshot.get("vulnerabilities", []) if "cveID" in v}
+        vulnerabilities = snapshot.get("vulnerabilities", [])
+
+        items_by_id = {}
+        skipped_missing_cve_id = 0
+        for v in vulnerabilities:
+            if "cveID" not in v:
+                skipped_missing_cve_id += 1
+                continue
+            items_by_id[v["cveID"]] = v
+        if skipped_missing_cve_id:
+            logging.warning(f"[데이터 이상] cveID 없는 항목 {skipped_missing_cve_id}건 스킵")
+
+        total_fetched = len(vulnerabilities)
+        total_processed = len(items_by_id)
+        logging.info(
+            f"[건수 확인] fetched={total_fetched} processed={total_processed} skipped={skipped_missing_cve_id}"
+        )
+
         current_hashes = {cve_id: compute_hash(item) for cve_id, item in items_by_id.items()}
 
         added, removed_candidates, updated = diff_items(current_hashes, state["items"])
@@ -320,7 +351,11 @@ def run_poll_cycle(now: datetime) -> None:
                 write_to_bronze(events, commit_sha=latest_sha, run_at=now.isoformat())
             except Exception as e:
                 logging.error(f"[에러] Bronze 적재 실패: {e}")
-                write_heartbeat(now, had_new_commit=True, status="error")
+                write_heartbeat(
+                    now, had_new_commit=True, status="error",
+                    total_fetched=total_fetched, total_processed=total_processed,
+                    skipped_missing_cve_id=skipped_missing_cve_id,
+                )
                 return  # 저장하지 않고 다음 실행에서 같은 커밋을 재처리
 
         for cve_id in added | updated:
@@ -330,7 +365,11 @@ def run_poll_cycle(now: datetime) -> None:
         state["last_processed_at"] = now.isoformat()
         state["last_catalog_version"] = catalog_version
         save_state(state)
-        write_heartbeat(now, had_new_commit=True, status="ok")
+        write_heartbeat(
+            now, had_new_commit=True, status="ok",
+            total_fetched=total_fetched, total_processed=total_processed,
+            skipped_missing_cve_id=skipped_missing_cve_id,
+        )
 
         logging.info(
             f"[실행 종료] added={len(added)} updated={len(updated)} removed_confirmed={len(confirmed_events)}"
@@ -347,3 +386,10 @@ def run_poll_cycle(now: datetime) -> None:
 def kev_poll(mytimer: func.TimerRequest) -> None:
     """10분마다 실행되는 timer trigger. cron "0 */10 * * * *" = 매 10분마다."""
     run_poll_cycle(datetime.now(timezone.utc))
+
+
+# monitor_app.py는 heartbeat 감시용 Blueprint(bp)만 정의합니다. Azure Functions Python v2는
+# entry point의 FunctionApp 인스턴스만 자동 인식하므로, 여기서 등록해야 kev_heartbeat_monitor가
+# 실제로 배포/실행됩니다.
+from monitor_app import bp  # noqa: E402
+app.register_functions(bp)
