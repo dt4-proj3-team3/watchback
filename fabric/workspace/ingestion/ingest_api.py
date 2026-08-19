@@ -76,26 +76,32 @@ def request_with_retry(
             elif response.status_code in (400, 404):
                 response.raise_for_status()
 
-            # GHSA 오류: 403는 Primary/Secondary Rate Limit인지 판별하고, 그 외 권한 오류는 재시도하지 않음
-            elif source == "ghsa" and response.status_code == 403:
+            # GitHub API 403: 403는 Primary/Secondary Rate Limit인지 판별하고, 그 외 권한 오류는 재시도하지 않음
+            elif source in ("ghsa", "kev") and response.status_code == 403:
                 remaining = response.headers.get("x-ratelimit-remaining")
                 message = response.json().get("message", "").lower()
 
                 if remaining == "0":
-                    wait_seconds = _handle_github_rate_limit( response, attempt, backoff_factor)
+                    wait_seconds = _handle_github_rate_limit(
+                        response, attempt, backoff_factor
+                    )
                     retry_reason = "GitHub Primary Rate Limit"
 
                 elif "secondary rate limit" in message:
-                    wait_seconds = _handle_github_rate_limit( response, attempt, backoff_factor)
+                    wait_seconds = _handle_github_rate_limit(
+                        response, attempt, backoff_factor
+                    )
                     retry_reason = "GitHub Secondary Rate Limit"
-    
+
                 else:
                     # 그 외 권한 오류
                     response.raise_for_status()
 
-            # GHSA 오류: 429는 과부한 요청으로 인해 서버가 요청을 처리할 수 없음을 나타내므로 GitHub Rate Limit 처리    
-            elif source == "ghsa" and response.status_code == 429:
-                wait_seconds = _handle_github_rate_limit(response,attempt,backoff_factor)
+            # GitHub API 429 오류: 429는 과부한 요청으로 인해 서버가 요청을 처리할 수 없음을 나타내므로 GitHub Rate Limit 처리    
+            elif source in ("ghsa", "kev") and response.status_code == 429:
+                wait_seconds = _handle_github_rate_limit(
+                    response, attempt, backoff_factor
+                )
                 retry_reason = "GitHub Rate Limit"
 
             # 공통 오류 중 재시도 : 429 는 과부한 요청으로 인해 서버가 요청을 처리할 수 없음을 나타내므로 retry_after 헤더를 확인하여 재시도 간격을 설정
