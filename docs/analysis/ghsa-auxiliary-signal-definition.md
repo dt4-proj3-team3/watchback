@@ -27,8 +27,7 @@ Watchback 데이터 파이프라인에서 **주요 위험 신호(Primary Signal:
 | **`vulnerable_version_range`** | 영향 버전 | GHSA API | 영향받는 취약 소프트웨어 버전 범위 확인 및 조직 내 설치 버전과의 매칭 (예: `>= 19.1.0, < 19.1.2`) |
 | **`curr_patched_version`** | 패치 정보 | GHSA API | 현재 시점 공식 최초 패치 버전 확인 (신규 패치 출시 감지) |
 | **`prev_patched_version`** | 패치 정보 | Silver 이력 (`LAG`) | 30일 전 패치 버전 비교를 통한 패치 버전 상향/변경 감지 |
-| **`ghsa_severity`** | 심각도 | GHSA API | 현재 시점 GitHub 공식 심각도 (`critical`, `high`, `medium`, `low`) |
-| **`prev_ghsa_severity`** | 심각도 | Silver 이력 (`LAG`) | 과거(30일 전) 대비 심각도 상향 조정 감지 |
+| **`ghsa_severity`** | 심각도 | GHSA API | 현재 시점 GitHub 공식 심각도 (`critical`, `high`, `medium`, `low` - B축 현재 상태 가중치) |
 | **`cvss_score`** | 정량 점수 | GHSA API | CVSS v3/v4 정량 위험도 점수 구간 산정 (0.0 ~ 10.0) |
 | **`cvss_vector`** | 공격 벡터 | GHSA API | Deadly Trio(AV:N/PR:N/UI:N) 공격 용이성 문맥 파싱 |
 | **`withdrawn`** | 철회 여부 | GHSA API | 권고 철회 여부 (`withdrawn_at` 존재 시 즉시 제외하는 Gate Filter) |
@@ -148,7 +147,9 @@ CVSS Vector 문자열 파싱을 통해 웹 UI에 직관적 해설 코멘트를 �
 1. **패치 변경(C축)의 해석 한계 (Actionability $\ne$ Risk)**:
    * 패치 신규 출시나 버전 상향은 공격 위험도 자체의 상승을 의미하지 않으며, **'개발자가 이제 조치할 수 있게 됨'을 나타내는 조치 가능성(Actionability) 신호**입니다.
    * 따라서 C축 단독으로는 위험을 과대평가하지 않으며, 반드시 A축(위험 변화) 또는 B축(심각도)과 결합하여 평가합니다.
-2. **심각도(B축) 상향의 유효성**:
-   * 취약점 공개 이후 새로운 공격 벡터가 발견되어 `ghsa_severity`가 상향(예: `medium` ➔ `critical`)된 경우에만 의미 있는 보조 신호로 인정합니다. 정적인 상태 유지는 점수 가중치로만 활용합니다.
+2. **GHSA 심각도 사후 상향(Severity Upgrade) 예외 규칙의 배제 결정 (DS Decision)**:
+   * **실증 데이터 분석 결과**: 심각도가 유의미하게 변화한 케이스 중, EPSS 변화를 관찰할 수 없는 **No-CVE 케이스는 12건 중 1건에 불과하여 매우 희귀**합니다.
+   * **트레이드오프 및 의사결정**: 이처럼 발생 빈도가 극히 희소한 사례를 위해 별도의 예외 규칙(Exception Rule)을 설계하거나 이전 심각도(`prev_ghsa_severity`)를 지속 추적·비교하는 파이프라인 상태 머신을 유지하는 것은 시스템 복잡도 대비 실익이 현저히 떨어집니다.
+   * **최종 정책**: 따라서 **No-CVE 심각도 변화에 대한 별도 예외 규칙은 고려하지 않으며**, GHSA 심각도는 과거 대비 동적 변화(Delta)를 감지하지 않고 **'현재 시점의 절대 심각도(Current Absolute Severity: Critical/High 및 CVSS 구간)'만을 B축 우선순위 가중치로 단순화하여 활용**합니다.
 3. **Withdrawn(철회) Advisory 처리**:
    * 오탐(False Positive)으로 판명되어 철회된 취약점(`withdrawn == true`)은 점수 계산 없이 즉시 제외(Gate Filter)해야 노이즈를 방지할 수 있습니다.
