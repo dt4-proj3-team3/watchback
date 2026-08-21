@@ -98,6 +98,7 @@ class Repository(IdMixin, TimestampMixin, Base):
     )
     github_repository_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     default_branch: Mapped[str | None] = mapped_column(String(255))
     importance: Mapped[str] = mapped_column(String(20), nullable=False)
     github_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -404,6 +405,7 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
         "organization_id": "저장소를 소유한 조직 식별자",
         "github_repository_id": "GitHub가 발급한 저장소 식별자",
         "full_name": "owner/repository 형식의 GitHub 저장소 전체 이름",
+        "display_name": "화면에 표시할 가상 회사 기준 저장소 이름",
         "default_branch": "GitHub 저장소 기본 브랜치 이름",
         "importance": "조직이 지정한 저장소 중요도",
         "github_updated_at": "GitHub에서 저장소가 마지막으로 변경된 시각",
