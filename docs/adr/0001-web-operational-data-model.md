@@ -21,6 +21,7 @@ Web은 Fabric Gold의 위험 변화 Candidate를 조직의 Dependabot Alert와 �
 - Dependabot 동기화 응답에서 Alert가 누락됐다는 사실만으로 기존 Alert를 삭제하지 않는다. 부분 응답·페이지네이션 실패·일시적인 수집 실패를 삭제로 해석하지 않고, GitHub가 제공한 명시적인 상태를 기준으로 현재 상태를 갱신한다.
 - Dependabot Alert당 Review Case는 하나만 유지한다. 해결된 Case에 새 Candidate가 연결되면 기존 Case를 재오픈하고 활동 이력을 추가한다.
 - 조직 소유 행은 `organization_id`를 직접 가지며 복합 외래 키로 조직 간 참조를 차단한다.
+- 저장소 `full_name`은 GitHub 연동 식별자로 보존하고, 화면에는 별도 `display_name`을 사용한다. 새 저장소의 최초 동기화에서는 `display_name`을 `full_name`으로 채우고 이후 동기화는 기존 표시명을 덮어쓰지 않는다.
 - 검토 활동은 append-only 이력으로 취급한다. Issue·PR처럼 외부 상태가 변하는 대상은 별도 테이블에 저장한다.
 
 ## Alternatives

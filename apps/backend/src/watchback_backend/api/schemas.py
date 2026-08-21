@@ -106,6 +106,7 @@ class ErrorResponse(ContractModel):
 class RepositorySummary(ContractModel):
     id: UUID
     full_name: str
+    display_name: str
     importance: Priority
 
 
@@ -329,8 +330,9 @@ LIST_EXAMPLE = {
             "updated_at": "2026-08-20T01:00:00Z",
             "repository": {
                 "id": "10000000-0000-0000-0000-000000000001",
-                "full_name": "watchback/demo-frontend",
-                "importance": "high",
+                "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+                "display_name": "novalink/customer-fe",
+                "importance": "critical",
             },
             "alert": {
                 "id": "20000000-0000-0000-0000-000000000001",
@@ -339,7 +341,7 @@ LIST_EXAMPLE = {
                 "package_name": "example-package",
                 "ecosystem": "npm",
                 "first_patched_version": "2.0.1",
-                "html_url": "https://github.com/watchback/demo-frontend/security/dependabot/12",
+                "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/12",
             },
             "advisory": {
                 "ghsa_id": "GHSA-xxxx-yyyy-zzzz",
@@ -417,7 +419,7 @@ ACTIVITY_REQUEST_EXAMPLE = {
     "note": "패치 버전으로 업데이트하는 Issue를 생성합니다.",
     "external_link": {
         "link_type": "issue",
-        "url": "https://github.com/watchback/demo-frontend/issues/21",
+        "url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/issues/21",
     },
 }
 
@@ -438,7 +440,7 @@ ACTIVITY_RESPONSE_EXAMPLE = {
             {
                 "id": "90000000-0000-0000-0000-000000000001",
                 "link_type": "issue",
-                "url": "https://github.com/watchback/demo-frontend/issues/21",
+                "url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/issues/21",
                 "github_owner": "watchback",
                 "github_repository": "demo-frontend",
                 "github_number": 21,

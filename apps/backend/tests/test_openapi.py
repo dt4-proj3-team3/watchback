@@ -88,6 +88,9 @@ def test_detail_contract_contains_candidate_batch_evidence_and_activity_history(
     detail = _resolve_schema(openapi_document, response_schema["$ref"])
 
     assert {"candidates", "activities"}.issubset(detail["required"])
+    repository_ref = detail["properties"]["repository"]["$ref"]
+    repository = _resolve_schema(openapi_document, repository_ref)
+    assert {"full_name", "display_name"}.issubset(repository["required"])
     candidate_ref = detail["properties"]["candidates"]["items"]["$ref"]
     candidate = _resolve_schema(openapi_document, candidate_ref)
     assert {"deliveries", "evidence"}.issubset(candidate["required"])

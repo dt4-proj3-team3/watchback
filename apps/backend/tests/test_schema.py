@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -9,9 +8,8 @@ from uuid import uuid4
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Engine, create_engine, inspect
+from sqlalchemy import Engine, inspect, select
 from sqlalchemy.exc import IntegrityError
-from testcontainers.community.postgres import PostgresContainer
 
 from watchback_backend.db.models import Base
 
@@ -31,29 +29,6 @@ EXPECTED_TABLES = {
     "security_advisories",
     "users",
 }
-
-
-@pytest.fixture(scope="session")
-def postgres_engine() -> Engine:
-    config = Config(Path(__file__).parents[1] / "alembic.ini")
-    previous_database_url = os.environ.get("DATABASE_URL")
-
-    with PostgresContainer("postgres:16-alpine", driver="psycopg") as postgres:
-        database_url = postgres.get_connection_url()
-        os.environ["DATABASE_URL"] = database_url
-        command.upgrade(config, "head")
-        engine = create_engine(database_url)
-
-        try:
-            yield engine
-        finally:
-            command.downgrade(config, "base")
-            assert set(inspect(engine).get_table_names()) == {"alembic_version"}
-            engine.dispose()
-            if previous_database_url is None:
-                os.environ.pop("DATABASE_URL", None)
-            else:
-                os.environ["DATABASE_URL"] = previous_database_url
 
 
 @contextmanager
@@ -120,6 +95,62 @@ def test_migration_is_current(postgres_engine: Engine) -> None:
     command.check(Config(Path(__file__).parents[1] / "alembic.ini"))
 
 
+def test_repository_display_name_migration_backfills_existing_rows(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    tables = Base.metadata.tables
+    now = datetime.now(UTC)
+    organization_id = uuid4()
+    repository_id = uuid4()
+
+    command.downgrade(config, "0001")
+    try:
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                tables["organizations"].insert(),
+                {
+                    "id": organization_id,
+                    "github_organization_id": 3001,
+                    "github_login": "migration-test-org",
+                    "display_name": "Migration Test",
+                },
+            )
+            connection.execute(
+                tables["repositories"].insert(),
+                {
+                    "id": repository_id,
+                    "organization_id": organization_id,
+                    "github_repository_id": 4001,
+                    "full_name": "migration-test-org/example",
+                    "importance": "high",
+                    "last_synced_at": now,
+                },
+            )
+
+        command.upgrade(config, "head")
+
+        with postgres_engine.begin() as connection:
+            display_name = connection.scalar(
+                select(tables["repositories"].c.display_name).where(
+                    tables["repositories"].c.id == repository_id
+                )
+            )
+            assert display_name == "migration-test-org/example"
+            connection.execute(
+                tables["repositories"].delete().where(
+                    tables["repositories"].c.id == repository_id
+                )
+            )
+            connection.execute(
+                tables["organizations"].delete().where(
+                    tables["organizations"].c.id == organization_id
+                )
+            )
+    finally:
+        command.upgrade(config, "head")
+
+
 def test_representative_references_and_duplicates(postgres_engine: Engine) -> None:
     tables = Base.metadata.tables
     now = datetime.now(UTC)
@@ -158,6 +189,7 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
                 "organization_id": organization_a,
                 "github_repository_id": 2001,
                 "full_name": "org-a/example",
+                "display_name": "Organization A/example",
                 "importance": "high",
                 "last_synced_at": now,
             },
