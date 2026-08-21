@@ -17,7 +17,7 @@ Web은 Fabric Gold의 위험 변화 Candidate를 조직의 Dependabot Alert와 �
 - Candidate와 Dependabot Alert Advisory는 CVE ID로 매칭하고 매칭 결과를 별도로 보존한다. CVE가 없는 Advisory는 Candidate와 매칭하지 않는다.
 - Batch별 `payload_hash`는 Candidate와 연결된 Evidence 집합을 정규화한 전체 payload를 대상으로 계산하여 Evidence 정정도 재전달 변경으로 감지한다.
 - Dependabot Alert는 `(repository_id, github_alert_number)`로 식별하며, 수신한 `github_updated_at`이 저장된 값보다 최신일 때만 현재 상태를 갱신한다. 동일하거나 오래된 응답은 기존 상태를 덮어쓰지 않는다.
-- Alert 상태가 `open`이면 `dismissed_at`과 `fixed_at`은 비우고, `dismissed`이면 `dismissed_at`, `fixed`이면 `fixed_at`을 저장한다.
+- Alert 상태가 `open`이면 종료 시각을 모두 비우고, `dismissed`이면 `dismissed_at`, `fixed`이면 `fixed_at`, `auto_dismissed`이면 `auto_dismissed_at`을 저장한다.
 - Dependabot 동기화 응답에서 Alert가 누락됐다는 사실만으로 기존 Alert를 삭제하지 않는다. 부분 응답·페이지네이션 실패·일시적인 수집 실패를 삭제로 해석하지 않고, GitHub가 제공한 명시적인 상태를 기준으로 현재 상태를 갱신한다.
 - Dependabot Alert당 Review Case는 하나만 유지한다. 해결된 Case에 새 Candidate가 연결되면 기존 Case를 재오픈하고 활동 이력을 추가한다.
 - 조직 소유 행은 `organization_id`를 직접 가지며 복합 외래 키로 조직 간 참조를 차단한다.

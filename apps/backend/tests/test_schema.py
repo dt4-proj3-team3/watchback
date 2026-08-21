@@ -151,6 +151,157 @@ def test_repository_display_name_migration_backfills_existing_rows(
         command.upgrade(config, "head")
 
 
+def test_dependabot_source_enum_migration_converts_existing_values(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    tables = Base.metadata.tables
+    now = datetime.now(UTC)
+    organization_id = uuid4()
+    repository_id = uuid4()
+    advisory_id = uuid4()
+    alert_id = uuid4()
+    auto_dismissed_alert_id = uuid4()
+
+    command.downgrade(config, "0002")
+    try:
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                tables["organizations"].insert(),
+                {
+                    "id": organization_id,
+                    "github_organization_id": 5001,
+                    "github_login": "enum-migration-org",
+                    "display_name": "Enum Migration",
+                },
+            )
+            connection.execute(
+                tables["repositories"].insert(),
+                {
+                    "id": repository_id,
+                    "organization_id": organization_id,
+                    "github_repository_id": 6001,
+                    "full_name": "enum-migration-org/example",
+                    "display_name": "enum-migration-org/example",
+                    "importance": "high",
+                    "last_synced_at": now,
+                },
+            )
+            connection.execute(
+                tables["security_advisories"].insert(),
+                {
+                    "id": advisory_id,
+                    "ghsa_id": "GHSA-enum-migration",
+                    "summary": "Enum migration",
+                    "severity": "moderate",
+                    "github_updated_at": now,
+                },
+            )
+            connection.execute(
+                tables["dependabot_alerts"].insert(),
+                {
+                    "id": alert_id,
+                    "organization_id": organization_id,
+                    "repository_id": repository_id,
+                    "advisory_id": advisory_id,
+                    "github_alert_number": 1,
+                    "state": "open",
+                    "package_name": "example",
+                    "ecosystem": "npm",
+                    "dependency_relationship": "indirect",
+                    "vulnerable_version_range": "< 2",
+                    "html_url": (
+                        "https://github.com/enum-migration-org/example/"
+                        "security/dependabot/1"
+                    ),
+                    "github_created_at": now,
+                    "github_updated_at": now,
+                    "last_synced_at": now,
+                },
+            )
+
+        command.upgrade(config, "0003")
+        with postgres_engine.begin() as connection:
+            assert connection.scalar(
+                select(tables["security_advisories"].c.severity).where(
+                    tables["security_advisories"].c.id == advisory_id
+                )
+            ) == "medium"
+            assert connection.scalar(
+                select(tables["dependabot_alerts"].c.dependency_relationship).where(
+                    tables["dependabot_alerts"].c.id == alert_id
+                )
+            ) == "transitive"
+            connection.execute(
+                tables["dependabot_alerts"].insert(),
+                {
+                    "id": auto_dismissed_alert_id,
+                    "organization_id": organization_id,
+                    "repository_id": repository_id,
+                    "advisory_id": advisory_id,
+                    "github_alert_number": 2,
+                    "state": "auto_dismissed",
+                    "package_name": "auto-example",
+                    "ecosystem": "npm",
+                    "dependency_relationship": "unknown",
+                    "vulnerable_version_range": "< 2",
+                    "html_url": (
+                        "https://github.com/enum-migration-org/example/"
+                        "security/dependabot/2"
+                    ),
+                    "github_created_at": now,
+                    "github_updated_at": now,
+                    "auto_dismissed_at": now,
+                    "last_synced_at": now,
+                },
+            )
+
+        command.downgrade(config, "0002")
+        with postgres_engine.begin() as connection:
+            assert connection.scalar(
+                select(tables["security_advisories"].c.severity).where(
+                    tables["security_advisories"].c.id == advisory_id
+                )
+            ) == "moderate"
+            assert connection.scalar(
+                select(tables["dependabot_alerts"].c.dependency_relationship).where(
+                    tables["dependabot_alerts"].c.id == alert_id
+                )
+            ) == "indirect"
+            auto_row = connection.execute(
+                select(
+                    tables["dependabot_alerts"].c.state,
+                    tables["dependabot_alerts"].c.dismissed_at,
+                    tables["dependabot_alerts"].c.dependency_relationship,
+                ).where(tables["dependabot_alerts"].c.id == auto_dismissed_alert_id)
+            ).one()
+            assert auto_row.state == "dismissed"
+            assert auto_row.dismissed_at == now
+            assert auto_row.dependency_relationship is None
+            connection.execute(
+                tables["dependabot_alerts"].delete().where(
+                    tables["dependabot_alerts"].c.repository_id == repository_id
+                )
+            )
+            connection.execute(
+                tables["security_advisories"].delete().where(
+                    tables["security_advisories"].c.id == advisory_id
+                )
+            )
+            connection.execute(
+                tables["repositories"].delete().where(
+                    tables["repositories"].c.id == repository_id
+                )
+            )
+            connection.execute(
+                tables["organizations"].delete().where(
+                    tables["organizations"].c.id == organization_id
+                )
+            )
+    finally:
+        command.upgrade(config, "head")
+
+
 def test_representative_references_and_duplicates(postgres_engine: Engine) -> None:
     tables = Base.metadata.tables
     now = datetime.now(UTC)
@@ -211,7 +362,7 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
                 "id": uuid4(),
                 "ghsa_id": "GHSA-no-cve-example",
                 "summary": "Advisory without CVE",
-                "severity": "moderate",
+                "severity": "medium",
                 "github_updated_at": now,
             },
         )
