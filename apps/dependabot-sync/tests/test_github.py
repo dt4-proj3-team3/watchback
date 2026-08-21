@@ -117,3 +117,18 @@ def test_rate_limit_reset_and_non_retryable_errors(raw_alerts):
     rendered = json.dumps(caught.value.context) + str(caught.value)
     assert "secret-token" not in rendered
     assert "token" not in rendered
+
+    calls = 0
+
+    def general_forbidden(request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            403,
+            headers={"X-RateLimit-Remaining": "10", "X-RateLimit-Reset": "1005"},
+        )
+
+    with client(general_forbidden) as github:
+        with pytest.raises(GitHubRequestError):
+            github.get_alerts("example/repo")
+    assert calls == 1

@@ -72,7 +72,6 @@ class GitHubClient:
     def _is_rate_limit(response: httpx.Response) -> bool:
         return response.status_code == 403 and (
             response.headers.get("X-RateLimit-Remaining") == "0"
-            or "X-RateLimit-Reset" in response.headers
             or "Retry-After" in response.headers
         )
 
