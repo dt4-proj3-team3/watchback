@@ -31,11 +31,12 @@ class AlertState(StrEnum):
     OPEN = "open"
     DISMISSED = "dismissed"
     FIXED = "fixed"
+    AUTO_DISMISSED = "auto_dismissed"
 
 
 class AdvisorySeverity(StrEnum):
     LOW = "low"
-    MODERATE = "moderate"
+    MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
@@ -47,7 +48,8 @@ class DependencyScope(StrEnum):
 
 class DependencyRelationship(StrEnum):
     DIRECT = "direct"
-    INDIRECT = "indirect"
+    TRANSITIVE = "transitive"
+    UNKNOWN = "unknown"
 
 
 class CaseSort(StrEnum):
@@ -132,6 +134,7 @@ class AlertDetail(AlertSummary):
     dismissed_by: str | None
     dismissed_comment: str | None
     fixed_at: datetime | None
+    auto_dismissed_at: datetime | None
 
 
 class AdvisorySummary(ContractModel):
@@ -381,6 +384,7 @@ DETAIL_EXAMPLE = {
         "dismissed_by": None,
         "dismissed_comment": None,
         "fixed_at": None,
+        "auto_dismissed_at": None,
     },
     "candidates": [
         {

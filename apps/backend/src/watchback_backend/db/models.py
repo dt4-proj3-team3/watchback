@@ -109,7 +109,7 @@ class SecurityAdvisory(IdMixin, TimestampMixin, Base):
     __tablename__ = "security_advisories"
     __table_args__ = (
         CheckConstraint(
-            "severity IN ('low', 'moderate', 'high', 'critical')",
+            "severity IN ('low', 'medium', 'high', 'critical')",
             name="severity_values",
         ),
         CheckConstraint("cvss_score BETWEEN 0 AND 10", name="cvss_score_range"),
@@ -136,20 +136,25 @@ class DependabotAlert(IdMixin, TimestampMixin, Base):
             ["organization_id", "repository_id"],
             ["repositories.organization_id", "repositories.id"],
         ),
-        CheckConstraint("state IN ('open', 'dismissed', 'fixed')", name="state_values"),
+        CheckConstraint(
+            "state IN ('open', 'dismissed', 'fixed', 'auto_dismissed')",
+            name="state_values",
+        ),
         CheckConstraint(
             "dependency_scope IS NULL OR dependency_scope IN ('runtime', 'development')",
             name="dependency_scope_values",
         ),
         CheckConstraint(
             "dependency_relationship IS NULL OR "
-            "dependency_relationship IN ('direct', 'indirect')",
+            "dependency_relationship IN ('direct', 'transitive', 'unknown')",
             name="dependency_relationship_values",
         ),
         CheckConstraint(
-            "(state = 'open' AND dismissed_at IS NULL AND fixed_at IS NULL) OR "
+            "(state = 'open' AND dismissed_at IS NULL AND fixed_at IS NULL "
+            "AND auto_dismissed_at IS NULL) OR "
             "(state = 'dismissed' AND dismissed_at IS NOT NULL) OR "
-            "(state = 'fixed' AND fixed_at IS NOT NULL)",
+            "(state = 'fixed' AND fixed_at IS NOT NULL) OR "
+            "(state = 'auto_dismissed' AND auto_dismissed_at IS NOT NULL)",
             name="state_timestamp_consistency",
         ),
         Index("ix_dependabot_alerts_organization_state", "organization_id", "state"),
