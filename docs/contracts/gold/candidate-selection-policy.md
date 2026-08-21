@@ -2,8 +2,6 @@
 
 ## 1. 목적
 
-Watchback GitHub Issue #74의 **DS-04 복합 신호 포함·제외와 우선순위 정책**을 정의한다.
-
 본 정책은 EPSS, KEV, GHSA 신호를 기반으로 Silver 분석 입력에서 Gold 재검토 후보와 근거를 생성하기 위한 기준이다.
 
 - 정책 ID: `DS-04`
