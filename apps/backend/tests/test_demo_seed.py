@@ -99,7 +99,7 @@ def test_seed_creates_only_demo_reference_data(clean_database: Engine) -> None:
                 REPOSITORIES[1]["id"],
                 1340408606,
                 "dt4-proj3-team3/watchback-vulnerable-be-lab",
-                "novalink/identity-api",
+                "novalink/ai-platform-api",
                 "main",
                 "high",
                 REPOSITORIES[1]["github_updated_at"],

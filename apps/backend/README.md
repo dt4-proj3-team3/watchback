@@ -70,6 +70,6 @@ PYTHONPATH=src python -m watchback_backend.db.demo_seed
 | 사용자 | 김서연 | `seoyeon.kim@novalink.example` | 재검토 담당자 |
 | 사용자 | 박준호 | `junho.park@novalink.example` | 조치 담당자 |
 | 저장소 | `novalink/customer-fe` | GitHub repository `1329314801` | `critical`, 고객 금융 포털 |
-| 저장소 | `novalink/identity-api` | GitHub repository `1340408606` | `high`, 본인확인·이미지 처리 API |
+| 저장소 | `novalink/ai-platform-api` | GitHub repository `1340408606` | `high`, AI 모델 서빙·LLM 게이트웨이 API |
 
 사용자 역할과 저장소의 업무 설명은 시연 시나리오용 설명이며 현재 DB 컬럼으로 저장하지 않는다. 이 시드는 Alert·Advisory·Gold Candidate·Evidence·Case를 만들지 않는다. 해당 데이터는 각 동기화 경로에서 적재한다.

@@ -11,6 +11,9 @@ apps/
 ├── dependabot-sync/      # Dependabot Alert 동기화 Job
 └── kev-ingestor/         # CISA KEV 수집 Azure Function
 
+data/
+└── demo/                 # 버전 관리되는 데모용 데이터와 API Fixture
+
 fabric/
 └── workspace/            # API로 배포할 Fabric 항목의 로컬 원본
     ├── ingestion/        # 외부 위험 데이터 수집 Fabric 항목
