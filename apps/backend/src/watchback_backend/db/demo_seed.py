@@ -48,7 +48,7 @@ REPOSITORIES = (
         "id": uuid5(NAMESPACE_URL, "watchback:demo:repository:github:1340408606"),
         "github_repository_id": 1340408606,
         "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
-        "display_name": "novalink/identity-api",
+        "display_name": "novalink/ai-platform-api",
         "default_branch": "main",
         "importance": "high",
         "github_updated_at": datetime(2026, 8, 20, 7, 29, 53, tzinfo=UTC),

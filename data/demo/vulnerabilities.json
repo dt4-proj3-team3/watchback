@@ -1,0 +1,1108 @@
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-24T02:52:00Z",
+  "github_api_version": "2022-11-28",
+  "expected_signal_evaluation": {
+    "policy_version": "ver.1",
+    "evaluation_start": "2025-03-21",
+    "evaluation_end": "2026-08-20",
+    "kev_catalog_version": "2026.08.20",
+    "epss_model_change_excluded_on": "2026-06-15",
+    "ghsa_patch_rules_evaluated": false
+  },
+  "repositories": [
+    {
+      "id": 1329314801,
+      "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+      "default_branch": "main",
+      "commit_sha": "a353f02088b15483baaccac29ffb5026950e549d",
+      "commit_at": "2026-08-20T07:11:47Z",
+      "target_cve_count": 9,
+      "target_alert_count": 17
+    },
+    {
+      "id": 1340408606,
+      "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+      "default_branch": "main",
+      "commit_sha": "b1a5c667b967c87a3f4300277acb2e70db41cfc9",
+      "commit_at": "2026-08-24T02:51:12Z",
+      "target_cve_count": 7,
+      "target_alert_count": 14
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "cve_id": "CVE-2025-27520",
+      "ghsa_id": "GHSA-33xw-247w-6hmc",
+      "package": "bentoml",
+      "ecosystem": "pip",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "advisory_published_at": "2025-04-04T16:05:32Z",
+      "advisory_updated_at": "2025-04-04T16:05:34Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 201,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.3.4, < 1.4.3",
+          "first_patched_version": "1.4.3",
+          "alert_created_at": "2026-08-24T02:49:43Z",
+          "alert_updated_at": "2026-08-24T02:49:43Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/201"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 228,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.3.4, < 1.4.3",
+          "first_patched_version": "1.4.3",
+          "alert_created_at": "2026-08-24T02:49:55Z",
+          "alert_updated_at": "2026-08-24T02:49:55Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/228"
+        }
+      ],
+      "summary": "BentoML Allows Remote Code Execution (RCE) via Insecure Deserialization",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-05-05",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00404000",
+          "current_epss": "0.49056000",
+          "previous_percentile": "0.58204000",
+          "current_percentile": "0.97601000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2025-05-05",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00404000",
+          "current_epss": "0.49056000",
+          "previous_percentile": "0.58204000",
+          "current_percentile": "0.97601000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-29927",
+      "ghsa_id": "GHSA-f82v-jwr5-mffw",
+      "package": "next",
+      "ecosystem": "npm",
+      "severity": "critical",
+      "cvss_score": 9.1,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      "advisory_published_at": "2025-03-21T15:20:12Z",
+      "advisory_updated_at": "2026-03-02T16:59:05Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 1,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 15.0.0, < 15.2.3",
+          "first_patched_version": "15.2.3",
+          "alert_created_at": "2026-08-10T01:17:22Z",
+          "alert_updated_at": "2026-08-10T01:17:22Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/1"
+        }
+      ],
+      "summary": "Authorization Bypass in Next.js Middleware",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-04-21",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00030000",
+          "current_epss": "0.91895000",
+          "previous_percentile": "0.05251000",
+          "current_percentile": "0.99663000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2025-04-21",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00030000",
+          "current_epss": "0.91895000",
+          "previous_percentile": "0.05251000",
+          "current_percentile": "0.99663000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-30208",
+      "ghsa_id": "GHSA-x574-m823-4x7w",
+      "package": "vite",
+      "ecosystem": "npm",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+      "advisory_published_at": "2025-03-25T14:00:02Z",
+      "advisory_updated_at": "2025-03-25T14:00:04Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 2,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.3",
+          "first_patched_version": "6.2.3",
+          "alert_created_at": "2026-08-10T01:17:23Z",
+          "alert_updated_at": "2026-08-20T07:12:03Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/2"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 87,
+          "state": "fixed",
+          "manifest_path": "transitive-override/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.3",
+          "first_patched_version": "6.2.3",
+          "alert_created_at": "2026-08-12T07:59:03Z",
+          "alert_updated_at": "2026-08-12T08:01:51Z",
+          "fixed_at": "2026-08-12T08:01:51Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/87"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 119,
+          "state": "fixed",
+          "manifest_path": "transitive-parent-update/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.3",
+          "first_patched_version": "6.2.3",
+          "alert_created_at": "2026-08-12T07:59:07Z",
+          "alert_updated_at": "2026-08-12T08:01:53Z",
+          "fixed_at": "2026-08-12T08:01:53Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/119"
+        }
+      ],
+      "summary": "Vite bypasses server.fs.deny when using ?raw??",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-04-24",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00035000",
+          "current_epss": "0.59415000",
+          "previous_percentile": "0.06401000",
+          "current_percentile": "0.98080000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2025-04-24",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00035000",
+          "current_epss": "0.59415000",
+          "previous_percentile": "0.06401000",
+          "current_percentile": "0.98080000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-31125",
+      "ghsa_id": "GHSA-4r4m-qw57-chr8",
+      "package": "vite",
+      "ecosystem": "npm",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+      "advisory_published_at": "2025-03-31T17:31:54Z",
+      "advisory_updated_at": "2026-01-22T21:47:41Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 3,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.4",
+          "first_patched_version": "6.2.4",
+          "alert_created_at": "2026-08-10T01:17:23Z",
+          "alert_updated_at": "2026-08-20T07:12:03Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/3"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 88,
+          "state": "fixed",
+          "manifest_path": "transitive-override/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.4",
+          "first_patched_version": "6.2.4",
+          "alert_created_at": "2026-08-12T07:59:03Z",
+          "alert_updated_at": "2026-08-12T08:01:51Z",
+          "fixed_at": "2026-08-12T08:01:51Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/88"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 120,
+          "state": "fixed",
+          "manifest_path": "transitive-parent-update/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.4",
+          "first_patched_version": "6.2.4",
+          "alert_created_at": "2026-08-12T07:59:07Z",
+          "alert_updated_at": "2026-08-12T08:01:53Z",
+          "fixed_at": "2026-08-12T08:01:53Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/120"
+        }
+      ],
+      "summary": "Vite has a `server.fs.deny` bypassed for `inline` and `raw` with `?import` query",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-05-01",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00032000",
+          "current_epss": "0.07669000",
+          "previous_percentile": "0.05780000",
+          "current_percentile": "0.91446000"
+        },
+        {
+          "rule_id": "R-KEV-NEW",
+          "observed_on": "2026-01-22",
+          "source": "cisa_kev",
+          "included_in_s1": true
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-01-23",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.03613000",
+          "current_epss": "0.74385000",
+          "previous_percentile": "0.87421000",
+          "current_percentile": "0.98798000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-31486",
+      "ghsa_id": "GHSA-xcj6-pq6g-qj4x",
+      "package": "vite",
+      "ecosystem": "npm",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+      "advisory_published_at": "2025-04-04T14:20:05Z",
+      "advisory_updated_at": "2025-04-30T17:26:54Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 4,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.5",
+          "first_patched_version": "6.2.5",
+          "alert_created_at": "2026-08-10T01:17:23Z",
+          "alert_updated_at": "2026-08-10T01:17:23Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/4"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 89,
+          "state": "open",
+          "manifest_path": "transitive-override/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.5",
+          "first_patched_version": "6.2.5",
+          "alert_created_at": "2026-08-12T07:59:03Z",
+          "alert_updated_at": "2026-08-12T07:59:03Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/89"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 121,
+          "state": "fixed",
+          "manifest_path": "transitive-parent-update/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.2.0, < 6.2.5",
+          "first_patched_version": "6.2.5",
+          "alert_created_at": "2026-08-12T07:59:07Z",
+          "alert_updated_at": "2026-08-12T08:01:53Z",
+          "fixed_at": "2026-08-12T08:01:53Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/121"
+        }
+      ],
+      "summary": "Vite allows server.fs.deny to be bypassed with .svg or relative paths",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-11-18",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00014000",
+          "current_epss": "0.07314000",
+          "previous_percentile": "0.01663000",
+          "current_percentile": "0.90769000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-06-15",
+          "source": "first_epss",
+          "included_in_s1": false,
+          "previous_epss": "0.05145000",
+          "current_epss": "0.35060000",
+          "previous_percentile": "0.89968000",
+          "current_percentile": "0.98226000",
+          "exclusion_reason": "EPSS v5 모델 교체일의 시스템성 변동"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-32375",
+      "ghsa_id": "GHSA-7v4r-c989-xh26",
+      "package": "bentoml",
+      "ecosystem": "pip",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "advisory_published_at": "2025-04-09T12:59:45Z",
+      "advisory_updated_at": "2025-04-23T15:24:05Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 202,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.0.0a1, < 1.4.8",
+          "first_patched_version": "1.4.8",
+          "alert_created_at": "2026-08-24T02:49:43Z",
+          "alert_updated_at": "2026-08-24T02:49:43Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/202"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 229,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.0.0a1, < 1.4.8",
+          "first_patched_version": "1.4.8",
+          "alert_created_at": "2026-08-24T02:49:55Z",
+          "alert_updated_at": "2026-08-24T02:49:55Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/229"
+        }
+      ],
+      "summary": "BentoML's runner server Vulnerable to Remote Code Execution (RCE) via Insecure Deserialization",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2025-05-10",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00041000",
+          "current_epss": "0.36960000",
+          "previous_percentile": "0.09423000",
+          "current_percentile": "0.96911000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2025-05-10",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00041000",
+          "current_epss": "0.36960000",
+          "previous_percentile": "0.09423000",
+          "current_percentile": "0.96911000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-55182",
+      "ghsa_id": "GHSA-fv66-9v8q-g76r",
+      "package": "react-server-dom-webpack",
+      "ecosystem": "npm",
+      "severity": "critical",
+      "cvss_score": 10.0,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+      "advisory_published_at": "2025-12-03T19:07:39Z",
+      "advisory_updated_at": "2025-12-09T16:53:25Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 20,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": "= 19.2.0",
+          "first_patched_version": "19.2.1",
+          "alert_created_at": "2026-08-10T01:17:25Z",
+          "alert_updated_at": "2026-08-20T07:12:04Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/20"
+        }
+      ],
+      "summary": "React Server Components are Vulnerable to RCE",
+      "expected_signals": [
+        {
+          "rule_id": "R-KEV-NEW",
+          "observed_on": "2025-12-05",
+          "source": "cisa_kev",
+          "included_in_s1": true
+        },
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-01-03",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00455000",
+          "current_epss": "0.47368000",
+          "previous_percentile": "0.63035000",
+          "current_percentile": "0.97599000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-01-03",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00455000",
+          "current_epss": "0.47368000",
+          "previous_percentile": "0.63035000",
+          "current_percentile": "0.97599000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-55183",
+      "ghsa_id": "GHSA-925w-6v3x-g4j4",
+      "package": "react-server-dom-webpack",
+      "ecosystem": "npm",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "advisory_published_at": "2025-12-11T22:36:08Z",
+      "advisory_updated_at": "2025-12-11T22:36:10Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 22,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 19.2.0, < 19.2.2",
+          "first_patched_version": "19.2.2",
+          "alert_created_at": "2026-08-10T01:17:25Z",
+          "alert_updated_at": "2026-08-10T01:17:25Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/22"
+        }
+      ],
+      "summary": "Source Code Exposure Vulnerability in React Server Components",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-01-11",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00057000",
+          "current_epss": "0.12469000",
+          "previous_percentile": "0.17900000",
+          "current_percentile": "0.93685000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2025-55184",
+      "ghsa_id": "GHSA-2m3v-v2m8-q956",
+      "package": "react-server-dom-webpack",
+      "ecosystem": "npm",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "advisory_published_at": "2025-12-11T22:36:44Z",
+      "advisory_updated_at": "2025-12-11T22:36:46Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 23,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 19.2.0, < 19.2.2",
+          "first_patched_version": "19.2.2",
+          "alert_created_at": "2026-08-10T01:17:26Z",
+          "alert_updated_at": "2026-08-10T01:17:26Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/23"
+        }
+      ],
+      "summary": "Denial of Service Vulnerability in React Server Components",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-01-11",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00072000",
+          "current_epss": "0.17001000",
+          "previous_percentile": "0.22191000",
+          "current_percentile": "0.94757000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-1207",
+      "ghsa_id": "GHSA-mwm9-4648-f68q",
+      "package": "Django",
+      "ecosystem": "pip",
+      "severity": "high",
+      "cvss_score": 0.0,
+      "cvss_vector": null,
+      "advisory_published_at": "2026-02-03T15:30:23Z",
+      "advisory_updated_at": "2026-06-05T16:24:43Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 44,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 4.2a1, < 4.2.28",
+          "first_patched_version": "4.2.28",
+          "alert_created_at": "2026-08-20T07:31:01Z",
+          "alert_updated_at": "2026-08-20T07:31:01Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/44"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 143,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 4.2a1, < 4.2.28",
+          "first_patched_version": "4.2.28",
+          "alert_created_at": "2026-08-20T07:31:17Z",
+          "alert_updated_at": "2026-08-20T07:31:17Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/143"
+        }
+      ],
+      "summary": "Django has an SQL Injection issue",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-03-07",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00017000",
+          "current_epss": "0.05462000",
+          "previous_percentile": "0.03338000",
+          "current_percentile": "0.90031000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-07-24",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.03779000",
+          "current_epss": "0.12976000",
+          "previous_percentile": "0.88557000",
+          "current_percentile": "0.95905000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-35029",
+      "ghsa_id": "GHSA-53mr-6c8q-9789",
+      "package": "litellm",
+      "ecosystem": "pip",
+      "severity": "high",
+      "cvss_score": 0.0,
+      "cvss_vector": null,
+      "advisory_published_at": "2026-04-03T21:59:31Z",
+      "advisory_updated_at": "2026-05-06T18:40:48Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 207,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": "< 1.83.0",
+          "first_patched_version": "1.83.0",
+          "alert_created_at": "2026-08-24T02:49:45Z",
+          "alert_updated_at": "2026-08-24T02:49:45Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/207"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 234,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": "< 1.83.0",
+          "first_patched_version": "1.83.0",
+          "alert_created_at": "2026-08-24T02:49:57Z",
+          "alert_updated_at": "2026-08-24T02:49:57Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/234"
+        }
+      ],
+      "summary": "LiteLLM: Privilege escalation via unrestricted proxy configuration endpoint",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-05-07",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00334000",
+          "current_epss": "0.13296000",
+          "previous_percentile": "0.56216000",
+          "current_percentile": "0.94206000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-05-18",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00192000",
+          "current_epss": "0.17672000",
+          "previous_percentile": "0.41198000",
+          "current_percentile": "0.95179000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-39363",
+      "ghsa_id": "GHSA-p9ff-h696-f583",
+      "package": "vite",
+      "ecosystem": "npm",
+      "severity": "high",
+      "cvss_score": 0.0,
+      "cvss_vector": null,
+      "advisory_published_at": "2026-04-06T18:03:24Z",
+      "advisory_updated_at": "2026-04-07T22:16:11Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 38,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.0.0, <= 6.4.1",
+          "first_patched_version": "6.4.2",
+          "alert_created_at": "2026-08-10T01:17:28Z",
+          "alert_updated_at": "2026-08-10T01:17:28Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/38"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 106,
+          "state": "open",
+          "manifest_path": "transitive-override/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.0.0, <= 6.4.1",
+          "first_patched_version": "6.4.2",
+          "alert_created_at": "2026-08-12T07:59:05Z",
+          "alert_updated_at": "2026-08-12T07:59:05Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/106"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 138,
+          "state": "fixed",
+          "manifest_path": "transitive-parent-update/package-lock.json",
+          "relationship": "transitive",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 6.0.0, <= 6.4.1",
+          "first_patched_version": "6.4.2",
+          "alert_created_at": "2026-08-12T07:59:10Z",
+          "alert_updated_at": "2026-08-12T08:01:54Z",
+          "fixed_at": "2026-08-12T08:01:54Z",
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/138"
+        }
+      ],
+      "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-05-14",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.000890000",
+          "current_epss": "0.06638000",
+          "previous_percentile": "0.252560000",
+          "current_percentile": "0.91292000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-40217",
+      "ghsa_id": "GHSA-wxxx-gvqv-xp7p",
+      "package": "litellm",
+      "ecosystem": "pip",
+      "severity": "high",
+      "cvss_score": 8.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "advisory_published_at": "2026-05-11T16:17:23Z",
+      "advisory_updated_at": "2026-05-11T16:17:23Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 218,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.81.8, < 1.83.10",
+          "first_patched_version": "1.83.10",
+          "alert_created_at": "2026-08-24T02:49:47Z",
+          "alert_updated_at": "2026-08-24T02:49:47Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/218"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 245,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.81.8, < 1.83.10",
+          "first_patched_version": "1.83.10",
+          "alert_created_at": "2026-08-24T02:49:59Z",
+          "alert_updated_at": "2026-08-24T02:49:59Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/245"
+        }
+      ],
+      "summary": "LiteLLM has a sandbox escape in custom-code guardrail",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-07-01",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00098000",
+          "current_epss": "0.06496000",
+          "previous_percentile": "0.26838000",
+          "current_percentile": "0.92926000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-42208",
+      "ghsa_id": "GHSA-r75f-5x8p-qvmc",
+      "package": "litellm",
+      "ecosystem": "pip",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "advisory_published_at": "2026-04-24T16:17:07Z",
+      "advisory_updated_at": "2026-05-12T13:27:12Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 213,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.81.16, < 1.83.7",
+          "first_patched_version": "1.83.7",
+          "alert_created_at": "2026-08-24T02:49:46Z",
+          "alert_updated_at": "2026-08-24T02:49:46Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/213"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 240,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.81.16, < 1.83.7",
+          "first_patched_version": "1.83.7",
+          "alert_created_at": "2026-08-24T02:49:58Z",
+          "alert_updated_at": "2026-08-24T02:49:58Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/240"
+        }
+      ],
+      "summary": "LiteLLM has SQL Injection in Proxy API key verification",
+      "expected_signals": [
+        {
+          "rule_id": "R-KEV-NEW",
+          "observed_on": "2026-05-08",
+          "source": "cisa_kev",
+          "included_in_s1": true
+        },
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-06-07",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00084000",
+          "current_epss": "0.56947000",
+          "previous_percentile": "0.24307000",
+          "current_percentile": "0.98176000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-06-07",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00084000",
+          "current_epss": "0.56947000",
+          "previous_percentile": "0.24307000",
+          "current_percentile": "0.98176000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-42271",
+      "ghsa_id": "GHSA-v4p8-mg3p-g94g",
+      "package": "litellm",
+      "ecosystem": "pip",
+      "severity": "high",
+      "cvss_score": 8.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "advisory_published_at": "2026-04-25T23:27:54Z",
+      "advisory_updated_at": "2026-06-09T13:07:08Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 214,
+          "state": "open",
+          "manifest_path": "pyproject.toml",
+          "relationship": "unknown",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.74.2, < 1.83.7",
+          "first_patched_version": "1.83.7",
+          "alert_created_at": "2026-08-24T02:49:46Z",
+          "alert_updated_at": "2026-08-24T02:49:46Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/214"
+        },
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "alert_number": 241,
+          "state": "open",
+          "manifest_path": "uv.lock",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 1.74.2, < 1.83.7",
+          "first_patched_version": "1.83.7",
+          "alert_created_at": "2026-08-24T02:49:59Z",
+          "alert_updated_at": "2026-08-24T02:49:59Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/241"
+        }
+      ],
+      "summary": "LiteLLM: Authenticated command execution via MCP stdio test endpoints",
+      "expected_signals": [
+        {
+          "rule_id": "R-KEV-NEW",
+          "observed_on": "2026-06-08",
+          "source": "cisa_kev",
+          "included_in_s1": true
+        },
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-06-09",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00052000",
+          "current_epss": "0.60784000",
+          "previous_percentile": "0.16109000",
+          "current_percentile": "0.98324000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-06-09",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.00052000",
+          "current_epss": "0.60784000",
+          "previous_percentile": "0.16109000",
+          "current_percentile": "0.98324000"
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2026-44578",
+      "ghsa_id": "GHSA-c4j6-fc7j-m34r",
+      "package": "next",
+      "ecosystem": "npm",
+      "severity": "high",
+      "cvss_score": 8.6,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N",
+      "advisory_published_at": "2026-05-11T15:55:15Z",
+      "advisory_updated_at": "2026-05-14T20:38:24Z",
+      "advisory_withdrawn_at": null,
+      "alerts": [
+        {
+          "repository": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "alert_number": 49,
+          "state": "open",
+          "manifest_path": "package-lock.json",
+          "relationship": "direct",
+          "scope": "runtime",
+          "vulnerable_version_range": ">= 13.4.13, < 15.5.16",
+          "first_patched_version": "15.5.16",
+          "alert_created_at": "2026-08-10T01:17:30Z",
+          "alert_updated_at": "2026-08-10T01:17:30Z",
+          "fixed_at": null,
+          "dismissed_at": null,
+          "auto_dismissed_at": null,
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/49"
+        }
+      ],
+      "summary": "Next.js vulnerable to server-side request forgery in applications using WebSocket upgrades",
+      "expected_signals": [
+        {
+          "rule_id": "R-EPSS-RISE-D30",
+          "observed_on": "2026-06-13",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.000320000",
+          "current_epss": "0.072150000",
+          "previous_percentile": "0.093060000",
+          "current_percentile": "0.918380000"
+        },
+        {
+          "rule_id": "R-EPSS-TOP5-ENTRY-D30",
+          "observed_on": "2026-06-23",
+          "source": "first_epss",
+          "included_in_s1": true,
+          "previous_epss": "0.05039000",
+          "current_epss": "0.37756000",
+          "previous_percentile": "0.89864000",
+          "current_percentile": "0.98347000"
+        }
+      ]
+    }
+  ]
+}

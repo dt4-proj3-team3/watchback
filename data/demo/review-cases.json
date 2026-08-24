@@ -1,0 +1,1591 @@
+{
+  "list": {
+    "items": [
+      {
+        "id": "30d08f52-163a-5a19-9edf-d5fb5eedca6b",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "66b36892-11fb-5f1e-912b-32db85729127",
+          "github_alert_number": 1,
+          "state": "open",
+          "package_name": "next",
+          "ecosystem": "npm",
+          "first_patched_version": "15.2.3",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/1"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-f82v-jwr5-mffw",
+          "cve_id": "CVE-2025-29927",
+          "summary": "Authorization Bypass in Next.js Middleware",
+          "severity": "critical",
+          "cvss_score": 9.1
+        },
+        "latest_candidate": {
+          "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
+          "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
+          "cve_id": "CVE-2025-29927",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2025-04-21T00:30:00Z"
+        }
+      },
+      {
+        "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "7405166d-b8fc-5150-9558-120015acbd61",
+          "github_alert_number": 49,
+          "state": "open",
+          "package_name": "next",
+          "ecosystem": "npm",
+          "first_patched_version": "15.5.16",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/49"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-c4j6-fc7j-m34r",
+          "cve_id": "CVE-2026-44578",
+          "summary": "Next.js vulnerable to server-side request forgery in applications using WebSocket upgrades",
+          "severity": "high",
+          "cvss_score": 8.6
+        },
+        "latest_candidate": {
+          "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
+          "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
+          "cve_id": "CVE-2026-44578",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-06-23T00:30:00Z"
+        }
+      },
+      {
+        "id": "cf32cb01-3f19-5447-be2c-a674c59a2122",
+        "status": "open",
+        "priority": "critical",
+        "review_reason": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "8271178c-827a-5087-a246-6fa1737f8add",
+          "github_alert_number": 3,
+          "state": "open",
+          "package_name": "vite",
+          "ecosystem": "npm",
+          "first_patched_version": "6.2.4",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/3"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-4r4m-qw57-chr8",
+          "cve_id": "CVE-2025-31125",
+          "summary": "Vite has a `server.fs.deny` bypassed for `inline` and `raw` with `?import` query",
+          "severity": "medium",
+          "cvss_score": 5.3
+        },
+        "latest_candidate": {
+          "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
+          "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
+          "cve_id": "CVE-2025-31125",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-01-23T00:30:00Z"
+        }
+      },
+      {
+        "id": "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "4a780e0f-ea0d-57f9-8546-fa07107329c7",
+          "github_alert_number": 38,
+          "state": "open",
+          "package_name": "vite",
+          "ecosystem": "npm",
+          "first_patched_version": "6.4.2",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/38"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-p9ff-h696-f583",
+          "cve_id": "CVE-2026-39363",
+          "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+          "severity": "high",
+          "cvss_score": 0.0
+        },
+        "latest_candidate": {
+          "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+          "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+          "cve_id": "CVE-2026-39363",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-05-14T00:30:00Z"
+        }
+      },
+      {
+        "id": "621de432-372a-5f56-8ac7-db770e69034e",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "566eb3d7-1b3c-5a08-8c57-bcbbc09219e6",
+          "github_alert_number": 106,
+          "state": "open",
+          "package_name": "vite",
+          "ecosystem": "npm",
+          "first_patched_version": "6.4.2",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/106"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-p9ff-h696-f583",
+          "cve_id": "CVE-2026-39363",
+          "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+          "severity": "high",
+          "cvss_score": 0.0
+        },
+        "latest_candidate": {
+          "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+          "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+          "cve_id": "CVE-2026-39363",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-05-14T00:30:00Z"
+        }
+      },
+      {
+        "id": "67b489b1-46b1-5266-a483-19d8bbdf4123",
+        "status": "open",
+        "priority": "critical",
+        "review_reason": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
+        "opened_at": "2026-08-21T01:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-21T01:00:00Z",
+        "repository": {
+          "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+          "display_name": "novalink/customer-fe",
+          "importance": "critical"
+        },
+        "alert": {
+          "id": "aafd4fb5-2a4f-52dc-8c04-8e9853918e63",
+          "github_alert_number": 20,
+          "state": "open",
+          "package_name": "react-server-dom-webpack",
+          "ecosystem": "npm",
+          "first_patched_version": "19.2.1",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/20"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-fv66-9v8q-g76r",
+          "cve_id": "CVE-2025-55182",
+          "summary": "React Server Components are Vulnerable to RCE",
+          "severity": "critical",
+          "cvss_score": 10.0
+        },
+        "latest_candidate": {
+          "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
+          "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
+          "cve_id": "CVE-2025-55182",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-01-03T00:30:00Z"
+        }
+      },
+      {
+        "id": "3c2e9c92-a87e-589c-af25-cd25c7cbe876",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
+        "opened_at": "2026-08-24T03:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-24T03:00:00Z",
+        "repository": {
+          "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "display_name": "novalink/ai-platform-api",
+          "importance": "high"
+        },
+        "alert": {
+          "id": "53ec5e7e-540a-5765-9b24-a94667505d9f",
+          "github_alert_number": 44,
+          "state": "open",
+          "package_name": "Django",
+          "ecosystem": "pip",
+          "first_patched_version": "4.2.28",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/44"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-mwm9-4648-f68q",
+          "cve_id": "CVE-2026-1207",
+          "summary": "Django has an SQL Injection issue",
+          "severity": "high",
+          "cvss_score": 0.0
+        },
+        "latest_candidate": {
+          "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
+          "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
+          "cve_id": "CVE-2026-1207",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
+          "selected_at": "2026-07-24T00:30:00Z"
+        }
+      },
+      {
+        "id": "36884e9b-d3b5-50f8-829b-a7be454d2722",
+        "status": "open",
+        "priority": "critical",
+        "review_reason": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
+        "opened_at": "2026-08-24T03:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-24T03:00:00Z",
+        "repository": {
+          "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "display_name": "novalink/ai-platform-api",
+          "importance": "high"
+        },
+        "alert": {
+          "id": "a8fb232e-87e6-5233-9628-970c843e2f28",
+          "github_alert_number": 201,
+          "state": "open",
+          "package_name": "bentoml",
+          "ecosystem": "pip",
+          "first_patched_version": "1.4.3",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/201"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-33xw-247w-6hmc",
+          "cve_id": "CVE-2025-27520",
+          "summary": "BentoML Allows Remote Code Execution (RCE) via Insecure Deserialization",
+          "severity": "critical",
+          "cvss_score": 9.8
+        },
+        "latest_candidate": {
+          "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
+          "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
+          "cve_id": "CVE-2025-27520",
+          "priority": "critical",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2025-05-05T00:30:00Z"
+        }
+      },
+      {
+        "id": "561f880a-8930-5bae-999e-dbe28be0c2fd",
+        "status": "open",
+        "priority": "high",
+        "review_reason": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
+        "opened_at": "2026-08-24T03:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-24T03:00:00Z",
+        "repository": {
+          "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "display_name": "novalink/ai-platform-api",
+          "importance": "high"
+        },
+        "alert": {
+          "id": "18fb34a6-d91a-55d9-813a-05192866fcd7",
+          "github_alert_number": 207,
+          "state": "open",
+          "package_name": "litellm",
+          "ecosystem": "pip",
+          "first_patched_version": "1.83.0",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/207"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-53mr-6c8q-9789",
+          "cve_id": "CVE-2026-35029",
+          "summary": "LiteLLM: Privilege escalation via unrestricted proxy configuration endpoint",
+          "severity": "high",
+          "cvss_score": 0.0
+        },
+        "latest_candidate": {
+          "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
+          "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
+          "cve_id": "CVE-2026-35029",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
+          "selected_at": "2026-05-18T00:30:00Z"
+        }
+      },
+      {
+        "id": "5cab1f43-afbd-51a1-b688-a546ad05af7c",
+        "status": "open",
+        "priority": "critical",
+        "review_reason": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
+        "opened_at": "2026-08-24T03:00:00Z",
+        "resolved_at": null,
+        "last_reopened_at": null,
+        "reopened_count": 0,
+        "updated_at": "2026-08-24T03:00:00Z",
+        "repository": {
+          "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+          "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+          "display_name": "novalink/ai-platform-api",
+          "importance": "high"
+        },
+        "alert": {
+          "id": "ada6ca97-5b11-5350-be3b-c9ace29e3737",
+          "github_alert_number": 213,
+          "state": "open",
+          "package_name": "litellm",
+          "ecosystem": "pip",
+          "first_patched_version": "1.83.7",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/213"
+        },
+        "advisory": {
+          "ghsa_id": "GHSA-r75f-5x8p-qvmc",
+          "cve_id": "CVE-2026-42208",
+          "summary": "LiteLLM has SQL Injection in Proxy API key verification",
+          "severity": "critical",
+          "cvss_score": 9.8
+        },
+        "latest_candidate": {
+          "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
+          "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
+          "cve_id": "CVE-2026-42208",
+          "priority": "critical",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2026-06-07T00:30:00Z"
+        }
+      }
+    ],
+    "page": 1,
+    "page_size": 10,
+    "total": 10
+  },
+  "empty": {
+    "items": [],
+    "page": 1,
+    "page_size": 20,
+    "total": 0
+  },
+  "details": {
+    "30d08f52-163a-5a19-9edf-d5fb5eedca6b": {
+      "id": "30d08f52-163a-5a19-9edf-d5fb5eedca6b",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "66b36892-11fb-5f1e-912b-32db85729127",
+        "github_alert_number": 1,
+        "state": "open",
+        "package_name": "next",
+        "ecosystem": "npm",
+        "first_patched_version": "15.2.3",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/1",
+        "manifest_path": "package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "direct",
+        "vulnerable_version_range": ">= 15.0.0, < 15.2.3",
+        "github_created_at": "2026-08-10T01:17:22Z",
+        "github_updated_at": "2026-08-10T01:17:22Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-f82v-jwr5-mffw",
+        "cve_id": "CVE-2025-29927",
+        "summary": "Authorization Bypass in Next.js Middleware",
+        "severity": "critical",
+        "cvss_score": 9.1
+      },
+      "latest_candidate": {
+        "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
+        "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
+        "cve_id": "CVE-2025-29927",
+        "priority": "high",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
+        "selected_at": "2025-04-21T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
+          "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
+          "cve_id": "CVE-2025-29927",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2025-04-21T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "36c18100-f428-577f-acb1-fa0ae1ea26aa",
+              "source_batch_id": "expected-gold-2025-04-21",
+              "as_of": "2025-04-21T00:00:00Z",
+              "source_generated_at": "2025-04-21T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2025-04-21T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "96e7e18e-77e8-5538-9aff-554156dc227a",
+              "source_evidence_id": "expected-cve-2025-29927-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00030000",
+              "current_value": "0.91895000",
+              "observed_at": "2025-04-21T00:00:00Z",
+              "source": "first_epss"
+            },
+            {
+              "id": "030f8392-734a-5bab-9d24-5d41be852804",
+              "source_evidence_id": "expected-cve-2025-29927-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.05251000",
+              "current_value": "0.99663000",
+              "observed_at": "2025-04-21T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "cc71c818-622d-59bc-9874-078c64f5c592": {
+      "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "7405166d-b8fc-5150-9558-120015acbd61",
+        "github_alert_number": 49,
+        "state": "open",
+        "package_name": "next",
+        "ecosystem": "npm",
+        "first_patched_version": "15.5.16",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/49",
+        "manifest_path": "package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "direct",
+        "vulnerable_version_range": ">= 13.4.13, < 15.5.16",
+        "github_created_at": "2026-08-10T01:17:30Z",
+        "github_updated_at": "2026-08-10T01:17:30Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-c4j6-fc7j-m34r",
+        "cve_id": "CVE-2026-44578",
+        "summary": "Next.js vulnerable to server-side request forgery in applications using WebSocket upgrades",
+        "severity": "high",
+        "cvss_score": 8.6
+      },
+      "latest_candidate": {
+        "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
+        "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
+        "cve_id": "CVE-2026-44578",
+        "priority": "high",
+        "change_type": "epss_top5_entry_d30",
+        "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "selected_at": "2026-06-23T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "e872f496-7c7e-5324-b90a-862d7dfca56e",
+          "source_candidate_id": "expected-cve-2026-44578-2026-06-13",
+          "cve_id": "CVE-2026-44578",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-06-13 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-06-13T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "d05635d3-384c-5824-9a50-bf7c0304d0ad",
+              "source_batch_id": "expected-gold-2026-06-13",
+              "as_of": "2026-06-13T00:00:00Z",
+              "source_generated_at": "2026-06-13T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-06-13T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "4791e876-8d60-50c6-a259-cada0c2c78a6",
+              "source_evidence_id": "expected-cve-2026-44578-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.000320000",
+              "current_value": "0.072150000",
+              "observed_at": "2026-06-13T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        },
+        {
+          "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
+          "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
+          "cve_id": "CVE-2026-44578",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-06-23T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "0437d24e-4cea-5e2c-a48d-1ceecadfec0b",
+              "source_batch_id": "expected-gold-2026-06-23",
+              "as_of": "2026-06-23T00:00:00Z",
+              "source_generated_at": "2026-06-23T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-06-23T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "0b10ebbb-0b93-50b1-be6a-ea389d1f6762",
+              "source_evidence_id": "expected-cve-2026-44578-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.89864000",
+              "current_value": "0.98347000",
+              "observed_at": "2026-06-23T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "cf32cb01-3f19-5447-be2c-a674c59a2122": {
+      "id": "cf32cb01-3f19-5447-be2c-a674c59a2122",
+      "status": "open",
+      "priority": "critical",
+      "review_reason": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "8271178c-827a-5087-a246-6fa1737f8add",
+        "github_alert_number": 3,
+        "state": "open",
+        "package_name": "vite",
+        "ecosystem": "npm",
+        "first_patched_version": "6.2.4",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/3",
+        "manifest_path": "package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "direct",
+        "vulnerable_version_range": ">= 6.2.0, < 6.2.4",
+        "github_created_at": "2026-08-10T01:17:23Z",
+        "github_updated_at": "2026-08-20T07:12:03Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-4r4m-qw57-chr8",
+        "cve_id": "CVE-2025-31125",
+        "summary": "Vite has a `server.fs.deny` bypassed for `inline` and `raw` with `?import` query",
+        "severity": "medium",
+        "cvss_score": 5.3
+      },
+      "latest_candidate": {
+        "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
+        "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
+        "cve_id": "CVE-2025-31125",
+        "priority": "high",
+        "change_type": "epss_top5_entry_d30",
+        "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "selected_at": "2026-01-23T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "2ed154d6-3788-5595-94a8-5a7cd63ff97d",
+          "source_candidate_id": "expected-cve-2025-31125-2025-05-01",
+          "cve_id": "CVE-2025-31125",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2025-05-01 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2025-05-01T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "f7ba2a0a-6269-5273-be64-6bc63426285d",
+              "source_batch_id": "expected-gold-2025-05-01",
+              "as_of": "2025-05-01T00:00:00Z",
+              "source_generated_at": "2025-05-01T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2025-05-01T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "1d7b6921-c221-5f77-bcf8-326ff0ca0bd1",
+              "source_evidence_id": "expected-cve-2025-31125-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00032000",
+              "current_value": "0.07669000",
+              "observed_at": "2025-05-01T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        },
+        {
+          "id": "7ce26497-6bfe-50c3-a9a1-23026c460fb1",
+          "source_candidate_id": "expected-cve-2025-31125-2026-01-22",
+          "cve_id": "CVE-2025-31125",
+          "priority": "critical",
+          "change_type": "kev_added",
+          "reason_summary": "2026-01-22 CISA KEV 신규 등재가 확인되었습니다.",
+          "selected_at": "2026-01-22T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "6bb7fa1b-e8da-5e7a-8bde-2c086652e65a",
+              "source_batch_id": "expected-gold-2026-01-22",
+              "as_of": "2026-01-22T00:00:00Z",
+              "source_generated_at": "2026-01-22T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-01-22T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "b21fc95d-6a8a-58db-b454-07a0c1cf9298",
+              "source_evidence_id": "expected-cve-2025-31125-r-kev-new",
+              "signal": "kev",
+              "value_type": "boolean",
+              "previous_value": "false",
+              "current_value": "true",
+              "observed_at": "2026-01-22T00:00:00Z",
+              "source": "cisa_kev"
+            }
+          ]
+        },
+        {
+          "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
+          "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
+          "cve_id": "CVE-2025-31125",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-01-23T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "8824c185-eeff-52da-ad06-007f9ee5fd24",
+              "source_batch_id": "expected-gold-2026-01-23",
+              "as_of": "2026-01-23T00:00:00Z",
+              "source_generated_at": "2026-01-23T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-01-23T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "21ce102d-2c0c-5a6b-827b-ba7e40ddd3b7",
+              "source_evidence_id": "expected-cve-2025-31125-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.87421000",
+              "current_value": "0.98798000",
+              "observed_at": "2026-01-23T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f": {
+      "id": "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "4a780e0f-ea0d-57f9-8546-fa07107329c7",
+        "github_alert_number": 38,
+        "state": "open",
+        "package_name": "vite",
+        "ecosystem": "npm",
+        "first_patched_version": "6.4.2",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/38",
+        "manifest_path": "package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "direct",
+        "vulnerable_version_range": ">= 6.0.0, <= 6.4.1",
+        "github_created_at": "2026-08-10T01:17:28Z",
+        "github_updated_at": "2026-08-10T01:17:28Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-p9ff-h696-f583",
+        "cve_id": "CVE-2026-39363",
+        "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+        "severity": "high",
+        "cvss_score": 0.0
+      },
+      "latest_candidate": {
+        "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+        "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+        "cve_id": "CVE-2026-39363",
+        "priority": "high",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+        "selected_at": "2026-05-14T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+          "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+          "cve_id": "CVE-2026-39363",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-05-14T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "a2d63a55-cc0f-545a-ab70-bd75aaae8799",
+              "source_batch_id": "expected-gold-2026-05-14",
+              "as_of": "2026-05-14T00:00:00Z",
+              "source_generated_at": "2026-05-14T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-05-14T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "1809325a-4cde-5471-8790-f008878fb98d",
+              "source_evidence_id": "expected-cve-2026-39363-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.000890000",
+              "current_value": "0.06638000",
+              "observed_at": "2026-05-14T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "621de432-372a-5f56-8ac7-db770e69034e": {
+      "id": "621de432-372a-5f56-8ac7-db770e69034e",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "566eb3d7-1b3c-5a08-8c57-bcbbc09219e6",
+        "github_alert_number": 106,
+        "state": "open",
+        "package_name": "vite",
+        "ecosystem": "npm",
+        "first_patched_version": "6.4.2",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/106",
+        "manifest_path": "transitive-override/package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "transitive",
+        "vulnerable_version_range": ">= 6.0.0, <= 6.4.1",
+        "github_created_at": "2026-08-12T07:59:05Z",
+        "github_updated_at": "2026-08-12T07:59:05Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-p9ff-h696-f583",
+        "cve_id": "CVE-2026-39363",
+        "summary": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+        "severity": "high",
+        "cvss_score": 0.0
+      },
+      "latest_candidate": {
+        "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+        "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+        "cve_id": "CVE-2026-39363",
+        "priority": "high",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+        "selected_at": "2026-05-14T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
+          "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
+          "cve_id": "CVE-2026-39363",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-05-14T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "a2d63a55-cc0f-545a-ab70-bd75aaae8799",
+              "source_batch_id": "expected-gold-2026-05-14",
+              "as_of": "2026-05-14T00:00:00Z",
+              "source_generated_at": "2026-05-14T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-05-14T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "1809325a-4cde-5471-8790-f008878fb98d",
+              "source_evidence_id": "expected-cve-2026-39363-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.000890000",
+              "current_value": "0.06638000",
+              "observed_at": "2026-05-14T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "67b489b1-46b1-5266-a483-19d8bbdf4123": {
+      "id": "67b489b1-46b1-5266-a483-19d8bbdf4123",
+      "status": "open",
+      "priority": "critical",
+      "review_reason": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
+      "opened_at": "2026-08-21T01:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-21T01:00:00Z",
+      "repository": {
+        "id": "4880c543-22c0-5f8a-9e8f-82e96f29fe1a",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-fe-lab",
+        "display_name": "novalink/customer-fe",
+        "importance": "critical"
+      },
+      "alert": {
+        "id": "aafd4fb5-2a4f-52dc-8c04-8e9853918e63",
+        "github_alert_number": 20,
+        "state": "open",
+        "package_name": "react-server-dom-webpack",
+        "ecosystem": "npm",
+        "first_patched_version": "19.2.1",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/20",
+        "manifest_path": "package-lock.json",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "direct",
+        "vulnerable_version_range": "= 19.2.0",
+        "github_created_at": "2026-08-10T01:17:25Z",
+        "github_updated_at": "2026-08-20T07:12:04Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-fv66-9v8q-g76r",
+        "cve_id": "CVE-2025-55182",
+        "summary": "React Server Components are Vulnerable to RCE",
+        "severity": "critical",
+        "cvss_score": 10.0
+      },
+      "latest_candidate": {
+        "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
+        "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
+        "cve_id": "CVE-2025-55182",
+        "priority": "high",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
+        "selected_at": "2026-01-03T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "0777787c-d686-5ee4-8a75-c4c5dc4193d3",
+          "source_candidate_id": "expected-cve-2025-55182-2025-12-05",
+          "cve_id": "CVE-2025-55182",
+          "priority": "critical",
+          "change_type": "kev_added",
+          "reason_summary": "2025-12-05 CISA KEV 신규 등재가 확인되었습니다.",
+          "selected_at": "2025-12-05T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "f81ebd25-1049-584e-add3-3a6f58ad69bb",
+              "source_batch_id": "expected-gold-2025-12-05",
+              "as_of": "2025-12-05T00:00:00Z",
+              "source_generated_at": "2025-12-05T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2025-12-05T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "5131dd10-ffa4-5f19-8501-cb39af10f9c4",
+              "source_evidence_id": "expected-cve-2025-55182-r-kev-new",
+              "signal": "kev",
+              "value_type": "boolean",
+              "previous_value": "false",
+              "current_value": "true",
+              "observed_at": "2025-12-05T00:00:00Z",
+              "source": "cisa_kev"
+            }
+          ]
+        },
+        {
+          "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
+          "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
+          "cve_id": "CVE-2025-55182",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2026-01-03T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "cc2a649a-3ecb-54a1-a50e-7c931e53bcb1",
+              "source_batch_id": "expected-gold-2026-01-03",
+              "as_of": "2026-01-03T00:00:00Z",
+              "source_generated_at": "2026-01-03T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-01-03T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "893326b3-e8d0-5447-b363-744eac0224a0",
+              "source_evidence_id": "expected-cve-2025-55182-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00455000",
+              "current_value": "0.47368000",
+              "observed_at": "2026-01-03T00:00:00Z",
+              "source": "first_epss"
+            },
+            {
+              "id": "a3f63538-0516-5311-a421-05da305b8a5a",
+              "source_evidence_id": "expected-cve-2025-55182-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.63035000",
+              "current_value": "0.97599000",
+              "observed_at": "2026-01-03T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "3c2e9c92-a87e-589c-af25-cd25c7cbe876": {
+      "id": "3c2e9c92-a87e-589c-af25-cd25c7cbe876",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
+      "opened_at": "2026-08-24T03:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-24T03:00:00Z",
+      "repository": {
+        "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+        "display_name": "novalink/ai-platform-api",
+        "importance": "high"
+      },
+      "alert": {
+        "id": "53ec5e7e-540a-5765-9b24-a94667505d9f",
+        "github_alert_number": 44,
+        "state": "open",
+        "package_name": "Django",
+        "ecosystem": "pip",
+        "first_patched_version": "4.2.28",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/44",
+        "manifest_path": "pyproject.toml",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "unknown",
+        "vulnerable_version_range": ">= 4.2a1, < 4.2.28",
+        "github_created_at": "2026-08-20T07:31:01Z",
+        "github_updated_at": "2026-08-20T07:31:01Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-mwm9-4648-f68q",
+        "cve_id": "CVE-2026-1207",
+        "summary": "Django has an SQL Injection issue",
+        "severity": "high",
+        "cvss_score": 0.0
+      },
+      "latest_candidate": {
+        "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
+        "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
+        "cve_id": "CVE-2026-1207",
+        "priority": "high",
+        "change_type": "epss_top5_entry_d30",
+        "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
+        "selected_at": "2026-07-24T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "4a33b7d4-c815-5dcd-8614-2cf46e7cf8a6",
+          "source_candidate_id": "expected-cve-2026-1207-2026-03-07",
+          "cve_id": "CVE-2026-1207",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-03-07 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2026-03-07T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "891bfc84-1a23-5b65-b4aa-44e4dca3c507",
+              "source_batch_id": "expected-gold-2026-03-07",
+              "as_of": "2026-03-07T00:00:00Z",
+              "source_generated_at": "2026-03-07T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-03-07T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "06820142-2986-5aad-9d84-e5f3f0a64dfb",
+              "source_evidence_id": "expected-cve-2026-1207-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00017000",
+              "current_value": "0.05462000",
+              "observed_at": "2026-03-07T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        },
+        {
+          "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
+          "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
+          "cve_id": "CVE-2026-1207",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
+          "selected_at": "2026-07-24T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "aad48c10-64e5-5dfd-83b3-5cebcf2dbbf3",
+              "source_batch_id": "expected-gold-2026-07-24",
+              "as_of": "2026-07-24T00:00:00Z",
+              "source_generated_at": "2026-07-24T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-07-24T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "f7194aaa-8b92-5f56-b4a0-e575d3b0fcd4",
+              "source_evidence_id": "expected-cve-2026-1207-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.88557000",
+              "current_value": "0.95905000",
+              "observed_at": "2026-07-24T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "36884e9b-d3b5-50f8-829b-a7be454d2722": {
+      "id": "36884e9b-d3b5-50f8-829b-a7be454d2722",
+      "status": "open",
+      "priority": "critical",
+      "review_reason": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
+      "opened_at": "2026-08-24T03:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-24T03:00:00Z",
+      "repository": {
+        "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+        "display_name": "novalink/ai-platform-api",
+        "importance": "high"
+      },
+      "alert": {
+        "id": "a8fb232e-87e6-5233-9628-970c843e2f28",
+        "github_alert_number": 201,
+        "state": "open",
+        "package_name": "bentoml",
+        "ecosystem": "pip",
+        "first_patched_version": "1.4.3",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/201",
+        "manifest_path": "pyproject.toml",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "unknown",
+        "vulnerable_version_range": ">= 1.3.4, < 1.4.3",
+        "github_created_at": "2026-08-24T02:49:43Z",
+        "github_updated_at": "2026-08-24T02:49:43Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-33xw-247w-6hmc",
+        "cve_id": "CVE-2025-27520",
+        "summary": "BentoML Allows Remote Code Execution (RCE) via Insecure Deserialization",
+        "severity": "critical",
+        "cvss_score": 9.8
+      },
+      "latest_candidate": {
+        "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
+        "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
+        "cve_id": "CVE-2025-27520",
+        "priority": "critical",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
+        "selected_at": "2025-05-05T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
+          "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
+          "cve_id": "CVE-2025-27520",
+          "priority": "critical",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2025-05-05T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "c5ae7341-2433-57e0-a291-b598b6755822",
+              "source_batch_id": "expected-gold-2025-05-05",
+              "as_of": "2025-05-05T00:00:00Z",
+              "source_generated_at": "2025-05-05T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2025-05-05T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "2bf15d95-bf02-5197-bc80-f46239724436",
+              "source_evidence_id": "expected-cve-2025-27520-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00404000",
+              "current_value": "0.49056000",
+              "observed_at": "2025-05-05T00:00:00Z",
+              "source": "first_epss"
+            },
+            {
+              "id": "5b159633-da80-52c5-bd88-ba1f6c8ca710",
+              "source_evidence_id": "expected-cve-2025-27520-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.58204000",
+              "current_value": "0.97601000",
+              "observed_at": "2025-05-05T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "561f880a-8930-5bae-999e-dbe28be0c2fd": {
+      "id": "561f880a-8930-5bae-999e-dbe28be0c2fd",
+      "status": "open",
+      "priority": "high",
+      "review_reason": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
+      "opened_at": "2026-08-24T03:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-24T03:00:00Z",
+      "repository": {
+        "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+        "display_name": "novalink/ai-platform-api",
+        "importance": "high"
+      },
+      "alert": {
+        "id": "18fb34a6-d91a-55d9-813a-05192866fcd7",
+        "github_alert_number": 207,
+        "state": "open",
+        "package_name": "litellm",
+        "ecosystem": "pip",
+        "first_patched_version": "1.83.0",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/207",
+        "manifest_path": "pyproject.toml",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "unknown",
+        "vulnerable_version_range": "< 1.83.0",
+        "github_created_at": "2026-08-24T02:49:45Z",
+        "github_updated_at": "2026-08-24T02:49:45Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-53mr-6c8q-9789",
+        "cve_id": "CVE-2026-35029",
+        "summary": "LiteLLM: Privilege escalation via unrestricted proxy configuration endpoint",
+        "severity": "high",
+        "cvss_score": 0.0
+      },
+      "latest_candidate": {
+        "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
+        "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
+        "cve_id": "CVE-2026-35029",
+        "priority": "high",
+        "change_type": "epss_top5_entry_d30",
+        "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
+        "selected_at": "2026-05-18T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "acd0d667-60a0-57ef-9faf-7c36ed202ee6",
+          "source_candidate_id": "expected-cve-2026-35029-2026-05-07",
+          "cve_id": "CVE-2026-35029",
+          "priority": "high",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-05-07 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2026-05-07T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "71982efa-ea4a-5992-ba32-e8754a8a3d04",
+              "source_batch_id": "expected-gold-2026-05-07",
+              "as_of": "2026-05-07T00:00:00Z",
+              "source_generated_at": "2026-05-07T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-05-07T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "bc9aaf99-706d-52d0-a25f-0972fb2ec12a",
+              "source_evidence_id": "expected-cve-2026-35029-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00334000",
+              "current_value": "0.13296000",
+              "observed_at": "2026-05-07T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        },
+        {
+          "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
+          "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
+          "cve_id": "CVE-2026-35029",
+          "priority": "high",
+          "change_type": "epss_top5_entry_d30",
+          "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
+          "selected_at": "2026-05-18T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "7a063b36-034d-513a-b55c-70dcedfbbdf3",
+              "source_batch_id": "expected-gold-2026-05-18",
+              "as_of": "2026-05-18T00:00:00Z",
+              "source_generated_at": "2026-05-18T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-05-18T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "9e248ac9-6918-5813-94bb-184a3e51a113",
+              "source_evidence_id": "expected-cve-2026-35029-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.41198000",
+              "current_value": "0.95179000",
+              "observed_at": "2026-05-18T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    },
+    "5cab1f43-afbd-51a1-b688-a546ad05af7c": {
+      "id": "5cab1f43-afbd-51a1-b688-a546ad05af7c",
+      "status": "open",
+      "priority": "critical",
+      "review_reason": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
+      "opened_at": "2026-08-24T03:00:00Z",
+      "resolved_at": null,
+      "last_reopened_at": null,
+      "reopened_count": 0,
+      "updated_at": "2026-08-24T03:00:00Z",
+      "repository": {
+        "id": "4d836e3c-4a01-5a9d-baeb-5d6a52b3144d",
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-be-lab",
+        "display_name": "novalink/ai-platform-api",
+        "importance": "high"
+      },
+      "alert": {
+        "id": "ada6ca97-5b11-5350-be3b-c9ace29e3737",
+        "github_alert_number": 213,
+        "state": "open",
+        "package_name": "litellm",
+        "ecosystem": "pip",
+        "first_patched_version": "1.83.7",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-be-lab/security/dependabot/213",
+        "manifest_path": "pyproject.toml",
+        "dependency_scope": "runtime",
+        "dependency_relationship": "unknown",
+        "vulnerable_version_range": ">= 1.81.16, < 1.83.7",
+        "github_created_at": "2026-08-24T02:49:46Z",
+        "github_updated_at": "2026-08-24T02:49:46Z",
+        "dismissed_at": null,
+        "dismissed_reason": null,
+        "dismissed_by": null,
+        "dismissed_comment": null,
+        "fixed_at": null,
+        "auto_dismissed_at": null
+      },
+      "advisory": {
+        "ghsa_id": "GHSA-r75f-5x8p-qvmc",
+        "cve_id": "CVE-2026-42208",
+        "summary": "LiteLLM has SQL Injection in Proxy API key verification",
+        "severity": "critical",
+        "cvss_score": 9.8
+      },
+      "latest_candidate": {
+        "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
+        "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
+        "cve_id": "CVE-2026-42208",
+        "priority": "critical",
+        "change_type": "epss_rise_d30",
+        "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
+        "selected_at": "2026-06-07T00:30:00Z"
+      },
+      "candidates": [
+        {
+          "id": "384347a2-d7cb-5b1c-8087-0d22863ae544",
+          "source_candidate_id": "expected-cve-2026-42208-2026-05-08",
+          "cve_id": "CVE-2026-42208",
+          "priority": "critical",
+          "change_type": "kev_new",
+          "reason_summary": "2026-05-08 CISA KEV에 새로 등재됐습니다.",
+          "selected_at": "2026-05-08T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "e748688b-1485-5e26-a88c-3c20a0427d1b",
+              "source_batch_id": "expected-gold-2026-05-08",
+              "as_of": "2026-05-08T00:00:00Z",
+              "source_generated_at": "2026-05-08T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-05-08T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "f47508f6-0322-5ac4-aa07-6e87d51d57d1",
+              "source_evidence_id": "expected-cve-2026-42208-r-kev-new",
+              "signal": "kev",
+              "value_type": "boolean",
+              "previous_value": "false",
+              "current_value": "true",
+              "observed_at": "2026-05-08T00:00:00Z",
+              "source": "cisa_kev"
+            }
+          ]
+        },
+        {
+          "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
+          "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
+          "cve_id": "CVE-2026-42208",
+          "priority": "critical",
+          "change_type": "epss_rise_d30",
+          "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
+          "selected_at": "2026-06-07T00:30:00Z",
+          "deliveries": [
+            {
+              "batch_id": "f56610c9-6679-55c0-8a45-d2ec3b1b413a",
+              "source_batch_id": "expected-gold-2026-06-07",
+              "as_of": "2026-06-07T00:00:00Z",
+              "source_generated_at": "2026-06-07T00:40:00Z",
+              "policy_version": "ver.1",
+              "schema_version": "1.0",
+              "received_at": "2026-06-07T00:45:00Z"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "89289386-f8e2-5009-9534-a6c3fc309859",
+              "source_evidence_id": "expected-cve-2026-42208-r-epss-rise-d30",
+              "signal": "epss_score_d30",
+              "value_type": "decimal",
+              "previous_value": "0.00084000",
+              "current_value": "0.56947000",
+              "observed_at": "2026-06-07T00:00:00Z",
+              "source": "first_epss"
+            },
+            {
+              "id": "87621e70-9404-5172-9fab-4603aed35135",
+              "source_evidence_id": "expected-cve-2026-42208-r-epss-top5-entry-d30",
+              "signal": "epss_percentile_d30",
+              "value_type": "decimal",
+              "previous_value": "0.24307000",
+              "current_value": "0.98176000",
+              "observed_at": "2026-06-07T00:00:00Z",
+              "source": "first_epss"
+            }
+          ]
+        }
+      ],
+      "activities": []
+    }
+  }
+}
