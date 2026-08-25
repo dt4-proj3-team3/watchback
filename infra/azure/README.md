@@ -53,7 +53,7 @@ unset GITHUB_TOKEN
 3. 토큰이 있으면 Key Vault에 저장한다.
 4. Backend, Frontend, Dependabot Worker 이미지를 ACR에서 빌드한다.
 5. PostgreSQL, Container Apps, Job과 로그 리소스를 배포한다.
-6. 현재 Container Apps outbound IP만 PostgreSQL 방화벽에 반영한다.
+6. 개발자 IP와 Azure 서비스 허용 규칙으로 PostgreSQL 접근을 제한한다.
 
 기본 이미지 태그는 현재 Git commit SHA 12자리다. 다른 태그가 필요하면 `IMAGE_TAG`를 명시한다. 개발자 공인 IP 자동 조회가 불가능하면 `DEVELOPER_IP`를 지정한다.
 
@@ -94,9 +94,9 @@ infra/azure/scripts/verify-dev.sh
 
 ## 재배포와 방화벽
 
-Container Apps Consumption 환경의 outbound IP는 바뀔 수 있다. `deploy-dev.sh`는 매번 실제 IP를 다시 조회하고 `watchback-aca-*` 방화벽 규칙만 교체한다. 개발자 IP가 바뀌면 `DEVELOPER_IP`를 지정해 다시 배포한다.
+PostgreSQL 방화벽에는 로컬 접속을 위한 개발자 공인 IP와 Container Apps·Job 접속을 위한 Azure 서비스 허용 규칙을 둔다. 따라서 Container Apps의 변동 가능한 outbound IP를 개별 등록하지 않는다. 개발자 IP가 바뀌면 `DEVELOPER_IP`를 지정해 다시 배포한다.
 
-`0.0.0.0` Azure 전체 허용 규칙은 만들지 않는다. 이 공개·제한형 구성이 개발 범위를 넘어서면 PostgreSQL과 Container Apps를 VNet 사설 연결로 이전한다.
+Azure 서비스 허용 규칙은 다른 Azure 고객의 리소스에서도 서버에 접속을 시도할 수 있는 넓은 규칙이다. 실제 접속에는 PostgreSQL 인증과 TLS가 필요하지만 개발 환경에서만 사용하며, 운영 환경에서는 PostgreSQL을 Private Access로 구성한다.
 
 ## 비용과 정리
 

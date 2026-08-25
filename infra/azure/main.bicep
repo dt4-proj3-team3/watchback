@@ -136,6 +136,16 @@ resource developerFirewall 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRu
   }
 }
 
+// 개발 환경에서 Container Apps와 Job의 변동 가능한 outbound IP를 개별 관리하지 않는다.
+resource azureServicesFirewall 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+  parent: postgres
+  name: 'AllowAllAzureServicesAndResourcesWithinAzureIps'
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+}
+
 resource databaseUrlSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
   name: 'database-url'

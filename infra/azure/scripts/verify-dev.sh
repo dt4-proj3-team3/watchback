@@ -25,14 +25,24 @@ if [[ "$(az acr show --name "$(output registryName)" --query adminUserEnabled --
   exit 1
 fi
 
-if az postgres flexible-server firewall-rule list \
+azure_firewall_count="$(az postgres flexible-server firewall-rule list \
   --resource-group "$RESOURCE_GROUP" \
   --name "$postgres_name" \
   --query "[?startIpAddress=='0.0.0.0' && endIpAddress=='0.0.0.0'] | length(@)" \
-  --output tsv | grep -qv '^0$'; then
-  echo "모든 Azure 서비스 허용 방화벽 규칙이 존재합니다." >&2
+  --output tsv)"
+if [[ "$azure_firewall_count" != "1" ]]; then
+  echo "Azure 서비스 허용 방화벽 규칙이 정확히 하나여야 합니다." >&2
   exit 1
 fi
 
-printf '{"backend":"%s","frontend":"%s","acr_admin":false,"broad_azure_firewall":false}\n' \
+if az postgres flexible-server firewall-rule list \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$postgres_name" \
+  --query "[?starts_with(name, 'watchback-aca-')] | length(@)" \
+  --output tsv | grep -qv '^0$'; then
+  echo "사용하지 않는 Container Apps 개별 IP 규칙이 남아 있습니다." >&2
+  exit 1
+fi
+
+printf '{"backend":"%s","frontend":"%s","acr_admin":false,"azure_services_firewall":true}\n' \
   "$backend_url" "$frontend_url"

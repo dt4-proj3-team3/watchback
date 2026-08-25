@@ -8,6 +8,13 @@ FOUNDATION_DEPLOYMENT="watchback-dev-foundation"
 MAIN_DEPLOYMENT="${AZURE_DEPLOYMENT_NAME:-watchback-dev}"
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+frontend_context=""
+cleanup() {
+  if [[ -n "$frontend_context" && -d "$frontend_context" ]]; then
+    rm -rf "$frontend_context"
+  fi
+}
+trap cleanup EXIT
 
 for command_name in az curl git openssl; do
   command -v "$command_name" >/dev/null || {
@@ -81,8 +88,14 @@ az acr build --registry "$registry_name" --image "watchback-backend:$IMAGE_TAG" 
   --file "$REPOSITORY_ROOT/apps/backend/Dockerfile" "$REPOSITORY_ROOT/apps/backend"
 az acr build --registry "$registry_name" --image "watchback-dependabot-sync:$IMAGE_TAG" \
   --file "$REPOSITORY_ROOT/apps/dependabot-sync/Dockerfile" "$REPOSITORY_ROOT/apps/dependabot-sync"
+
+frontend_context="$(mktemp -d)"
+mkdir -p "$frontend_context/apps" "$frontend_context/data"
+cp -R "$REPOSITORY_ROOT/apps/frontend" "$frontend_context/apps/frontend"
+cp -R "$REPOSITORY_ROOT/data/demo" "$frontend_context/data/demo"
+cp "$REPOSITORY_ROOT/.dockerignore" "$frontend_context/.dockerignore"
 az acr build --registry "$registry_name" --image "watchback-frontend:$IMAGE_TAG" \
-  --file "$REPOSITORY_ROOT/apps/frontend/Dockerfile" "$REPOSITORY_ROOT"
+  --file "$frontend_context/apps/frontend/Dockerfile" "$frontend_context"
 
 az deployment group create \
   --resource-group "$RESOURCE_GROUP" \
@@ -95,9 +108,6 @@ az deployment group create \
     deployDependabotJob="$deploy_dependabot_job" \
     postgresAdminPassword="$postgres_password" \
   --output none
-
-AZURE_RESOURCE_GROUP="$RESOURCE_GROUP" AZURE_DEPLOYMENT_NAME="$MAIN_DEPLOYMENT" \
-  "$REPOSITORY_ROOT/infra/azure/scripts/sync-postgres-firewall.sh"
 
 echo "Azure 개발 환경 배포가 완료되었습니다. imageTag=$IMAGE_TAG"
 az deployment group show \
