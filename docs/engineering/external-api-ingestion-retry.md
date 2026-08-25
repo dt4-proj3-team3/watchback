@@ -1,5 +1,6 @@
 # External API Ingestion Retry
 
+
 ## 목적
 
 외부 위험 데이터 수집 과정에서 API 호출 실패를 상태 코드와 오류 유형에 따라 일관되게 처리하기 위한 공통 기준을 정의한다.
@@ -7,6 +8,7 @@
 API 호출 실패는 모두 같은 방식으로 처리하지 않는다. 요청 자체가 잘못된 경우, API 제공자의 Rate Limit에 걸린 경우, 서버 측 일시 장애가 발생한 경우는 각각 원인과 복구 가능성이 다르다. 따라서 오류 유형에 따라 retry 여부와 대기 전략을 다르게 적용한다.
 
 이 문서는 `fabric/workspace/ingestion/ingest_api.py`의 공통 retry 처리 기준을 설명하며, 각 수집 구현에서 오류 기록, Bronze 적재, batch metadata 기록을 설계할 때 참고한다.
+
 
 ## 적용 범위
 
@@ -18,6 +20,7 @@ API 호출 실패는 모두 같은 방식으로 처리하지 않는다. 요청 �
 - 향후 추가되는 외부 API 기반 Bronze ingestion 작업
 
 이 문서는 API 호출 안정성에 대한 공통 기준만 다룬다. 데이터 정합성 검증, 스키마 계약, 중복 제거, 멱등성 검증, Bronze/Silver/Gold 계층별 저장 정책은 각 ingestion 구현 또는 `docs/contracts/`의 계층별 계약 문서에서 다룬다.
+
 
 ## 핵심 구현
 
@@ -46,6 +49,7 @@ wait_seconds = backoff_factor * (2 ** attempt) + jitter
 ```
 
 GitHub Rate Limit 처리는 `_handle_github_rate_limit()`에서 담당한다. `Retry-After` 헤더가 있으면 해당 값을 우선 사용하고, `x-ratelimit-remaining`이 `0`이면 `x-ratelimit-reset` 시각까지 대기한다. 두 정보가 모두 없으면 Secondary Rate Limit으로 보고 기본 60초부터 backoff를 적용한다.
+
 
 ## 재시도 정책 요약
 
