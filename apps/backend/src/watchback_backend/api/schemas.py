@@ -265,7 +265,7 @@ class ReviewCaseSummary(ContractModel):
     alert: AlertSummary
     advisory: AdvisorySummary
     latest_candidate: CandidateSummary = Field(
-        description="연결된 Candidate 중 selected_at이 가장 최신인 항목"
+        description="Case가 현재 대표로 사용하는 Candidate"
     )
 
 
@@ -279,7 +279,7 @@ class ReviewCaseListResponse(ContractModel):
 class ReviewCaseDetail(ReviewCaseSummary):
     alert: AlertDetail
     candidates: list[CandidateDetail] = Field(
-        description="선정 시각의 오름차순으로 정렬된 전체 위험 후보 이력"
+        description="선정 시각순 전체 후보이며 동일 Candidate의 재전달 Evidence는 중복 제거"
     )
     activities: list[ReviewActivityResponse] = Field(
         description="활동 발생 시각의 오름차순 이력"
