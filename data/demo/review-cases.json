@@ -37,10 +37,13 @@
           "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
           "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
           "cve_id": "CVE-2025-29927",
-          "priority": "high",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
-          "selected_at": "2025-04-21T00:30:00Z"
+          "selected_at": "2025-04-21T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-29927",
+          "ghsa_id": "GHSA-f82v-jwr5-mffw"
         }
       },
       {
@@ -79,10 +82,13 @@
           "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
           "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
           "cve_id": "CVE-2026-44578",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-          "selected_at": "2026-06-23T00:30:00Z"
+          "selected_at": "2026-06-23T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-44578",
+          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
         }
       },
       {
@@ -121,10 +127,13 @@
           "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
           "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
           "cve_id": "CVE-2025-31125",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-          "selected_at": "2026-01-23T00:30:00Z"
+          "selected_at": "2026-01-23T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-31125",
+          "ghsa_id": "GHSA-4r4m-qw57-chr8"
         }
       },
       {
@@ -163,10 +172,13 @@
           "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
           "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
           "cve_id": "CVE-2026-39363",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
-          "selected_at": "2026-05-14T00:30:00Z"
+          "selected_at": "2026-05-14T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-39363",
+          "ghsa_id": "GHSA-p9ff-h696-f583"
         }
       },
       {
@@ -205,10 +217,13 @@
           "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
           "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
           "cve_id": "CVE-2026-39363",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
-          "selected_at": "2026-05-14T00:30:00Z"
+          "selected_at": "2026-05-14T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-39363",
+          "ghsa_id": "GHSA-p9ff-h696-f583"
         }
       },
       {
@@ -247,10 +262,13 @@
           "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
           "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
           "cve_id": "CVE-2025-55182",
-          "priority": "high",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
-          "selected_at": "2026-01-03T00:30:00Z"
+          "selected_at": "2026-01-03T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-55182",
+          "ghsa_id": "GHSA-fv66-9v8q-g76r"
         }
       },
       {
@@ -289,10 +307,13 @@
           "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
           "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
           "cve_id": "CVE-2026-1207",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
-          "selected_at": "2026-07-24T00:30:00Z"
+          "selected_at": "2026-07-24T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-1207",
+          "ghsa_id": "GHSA-mwm9-4648-f68q"
         }
       },
       {
@@ -331,10 +352,13 @@
           "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
           "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
           "cve_id": "CVE-2025-27520",
-          "priority": "critical",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
-          "selected_at": "2025-05-05T00:30:00Z"
+          "selected_at": "2025-05-05T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-27520",
+          "ghsa_id": "GHSA-33xw-247w-6hmc"
         }
       },
       {
@@ -373,10 +397,13 @@
           "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
           "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
           "cve_id": "CVE-2026-35029",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
-          "selected_at": "2026-05-18T00:30:00Z"
+          "selected_at": "2026-05-18T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-35029",
+          "ghsa_id": "GHSA-53mr-6c8q-9789"
         }
       },
       {
@@ -415,10 +442,13 @@
           "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
           "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
           "cve_id": "CVE-2026-42208",
-          "priority": "critical",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
-          "selected_at": "2026-06-07T00:30:00Z"
+          "selected_at": "2026-06-07T00:30:00Z",
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-42208",
+          "ghsa_id": "GHSA-r75f-5x8p-qvmc"
         }
       }
     ],
@@ -481,17 +511,20 @@
         "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
         "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
         "cve_id": "CVE-2025-29927",
-        "priority": "high",
+        "priority": "P1",
         "change_type": "epss_rise_d30",
         "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
-        "selected_at": "2025-04-21T00:30:00Z"
+        "selected_at": "2025-04-21T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2025-29927",
+        "ghsa_id": "GHSA-f82v-jwr5-mffw"
       },
       "candidates": [
         {
           "id": "23f2b983-e0aa-5828-98f0-ac718030b0e4",
           "source_candidate_id": "expected-cve-2025-29927-2025-04-21",
           "cve_id": "CVE-2025-29927",
-          "priority": "high",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2025-04-21T00:30:00Z",
@@ -515,7 +548,9 @@
               "previous_value": "0.00030000",
               "current_value": "0.91895000",
               "observed_at": "2025-04-21T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "36c18100-f428-577f-acb1-fa0ae1ea26aa",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             },
             {
               "id": "030f8392-734a-5bab-9d24-5d41be852804",
@@ -525,9 +560,14 @@
               "previous_value": "0.05251000",
               "current_value": "0.99663000",
               "observed_at": "2025-04-21T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "36c18100-f428-577f-acb1-fa0ae1ea26aa",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-29927",
+          "ghsa_id": "GHSA-f82v-jwr5-mffw"
         }
       ],
       "activities": []
@@ -580,17 +620,20 @@
         "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
         "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
         "cve_id": "CVE-2026-44578",
-        "priority": "high",
+        "priority": "P3",
         "change_type": "epss_top5_entry_d30",
         "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-        "selected_at": "2026-06-23T00:30:00Z"
+        "selected_at": "2026-06-23T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-44578",
+        "ghsa_id": "GHSA-c4j6-fc7j-m34r"
       },
       "candidates": [
         {
           "id": "e872f496-7c7e-5324-b90a-862d7dfca56e",
           "source_candidate_id": "expected-cve-2026-44578-2026-06-13",
           "cve_id": "CVE-2026-44578",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-06-13 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2026-06-13T00:30:00Z",
@@ -614,15 +657,20 @@
               "previous_value": "0.000320000",
               "current_value": "0.072150000",
               "observed_at": "2026-06-13T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "d05635d3-384c-5824-9a50-bf7c0304d0ad",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-44578",
+          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
         },
         {
           "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
           "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
           "cve_id": "CVE-2026-44578",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
           "selected_at": "2026-06-23T00:30:00Z",
@@ -646,9 +694,14 @@
               "previous_value": "0.89864000",
               "current_value": "0.98347000",
               "observed_at": "2026-06-23T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "0437d24e-4cea-5e2c-a48d-1ceecadfec0b",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-44578",
+          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
         }
       ],
       "activities": []
@@ -701,17 +754,20 @@
         "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
         "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
         "cve_id": "CVE-2025-31125",
-        "priority": "high",
+        "priority": "P3",
         "change_type": "epss_top5_entry_d30",
         "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-        "selected_at": "2026-01-23T00:30:00Z"
+        "selected_at": "2026-01-23T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2025-31125",
+        "ghsa_id": "GHSA-4r4m-qw57-chr8"
       },
       "candidates": [
         {
           "id": "2ed154d6-3788-5595-94a8-5a7cd63ff97d",
           "source_candidate_id": "expected-cve-2025-31125-2025-05-01",
           "cve_id": "CVE-2025-31125",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2025-05-01 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2025-05-01T00:30:00Z",
@@ -735,15 +791,20 @@
               "previous_value": "0.00032000",
               "current_value": "0.07669000",
               "observed_at": "2025-05-01T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "f7ba2a0a-6269-5273-be64-6bc63426285d",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-31125",
+          "ghsa_id": "GHSA-4r4m-qw57-chr8"
         },
         {
           "id": "7ce26497-6bfe-50c3-a9a1-23026c460fb1",
           "source_candidate_id": "expected-cve-2025-31125-2026-01-22",
           "cve_id": "CVE-2025-31125",
-          "priority": "critical",
+          "priority": "P0",
           "change_type": "kev_added",
           "reason_summary": "2026-01-22 CISA KEV 신규 등재가 확인되었습니다.",
           "selected_at": "2026-01-22T00:30:00Z",
@@ -767,15 +828,20 @@
               "previous_value": "false",
               "current_value": "true",
               "observed_at": "2026-01-22T00:00:00Z",
-              "source": "cisa_kev"
+              "source": "cisa_kev",
+              "batch_id": "6bb7fa1b-e8da-5e7a-8bde-2c086652e65a",
+              "evidence_summary": "CISA KEV에 새로 등재되었습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-31125",
+          "ghsa_id": "GHSA-4r4m-qw57-chr8"
         },
         {
           "id": "8ae0f63f-efc0-5fa4-8784-8f843368a9c8",
           "source_candidate_id": "expected-cve-2025-31125-2026-01-23",
           "cve_id": "CVE-2025-31125",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
           "selected_at": "2026-01-23T00:30:00Z",
@@ -799,9 +865,14 @@
               "previous_value": "0.87421000",
               "current_value": "0.98798000",
               "observed_at": "2026-01-23T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "8824c185-eeff-52da-ad06-007f9ee5fd24",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-31125",
+          "ghsa_id": "GHSA-4r4m-qw57-chr8"
         }
       ],
       "activities": []
@@ -854,17 +925,20 @@
         "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
         "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
         "cve_id": "CVE-2026-39363",
-        "priority": "high",
+        "priority": "P2",
         "change_type": "epss_rise_d30",
         "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
-        "selected_at": "2026-05-14T00:30:00Z"
+        "selected_at": "2026-05-14T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-39363",
+        "ghsa_id": "GHSA-p9ff-h696-f583"
       },
       "candidates": [
         {
           "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
           "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
           "cve_id": "CVE-2026-39363",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2026-05-14T00:30:00Z",
@@ -888,9 +962,14 @@
               "previous_value": "0.000890000",
               "current_value": "0.06638000",
               "observed_at": "2026-05-14T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "a2d63a55-cc0f-545a-ab70-bd75aaae8799",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-39363",
+          "ghsa_id": "GHSA-p9ff-h696-f583"
         }
       ],
       "activities": []
@@ -943,17 +1022,20 @@
         "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
         "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
         "cve_id": "CVE-2026-39363",
-        "priority": "high",
+        "priority": "P2",
         "change_type": "epss_rise_d30",
         "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
-        "selected_at": "2026-05-14T00:30:00Z"
+        "selected_at": "2026-05-14T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-39363",
+        "ghsa_id": "GHSA-p9ff-h696-f583"
       },
       "candidates": [
         {
           "id": "ae68e76c-4ccd-5178-840c-46920c0c9346",
           "source_candidate_id": "expected-cve-2026-39363-2026-05-14",
           "cve_id": "CVE-2026-39363",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2026-05-14T00:30:00Z",
@@ -977,9 +1059,14 @@
               "previous_value": "0.000890000",
               "current_value": "0.06638000",
               "observed_at": "2026-05-14T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "a2d63a55-cc0f-545a-ab70-bd75aaae8799",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-39363",
+          "ghsa_id": "GHSA-p9ff-h696-f583"
         }
       ],
       "activities": []
@@ -1032,17 +1119,20 @@
         "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
         "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
         "cve_id": "CVE-2025-55182",
-        "priority": "high",
+        "priority": "P1",
         "change_type": "epss_rise_d30",
         "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
-        "selected_at": "2026-01-03T00:30:00Z"
+        "selected_at": "2026-01-03T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2025-55182",
+        "ghsa_id": "GHSA-fv66-9v8q-g76r"
       },
       "candidates": [
         {
           "id": "0777787c-d686-5ee4-8a75-c4c5dc4193d3",
           "source_candidate_id": "expected-cve-2025-55182-2025-12-05",
           "cve_id": "CVE-2025-55182",
-          "priority": "critical",
+          "priority": "P0",
           "change_type": "kev_added",
           "reason_summary": "2025-12-05 CISA KEV 신규 등재가 확인되었습니다.",
           "selected_at": "2025-12-05T00:30:00Z",
@@ -1066,15 +1156,20 @@
               "previous_value": "false",
               "current_value": "true",
               "observed_at": "2025-12-05T00:00:00Z",
-              "source": "cisa_kev"
+              "source": "cisa_kev",
+              "batch_id": "f81ebd25-1049-584e-add3-3a6f58ad69bb",
+              "evidence_summary": "CISA KEV에 새로 등재되었습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-55182",
+          "ghsa_id": "GHSA-fv66-9v8q-g76r"
         },
         {
           "id": "730c760f-c5e1-56fb-95dd-aca4571b986b",
           "source_candidate_id": "expected-cve-2025-55182-2026-01-03",
           "cve_id": "CVE-2025-55182",
-          "priority": "high",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
           "selected_at": "2026-01-03T00:30:00Z",
@@ -1098,7 +1193,9 @@
               "previous_value": "0.00455000",
               "current_value": "0.47368000",
               "observed_at": "2026-01-03T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "cc2a649a-3ecb-54a1-a50e-7c931e53bcb1",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             },
             {
               "id": "a3f63538-0516-5311-a421-05da305b8a5a",
@@ -1108,9 +1205,14 @@
               "previous_value": "0.63035000",
               "current_value": "0.97599000",
               "observed_at": "2026-01-03T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "cc2a649a-3ecb-54a1-a50e-7c931e53bcb1",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-55182",
+          "ghsa_id": "GHSA-fv66-9v8q-g76r"
         }
       ],
       "activities": []
@@ -1163,17 +1265,20 @@
         "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
         "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
         "cve_id": "CVE-2026-1207",
-        "priority": "high",
+        "priority": "P3",
         "change_type": "epss_top5_entry_d30",
         "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
-        "selected_at": "2026-07-24T00:30:00Z"
+        "selected_at": "2026-07-24T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-1207",
+        "ghsa_id": "GHSA-mwm9-4648-f68q"
       },
       "candidates": [
         {
           "id": "4a33b7d4-c815-5dcd-8614-2cf46e7cf8a6",
           "source_candidate_id": "expected-cve-2026-1207-2026-03-07",
           "cve_id": "CVE-2026-1207",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-03-07 EPSS가 30일 전보다 크게 상승했습니다.",
           "selected_at": "2026-03-07T00:30:00Z",
@@ -1197,15 +1302,20 @@
               "previous_value": "0.00017000",
               "current_value": "0.05462000",
               "observed_at": "2026-03-07T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "891bfc84-1a23-5b65-b4aa-44e4dca3c507",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-1207",
+          "ghsa_id": "GHSA-mwm9-4648-f68q"
         },
         {
           "id": "7282a6ea-d0b2-58ae-b9fa-1a7147c407f0",
           "source_candidate_id": "expected-cve-2026-1207-2026-07-24",
           "cve_id": "CVE-2026-1207",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
           "selected_at": "2026-07-24T00:30:00Z",
@@ -1229,9 +1339,14 @@
               "previous_value": "0.88557000",
               "current_value": "0.95905000",
               "observed_at": "2026-07-24T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "aad48c10-64e5-5dfd-83b3-5cebcf2dbbf3",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-1207",
+          "ghsa_id": "GHSA-mwm9-4648-f68q"
         }
       ],
       "activities": []
@@ -1284,17 +1399,20 @@
         "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
         "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
         "cve_id": "CVE-2025-27520",
-        "priority": "critical",
+        "priority": "P1",
         "change_type": "epss_rise_d30",
         "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
-        "selected_at": "2025-05-05T00:30:00Z"
+        "selected_at": "2025-05-05T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2025-27520",
+        "ghsa_id": "GHSA-33xw-247w-6hmc"
       },
       "candidates": [
         {
           "id": "229b7fb7-8920-5306-a5c6-b0b4f998b7bd",
           "source_candidate_id": "expected-cve-2025-27520-2025-05-05",
           "cve_id": "CVE-2025-27520",
-          "priority": "critical",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
           "selected_at": "2025-05-05T00:30:00Z",
@@ -1318,7 +1436,9 @@
               "previous_value": "0.00404000",
               "current_value": "0.49056000",
               "observed_at": "2025-05-05T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "c5ae7341-2433-57e0-a291-b598b6755822",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             },
             {
               "id": "5b159633-da80-52c5-bd88-ba1f6c8ca710",
@@ -1328,9 +1448,14 @@
               "previous_value": "0.58204000",
               "current_value": "0.97601000",
               "observed_at": "2025-05-05T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "c5ae7341-2433-57e0-a291-b598b6755822",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2025-27520",
+          "ghsa_id": "GHSA-33xw-247w-6hmc"
         }
       ],
       "activities": []
@@ -1383,17 +1508,20 @@
         "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
         "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
         "cve_id": "CVE-2026-35029",
-        "priority": "high",
+        "priority": "P3",
         "change_type": "epss_top5_entry_d30",
         "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
-        "selected_at": "2026-05-18T00:30:00Z"
+        "selected_at": "2026-05-18T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-35029",
+        "ghsa_id": "GHSA-53mr-6c8q-9789"
       },
       "candidates": [
         {
           "id": "acd0d667-60a0-57ef-9faf-7c36ed202ee6",
           "source_candidate_id": "expected-cve-2026-35029-2026-05-07",
           "cve_id": "CVE-2026-35029",
-          "priority": "high",
+          "priority": "P2",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-05-07 EPSS가 30일 전보다 크게 상승했습니다.",
           "selected_at": "2026-05-07T00:30:00Z",
@@ -1417,15 +1545,20 @@
               "previous_value": "0.00334000",
               "current_value": "0.13296000",
               "observed_at": "2026-05-07T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "71982efa-ea4a-5992-ba32-e8754a8a3d04",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-35029",
+          "ghsa_id": "GHSA-53mr-6c8q-9789"
         },
         {
           "id": "05a8b6ef-da6e-5a04-a3df-74b68007e967",
           "source_candidate_id": "expected-cve-2026-35029-2026-05-18",
           "cve_id": "CVE-2026-35029",
-          "priority": "high",
+          "priority": "P3",
           "change_type": "epss_top5_entry_d30",
           "reason_summary": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
           "selected_at": "2026-05-18T00:30:00Z",
@@ -1449,9 +1582,14 @@
               "previous_value": "0.41198000",
               "current_value": "0.95179000",
               "observed_at": "2026-05-18T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "7a063b36-034d-513a-b55c-70dcedfbbdf3",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-35029",
+          "ghsa_id": "GHSA-53mr-6c8q-9789"
         }
       ],
       "activities": []
@@ -1504,17 +1642,20 @@
         "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
         "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
         "cve_id": "CVE-2026-42208",
-        "priority": "critical",
+        "priority": "P1",
         "change_type": "epss_rise_d30",
         "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
-        "selected_at": "2026-06-07T00:30:00Z"
+        "selected_at": "2026-06-07T00:30:00Z",
+        "subject_type": "CVE",
+        "subject_id": "CVE-2026-42208",
+        "ghsa_id": "GHSA-r75f-5x8p-qvmc"
       },
       "candidates": [
         {
           "id": "384347a2-d7cb-5b1c-8087-0d22863ae544",
           "source_candidate_id": "expected-cve-2026-42208-2026-05-08",
           "cve_id": "CVE-2026-42208",
-          "priority": "critical",
+          "priority": "P0",
           "change_type": "kev_new",
           "reason_summary": "2026-05-08 CISA KEV에 새로 등재됐습니다.",
           "selected_at": "2026-05-08T00:30:00Z",
@@ -1538,15 +1679,20 @@
               "previous_value": "false",
               "current_value": "true",
               "observed_at": "2026-05-08T00:00:00Z",
-              "source": "cisa_kev"
+              "source": "cisa_kev",
+              "batch_id": "e748688b-1485-5e26-a88c-3c20a0427d1b",
+              "evidence_summary": "CISA KEV에 새로 등재되었습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-42208",
+          "ghsa_id": "GHSA-r75f-5x8p-qvmc"
         },
         {
           "id": "5427d938-e585-5559-8b8d-504a32b9f0e4",
           "source_candidate_id": "expected-cve-2026-42208-2026-06-07",
           "cve_id": "CVE-2026-42208",
-          "priority": "critical",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
           "reason_summary": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
           "selected_at": "2026-06-07T00:30:00Z",
@@ -1570,7 +1716,9 @@
               "previous_value": "0.00084000",
               "current_value": "0.56947000",
               "observed_at": "2026-06-07T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "f56610c9-6679-55c0-8a45-d2ec3b1b413a",
+              "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             },
             {
               "id": "87621e70-9404-5172-9fab-4603aed35135",
@@ -1580,9 +1728,14 @@
               "previous_value": "0.24307000",
               "current_value": "0.98176000",
               "observed_at": "2026-06-07T00:00:00Z",
-              "source": "first_epss"
+              "source": "first_epss",
+              "batch_id": "f56610c9-6679-55c0-8a45-d2ec3b1b413a",
+              "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
-          ]
+          ],
+          "subject_type": "CVE",
+          "subject_id": "CVE-2026-42208",
+          "ghsa_id": "GHSA-r75f-5x8p-qvmc"
         }
       ],
       "activities": []

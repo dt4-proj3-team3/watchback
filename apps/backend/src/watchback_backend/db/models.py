@@ -198,6 +198,7 @@ class GoldBatch(IdMixin, CreatedAtMixin, Base):
     )
 
     source_batch_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    ds_run_id: Mapped[str | None] = mapped_column(String(255))
     as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source_generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     policy_version: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -210,14 +211,26 @@ class RiskCandidate(IdMixin, TimestampMixin, Base):
     __tablename__ = "risk_candidates"
     __table_args__ = (
         CheckConstraint(
-            "priority IN ('low', 'medium', 'high', 'critical')",
+            "subject_type IN ('CVE', 'GHSA')",
+            name="subject_type_values",
+        ),
+        CheckConstraint(
+            "(subject_type = 'CVE' AND cve_id IS NOT NULL AND subject_id = cve_id) OR "
+            "(subject_type = 'GHSA' AND cve_id IS NULL AND subject_id = ghsa_id)",
+            name="subject_consistency",
+        ),
+        CheckConstraint(
+            "priority IN ('P0', 'P1', 'P2', 'P3')",
             name="priority_values",
         ),
-        {"comment": "Gold가 선정한 CVE 기준 위험 변화 후보"},
+        {"comment": "Gold가 선정한 CVE 또는 GHSA 기준 위험 변화 후보"},
     )
 
     source_candidate_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    cve_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    subject_type: Mapped[str] = mapped_column(String(10), nullable=False)
+    subject_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    ghsa_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    cve_id: Mapped[str | None] = mapped_column(String(32), index=True)
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     change_type: Mapped[str] = mapped_column(String(100), nullable=False)
     reason_summary: Mapped[str] = mapped_column(Text, nullable=False)
@@ -245,19 +258,26 @@ class CandidateEvidence(IdMixin, TimestampMixin, Base):
             "value_type IN ('boolean', 'decimal', 'version', 'timestamp', 'text')",
             name="value_type_values",
         ),
+        UniqueConstraint("batch_id", "source_evidence_id"),
+        ForeignKeyConstraint(
+            ["batch_id", "candidate_id"],
+            ["gold_batch_candidates.batch_id", "gold_batch_candidates.candidate_id"],
+        ),
         Index("ix_candidate_evidence_candidate_observed", "candidate_id", "observed_at"),
         Index("ix_candidate_evidence_signal_observed", "signal", "observed_at"),
         {"comment": "위험 후보를 뒷받침하는 신호별 변화 전후 근거"},
     )
 
-    source_evidence_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    candidate_id: Mapped[UUID] = mapped_column(ForeignKey("risk_candidates.id"), nullable=False)
+    source_evidence_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    batch_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    candidate_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     signal: Mapped[str] = mapped_column(String(100), nullable=False)
     value_type: Mapped[str] = mapped_column(String(20), nullable=False)
     previous_value: Mapped[str | None] = mapped_column(Text)
-    current_value: Mapped[str] = mapped_column(Text, nullable=False)
+    current_value: Mapped[str | None] = mapped_column(Text)
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(100), nullable=False)
+    evidence_summary: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class AlertCandidateMatch(Base):
@@ -462,6 +482,7 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
     "gold_batches": {
         "id": "Gold Batch 내부 식별자",
         "source_batch_id": "Gold가 발급한 외부 Batch 식별자",
+        "ds_run_id": "DS 실행을 추적하는 선택적 식별자",
         "as_of": "후보 선정 결과가 유효한 기준 시각",
         "source_generated_at": "Gold가 Batch 결과를 생성한 시각",
         "policy_version": "후보 선정에 사용한 정책 버전",
@@ -473,8 +494,11 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
     "risk_candidates": {
         "id": "위험 후보 내부 식별자",
         "source_candidate_id": "Gold가 발급한 외부 위험 후보 식별자",
-        "cve_id": "Dependabot Alert Advisory와 연결할 CVE 식별자",
-        "priority": "Gold가 부여한 고객 독립적 후보 우선순위",
+        "subject_type": "Alert 연결 기준 종류이며 CVE 또는 GHSA",
+        "subject_id": "subject_type에 따른 CVE 또는 GHSA 공통 연결 식별자",
+        "ghsa_id": "Gold 원본 GHSA 식별자",
+        "cve_id": "연결된 CVE 식별자이며 GHSA-only 후보이면 null",
+        "priority": "Gold가 부여한 P0~P3 후보 우선순위",
         "change_type": "후보로 선정된 위험 변화 유형",
         "reason_summary": "후보 선정 사유 요약",
         "selected_at": "Gold가 위험 변화를 후보로 선정한 시각",
@@ -490,6 +514,7 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
     "candidate_evidence": {
         "id": "후보 근거 내부 식별자",
         "source_evidence_id": "Gold가 발급한 외부 근거 식별자",
+        "batch_id": "Evidence가 포함된 Gold Batch 식별자",
         "candidate_id": "근거가 뒷받침하는 위험 후보 식별자",
         "signal": "변화를 관찰한 위험 신호 이름",
         "value_type": "변화 전후 값을 해석할 자료형",
@@ -497,6 +522,7 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
         "current_value": "변화 후 값",
         "observed_at": "근거 신호의 변화를 관찰한 시각",
         "source": "근거 신호의 원천 데이터 이름",
+        "evidence_summary": "Web 상세 화면에 표시할 근거 설명",
         "created_at": "운영 DB에 후보 근거를 생성한 시각",
         "updated_at": "운영 DB에서 후보 근거를 마지막으로 수정한 시각",
     },
