@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Path, Query, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Body, Depends, Header, Path, Query, status
+from sqlalchemy.orm import Session
 
+from watchback_backend.api import service
 from watchback_backend.api.schemas import (
     ACTIVITY_REQUEST_EXAMPLE,
     ACTIVITY_RESPONSE_EXAMPLE,
@@ -20,9 +22,26 @@ from watchback_backend.api.schemas import (
     ReviewCaseListResponse,
     SortOrder,
 )
+from watchback_backend.db.session import get_session
 
 
 router = APIRouter(prefix="/api/v1/review-cases", tags=["review-cases"])
+
+
+@dataclass(frozen=True)
+class ContextHeaders:
+    organization_id: UUID
+    user_id: UUID
+
+
+def get_context_headers(
+    organization_id: Annotated[
+        UUID, Header(alias="X-Organization-ID", description="요청 조직 UUID")
+    ],
+    user_id: Annotated[UUID, Header(alias="X-User-ID", description="작업자 UUID")],
+) -> ContextHeaders:
+    return ContextHeaders(organization_id, user_id)
+
 
 def _error_response(description: str, code: str, message: str) -> dict[str, Any]:
     return {
@@ -41,14 +60,33 @@ FORBIDDEN = _error_response(
     "organization_scope_violation",
     "요청한 조직 범위에 접근할 수 없습니다.",
 )
-NOT_FOUND = _error_response(
-    "요청 조직에서 재검토 Case를 찾을 수 없음",
-    "review_case_not_found",
-    "재검토 Case를 찾을 수 없습니다.",
-)
+NOT_FOUND = {
+    "model": ErrorResponse,
+    "description": "재검토 Case 또는 연결된 Candidate를 찾을 수 없음",
+    "content": {
+        "application/json": {
+            "examples": {
+                "review_case_not_found": {
+                    "value": {
+                        "code": "review_case_not_found",
+                        "message": "재검토 Case를 찾을 수 없습니다.",
+                        "details": None,
+                    }
+                },
+                "candidate_not_found": {
+                    "value": {
+                        "code": "candidate_not_found",
+                        "message": "이 Case에 연결된 위험 후보를 찾을 수 없습니다.",
+                        "details": None,
+                    }
+                },
+            }
+        }
+    },
+}
 CONFLICT = {
     "model": ErrorResponse,
-    "description": "동일 활동·외부 링크 또는 현재 Case 상태와 충돌",
+    "description": "동일 활동 또는 외부 링크와 충돌",
     "content": {
         "application/json": {
             "examples": {
@@ -66,13 +104,6 @@ CONFLICT = {
                         "details": None,
                     }
                 },
-                "case_state_conflict": {
-                    "value": {
-                        "code": "case_state_conflict",
-                        "message": "현재 Case 상태에서는 요청한 활동을 기록할 수 없습니다.",
-                        "details": None,
-                    }
-                },
             }
         }
     },
@@ -82,22 +113,6 @@ VALIDATION_ERROR = _error_response(
     "validation_error",
     "요청 값이 API 계약에 맞지 않습니다.",
 )
-NOT_IMPLEMENTED = _error_response(
-    "이슈 #86에서는 계약만 제공하며 실제 처리는 WEB-04에서 구현",
-    "not_implemented",
-    "API 계약만 정의되어 있으며 아직 실행 기능은 구현되지 않았습니다.",
-)
-
-
-def _not_implemented() -> JSONResponse:
-    return JSONResponse(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        content={
-            "code": "not_implemented",
-            "message": "API 계약만 정의되어 있으며 아직 실행 기능은 구현되지 않았습니다.",
-            "details": None,
-        },
-    )
 
 
 @router.get(
@@ -118,10 +133,11 @@ def _not_implemented() -> JSONResponse:
         },
         403: FORBIDDEN,
         422: VALIDATION_ERROR,
-        501: NOT_IMPLEMENTED,
     },
 )
 def list_review_cases(
+    headers: Annotated[ContextHeaders, Depends(get_context_headers)],
+    session: Annotated[Session, Depends(get_session)],
     case_status: Annotated[
         CaseStatusFilter,
         Query(alias="status", description="기본값은 열린 Case만 조회합니다."),
@@ -137,9 +153,19 @@ def list_review_cases(
     order: Annotated[SortOrder, Query()] = SortOrder.DESC,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-) -> Any:
-    del case_status, priority, change_type, sort, order, page, page_size
-    return _not_implemented()
+) -> ReviewCaseListResponse:
+    context = service.require_context(session, headers.organization_id, headers.user_id)
+    return service.list_review_cases(
+        session,
+        context,
+        case_status=case_status,
+        priority=priority,
+        change_type=change_type,
+        sort=sort,
+        order=order,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get(
@@ -154,14 +180,15 @@ def list_review_cases(
         403: FORBIDDEN,
         404: NOT_FOUND,
         422: VALIDATION_ERROR,
-        501: NOT_IMPLEMENTED,
     },
 )
 def get_review_case(
     case_id: Annotated[UUID, Path(description="재검토 Case 식별자")],
-) -> Any:
-    del case_id
-    return _not_implemented()
+    headers: Annotated[ContextHeaders, Depends(get_context_headers)],
+    session: Annotated[Session, Depends(get_session)],
+) -> ReviewCaseDetail:
+    context = service.require_context(session, headers.organization_id, headers.user_id)
+    return service.get_review_case(session, context, case_id)
 
 
 @router.post(
@@ -178,18 +205,21 @@ def get_review_case(
         404: NOT_FOUND,
         409: CONFLICT,
         422: VALIDATION_ERROR,
-        501: NOT_IMPLEMENTED,
     },
 )
 def create_review_activity(
     case_id: Annotated[UUID, Path(description="재검토 Case 식별자")],
+    headers: Annotated[ContextHeaders, Depends(get_context_headers)],
+    session: Annotated[Session, Depends(get_session)],
     payload: Annotated[
         ReviewActivityCreate,
         Body(
             discriminator="activity_type",
-            openapi_examples={"with_external_link": {"value": ACTIVITY_REQUEST_EXAMPLE}},
+            openapi_examples={
+                "with_external_link": {"value": ACTIVITY_REQUEST_EXAMPLE}
+            },
         ),
     ],
-) -> Any:
-    del case_id, payload
-    return _not_implemented()
+) -> ReviewActivityCreated:
+    context = service.require_context(session, headers.organization_id, headers.user_id)
+    return service.create_review_activity(session, context, case_id, payload)

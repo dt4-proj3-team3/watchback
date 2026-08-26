@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from watchback_backend.api.routes import router as review_cases_router
+from watchback_backend.api.service import ServiceError
 
 
 app = FastAPI(
@@ -12,6 +13,15 @@ app = FastAPI(
     description="Dependabot Alert의 위험 변화 재검토 계약 API",
 )
 app.include_router(review_cases_router)
+
+
+@app.exception_handler(ServiceError)
+async def service_error_handler(request: Request, exc: ServiceError) -> JSONResponse:
+    del request
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message, "details": None},
+    )
 
 
 @app.exception_handler(RequestValidationError)

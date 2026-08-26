@@ -230,7 +230,6 @@ class ReviewActivityResponse(ContractModel):
 
 
 class CreatedReviewActivityResponse(ReviewActivityResponse):
-    candidate_id: UUID
     activity_type: UserActivityType
     actor: ActorSummary
 
@@ -418,9 +417,9 @@ DETAIL_EXAMPLE = {
 }
 
 ACTIVITY_REQUEST_EXAMPLE = {
-    "activity_type": "remediation_requested",
+    "activity_type": "risk_accepted",
     "candidate_id": "40000000-0000-0000-0000-000000000001",
-    "note": "패치 버전으로 업데이트하는 Issue를 생성합니다.",
+    "note": "현재 위험을 검토한 뒤 수용합니다.",
     "external_link": {
         "link_type": "issue",
         "url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/issues/21",
@@ -432,8 +431,8 @@ ACTIVITY_RESPONSE_EXAMPLE = {
     "activity": {
         "id": "70000000-0000-0000-0000-000000000001",
         "candidate_id": "40000000-0000-0000-0000-000000000001",
-        "activity_type": "remediation_requested",
-        "note": "패치 버전으로 업데이트하는 Issue를 생성합니다.",
+        "activity_type": "risk_accepted",
+        "note": "현재 위험을 검토한 뒤 수용합니다.",
         "actor": {
             "id": "80000000-0000-0000-0000-000000000001",
             "display_name": "Watchback Reviewer",
@@ -445,12 +444,12 @@ ACTIVITY_RESPONSE_EXAMPLE = {
                 "id": "90000000-0000-0000-0000-000000000001",
                 "link_type": "issue",
                 "url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/issues/21",
-                "github_owner": "watchback",
-                "github_repository": "demo-frontend",
+                "github_owner": "dt4-proj3-team3",
+                "github_repository": "watchback-vulnerable-fe-lab",
                 "github_number": 21,
-                "external_state": "open",
-                "github_updated_at": "2026-08-20T02:00:00Z",
-                "last_synced_at": "2026-08-20T02:00:00Z",
+                "external_state": None,
+                "github_updated_at": None,
+                "last_synced_at": None,
             }
         ],
     },
