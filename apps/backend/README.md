@@ -24,7 +24,22 @@ python -m uvicorn watchback_backend.main:app --reload --app-dir src
 - ReDoc: <http://localhost:8000/redoc>
 - OpenAPI JSON: <http://localhost:8000/openapi.json>
 
-현재 재검토 API는 계약만 정의되어 있다. 유효한 요청도 실제 DB를 조회하거나 변경하지 않고 `501 Not Implemented`를 반환한다.
+재검토 API는 `DATABASE_URL`의 PostgreSQL 운영 DB를 조회하고 활동을 저장한다. 애플리케이션 import와 OpenAPI 문서 조회에는 DB 연결이 필요하지 않지만 실제 API 요청에는 연결 가능한 DB가 필요하다.
+
+세 API 모두 S1 임시 요청 컨텍스트로 다음 UUID 헤더를 요구한다.
+
+- `X-Organization-ID`: 요청 조직
+- `X-User-ID`: 조직에 소속된 작업자
+
+별도 인증은 아직 수행하지 않으며, 헤더의 사용자가 요청 조직에 소속됐는지만 DB에서 확인한다.
+
+```bash
+curl 'http://localhost:8000/api/v1/review-cases?status=open' \
+  -H 'X-Organization-ID: ORGANIZATION_UUID' \
+  -H 'X-User-ID: USER_UUID'
+```
+
+목록은 기본적으로 열린 Case를 우선순위 내림차순으로 반환한다. 상세는 Alert에 연결된 전체 Candidate·Batch·Evidence·활동 이력을 반환한다. 활동 API에서 `risk_accepted`를 기록하면 열린 Case가 해결 상태로 바뀌며, 그 외 활동은 Case 상태를 변경하지 않는다.
 
 ## 테스트
 
