@@ -88,3 +88,35 @@ PYTHONPATH=src python -m watchback_backend.db.demo_seed
 | 저장소 | `novalink/ai-platform-api` | GitHub repository `1340408606` | `high`, AI 모델 서빙·LLM 게이트웨이 API |
 
 사용자 역할과 저장소의 업무 설명은 시연 시나리오용 설명이며 현재 DB 컬럼으로 저장하지 않는다. 이 시드는 Alert·Advisory·Gold Candidate·Evidence·Case를 만들지 않는다. 해당 데이터는 각 동기화 경로에서 적재한다.
+
+## Alert–Candidate 매칭
+
+Dependabot Alert와 Gold Candidate가 적재된 뒤 조직 단위로 매칭한다.
+
+```bash
+export DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:PORT/DATABASE'
+export ORGANIZATION_ID='ORGANIZATION_UUID'
+PYTHONPATH=src python -m watchback_backend.matching --dry-run
+PYTHONPATH=src python -m watchback_backend.matching
+```
+
+`--dry-run`은 저장 없이 동일한 매칭 결과를 계산한다. CVE Candidate는 CVE와 GHSA를 함께 확인하고, CVE가 없는 Candidate는 GHSA로 연결한다. 새 연결은 Open Alert에만 만들며 기존 연결은 Alert 상태가 바뀌어도 삭제하지 않는다.
+
+실행 결과는 신규·기존 매칭, 1:1·1:N·N:1 관계, 제외 사유와 대표 원천 추적 샘플을 JSON 한 건으로 출력한다. 이 명령은 매칭만 저장하며 Review Case를 생성하지 않는다.
+
+## 재검토 Case 생성
+
+Alert–Candidate 매칭을 저장한 뒤 조직 단위로 Review Case를 생성한다.
+
+```bash
+export DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:PORT/DATABASE'
+export ORGANIZATION_ID='ORGANIZATION_UUID'
+PYTHONPATH=src python -m watchback_backend.case_generation --dry-run
+PYTHONPATH=src python -m watchback_backend.case_generation
+```
+
+현재 Open Alert만 Case 생성·재오픈 대상으로 처리하며 Alert당 Case는 한 건만 유지한다. Case 우선순위는 Advisory 심각도를 사용하고 Candidate의 P0~P3 우선순위는 별도로 보존한다.
+
+목록과 상세 상단은 Case의 대표 Candidate를 사용한다. 상세에는 연결된 모든 Candidate가 누적되며, 같은 Candidate가 여러 Batch로 재전달한 동일 Evidence는 한 번만 표시한다. 해결된 Case는 더 최신인 새 Candidate가 연결될 때 재오픈하고 동일 Candidate의 Batch 재전달만으로 재오픈하지 않는다.
+
+실행 결과는 생성·갱신·재오픈·변경 없음·제외 건수와 대표 Candidate·Batch·정책 버전·기준 시점을 JSON 한 건으로 출력한다.

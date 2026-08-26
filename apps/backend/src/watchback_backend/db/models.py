@@ -49,7 +49,10 @@ class CreatedAtMixin:
 
 class TimestampMixin(CreatedAtMixin):
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
 
@@ -57,7 +60,9 @@ class Organization(IdMixin, TimestampMixin, Base):
     __tablename__ = "organizations"
     __table_args__ = {"comment": "GitHub 조직 단위 테넌트"}
 
-    github_organization_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    github_organization_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, unique=True
+    )
     github_login: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -102,7 +107,9 @@ class Repository(IdMixin, TimestampMixin, Base):
     default_branch: Mapped[str | None] = mapped_column(String(255))
     importance: Mapped[str] = mapped_column(String(20), nullable=False)
     github_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_synced_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class SecurityAdvisory(IdMixin, TimestampMixin, Base):
@@ -122,9 +129,15 @@ class SecurityAdvisory(IdMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
     cvss_score: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
-    github_published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    github_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    github_withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    github_published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    github_updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    github_withdrawn_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class DependabotAlert(IdMixin, TimestampMixin, Base):
@@ -158,7 +171,11 @@ class DependabotAlert(IdMixin, TimestampMixin, Base):
             name="state_timestamp_consistency",
         ),
         Index("ix_dependabot_alerts_organization_state", "organization_id", "state"),
-        Index("ix_dependabot_alerts_organization_package", "organization_id", "package_name"),
+        Index(
+            "ix_dependabot_alerts_organization_package",
+            "organization_id",
+            "package_name",
+        ),
         Index("ix_dependabot_alerts_advisory_id", "advisory_id"),
         Index("ix_dependabot_alerts_github_updated_at", "github_updated_at"),
         {"comment": "GitHub Dependabot Alert의 현재 상태"},
@@ -179,15 +196,21 @@ class DependabotAlert(IdMixin, TimestampMixin, Base):
     vulnerable_version_range: Mapped[str] = mapped_column(String(255), nullable=False)
     first_patched_version: Mapped[str | None] = mapped_column(String(100))
     html_url: Mapped[str] = mapped_column(Text, nullable=False)
-    github_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    github_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    github_created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    github_updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dismissed_reason: Mapped[str | None] = mapped_column(String(255))
     dismissed_by: Mapped[str | None] = mapped_column(String(255))
     dismissed_comment: Mapped[str | None] = mapped_column(Text)
     fixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     auto_dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_synced_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class GoldBatch(IdMixin, CreatedAtMixin, Base):
@@ -197,10 +220,14 @@ class GoldBatch(IdMixin, CreatedAtMixin, Base):
         {"comment": "완료된 Gold 위험 후보 전달 Batch"},
     )
 
-    source_batch_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    source_batch_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
     ds_run_id: Mapped[str | None] = mapped_column(String(255))
     as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    source_generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_generated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     policy_version: Mapped[str] = mapped_column(String(100), nullable=False)
     schema_version: Mapped[str] = mapped_column(String(50), nullable=False)
     candidate_count: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -226,7 +253,9 @@ class RiskCandidate(IdMixin, TimestampMixin, Base):
         {"comment": "Gold가 선정한 CVE 또는 GHSA 기준 위험 변화 후보"},
     )
 
-    source_candidate_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    source_candidate_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
     subject_type: Mapped[str] = mapped_column(String(10), nullable=False)
     subject_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
     ghsa_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
@@ -234,7 +263,9 @@ class RiskCandidate(IdMixin, TimestampMixin, Base):
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     change_type: Mapped[str] = mapped_column(String(100), nullable=False)
     reason_summary: Mapped[str] = mapped_column(Text, nullable=False)
-    selected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    selected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class GoldBatchCandidate(Base):
@@ -248,7 +279,9 @@ class GoldBatchCandidate(Base):
         ForeignKey("risk_candidates.id"), primary_key=True
     )
     payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class CandidateEvidence(IdMixin, TimestampMixin, Base):
@@ -263,7 +296,9 @@ class CandidateEvidence(IdMixin, TimestampMixin, Base):
             ["batch_id", "candidate_id"],
             ["gold_batch_candidates.batch_id", "gold_batch_candidates.candidate_id"],
         ),
-        Index("ix_candidate_evidence_candidate_observed", "candidate_id", "observed_at"),
+        Index(
+            "ix_candidate_evidence_candidate_observed", "candidate_id", "observed_at"
+        ),
         Index("ix_candidate_evidence_signal_observed", "signal", "observed_at"),
         {"comment": "위험 후보를 뒷받침하는 신호별 변화 전후 근거"},
     )
@@ -275,7 +310,9 @@ class CandidateEvidence(IdMixin, TimestampMixin, Base):
     value_type: Mapped[str] = mapped_column(String(20), nullable=False)
     previous_value: Mapped[str | None] = mapped_column(Text)
     current_value: Mapped[str | None] = mapped_column(Text)
-    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     source: Mapped[str] = mapped_column(String(100), nullable=False)
     evidence_summary: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -287,7 +324,7 @@ class AlertCandidateMatch(Base):
             ["organization_id", "alert_id"],
             ["dependabot_alerts.organization_id", "dependabot_alerts.id"],
         ),
-        {"comment": "Dependabot Alert Advisory의 CVE와 위험 후보의 매칭 결과"},
+        {"comment": "Dependabot Alert와 Gold 위험 후보의 CVE·GHSA 매칭 결과"},
     )
 
     organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
@@ -295,7 +332,9 @@ class AlertCandidateMatch(Base):
     candidate_id: Mapped[UUID] = mapped_column(
         ForeignKey("risk_candidates.id"), primary_key=True
     )
-    matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    matched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class ReviewCase(IdMixin, TimestampMixin, Base):
@@ -305,6 +344,10 @@ class ReviewCase(IdMixin, TimestampMixin, Base):
         ForeignKeyConstraint(
             ["organization_id", "alert_id"],
             ["dependabot_alerts.organization_id", "dependabot_alerts.id"],
+        ),
+        ForeignKeyConstraint(
+            ["representative_batch_id", "representative_candidate_id"],
+            ["gold_batch_candidates.batch_id", "gold_batch_candidates.candidate_id"],
         ),
         UniqueConstraint("alert_id"),
         CheckConstraint("status IN ('open', 'resolved')", name="status_values"),
@@ -318,13 +361,22 @@ class ReviewCase(IdMixin, TimestampMixin, Base):
             name="status_timestamp_consistency",
         ),
         CheckConstraint("reopened_count >= 0", name="reopened_count_nonnegative"),
-        Index("ix_review_cases_organization_status_priority", "organization_id", "status", "priority"),
-        Index("ix_review_cases_organization_updated_at", "organization_id", "updated_at"),
+        Index(
+            "ix_review_cases_organization_status_priority",
+            "organization_id",
+            "status",
+            "priority",
+        ),
+        Index(
+            "ix_review_cases_organization_updated_at", "organization_id", "updated_at"
+        ),
         {"comment": "Dependabot Alert 한 건의 재검토 수명 주기"},
     )
 
     organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     alert_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    representative_candidate_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    representative_batch_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     review_reason: Mapped[str] = mapped_column(Text, nullable=False)
@@ -370,7 +422,9 @@ class ReviewActivity(IdMixin, CreatedAtMixin, Base):
     candidate_id: Mapped[UUID | None] = mapped_column(ForeignKey("risk_candidates.id"))
     activity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     note: Mapped[str | None] = mapped_column(Text)
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
 
 class ExternalLink(IdMixin, TimestampMixin, Base):
@@ -389,7 +443,9 @@ class ExternalLink(IdMixin, TimestampMixin, Base):
             ],
         ),
         UniqueConstraint("organization_id", "url"),
-        CheckConstraint("link_type IN ('issue', 'pull_request')", name="link_type_values"),
+        CheckConstraint(
+            "link_type IN ('issue', 'pull_request')", name="link_type_values"
+        ),
         {"comment": "재검토 Case에 연결된 GitHub Issue 또는 Pull Request"},
     )
 
@@ -536,6 +592,8 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
         "id": "재검토 Case 내부 식별자",
         "organization_id": "Case가 속한 조직 식별자",
         "alert_id": "Case가 검토하는 Dependabot Alert 식별자",
+        "representative_candidate_id": "Case 목록과 상단 요약에 사용하는 대표 Candidate 식별자",
+        "representative_batch_id": "대표 Candidate를 전달한 Gold Batch 식별자",
         "status": "Case의 현재 검토 상태",
         "priority": "Web 화면에 표시할 Case 우선순위",
         "review_reason": "현재 대표 재검토 사유의 스냅샷",

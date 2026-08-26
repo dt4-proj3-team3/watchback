@@ -85,10 +85,13 @@ def require_context(
     return RequestContext(organization_id, user.id, user.display_name)
 
 
-def _latest_candidate_subquery() -> Any:
-    ranked = (
+def _summary_query() -> Select[tuple[Any, ...]]:
+    return (
         select(
-            AlertCandidateMatch.alert_id.label("alert_id"),
+            ReviewCase,
+            Repository,
+            DependabotAlert,
+            SecurityAdvisory,
             RiskCandidate.id.label("candidate_id"),
             RiskCandidate.source_candidate_id,
             RiskCandidate.subject_type,
@@ -99,43 +102,14 @@ def _latest_candidate_subquery() -> Any:
             RiskCandidate.change_type,
             RiskCandidate.reason_summary,
             RiskCandidate.selected_at,
-            func.row_number()
-            .over(
-                partition_by=AlertCandidateMatch.alert_id,
-                order_by=(RiskCandidate.selected_at.desc(), RiskCandidate.id.desc()),
-            )
-            .label("candidate_rank"),
-        )
-        .join(RiskCandidate, RiskCandidate.id == AlertCandidateMatch.candidate_id)
-        .subquery("ranked_candidates")
-    )
-    return (
-        select(ranked).where(ranked.c.candidate_rank == 1).subquery("latest_candidate")
-    )
-
-
-def _summary_query(latest: Any) -> Select[tuple[Any, ...]]:
-    return (
-        select(
-            ReviewCase,
-            Repository,
-            DependabotAlert,
-            SecurityAdvisory,
-            latest.c.candidate_id,
-            latest.c.source_candidate_id,
-            latest.c.subject_type,
-            latest.c.subject_id,
-            latest.c.candidate_ghsa_id,
-            latest.c.cve_id,
-            latest.c.candidate_priority,
-            latest.c.change_type,
-            latest.c.reason_summary,
-            latest.c.selected_at,
         )
         .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
         .join(Repository, Repository.id == DependabotAlert.repository_id)
         .join(SecurityAdvisory, SecurityAdvisory.id == DependabotAlert.advisory_id)
-        .join(latest, latest.c.alert_id == ReviewCase.alert_id)
+        .join(
+            RiskCandidate,
+            RiskCandidate.id == ReviewCase.representative_candidate_id,
+        )
     )
 
 
@@ -207,8 +181,7 @@ def list_review_cases(
     page: int,
     page_size: int,
 ) -> ReviewCaseListResponse:
-    latest = _latest_candidate_subquery()
-    query = _summary_query(latest).where(
+    query = _summary_query().where(
         ReviewCase.organization_id == context.organization_id
     )
     if case_status is not CaseStatusFilter.ALL:
@@ -216,7 +189,7 @@ def list_review_cases(
     if priority is not None:
         query = query.where(ReviewCase.priority == priority.value)
     if change_type is not None:
-        query = query.where(latest.c.change_type == change_type)
+        query = query.where(RiskCandidate.change_type == change_type)
 
     total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
     direction = "asc" if order is SortOrder.ASC else "desc"
@@ -270,8 +243,7 @@ def _case_row(
             "요청한 조직 범위에 접근할 수 없습니다.",
         )
 
-    latest = _latest_candidate_subquery()
-    query = _summary_query(latest).where(ReviewCase.id == case_id)
+    query = _summary_query().where(ReviewCase.id == case_id)
     if lock:
         query = query.with_for_update(of=ReviewCase)
     row = session.execute(query).one_or_none()
@@ -319,11 +291,30 @@ def get_review_case(
             .where(GoldBatchCandidate.candidate_id == candidate.id)
             .order_by(GoldBatch.as_of.asc(), GoldBatch.id.asc())
         ).all()
-        evidence_rows = session.scalars(
-            select(CandidateEvidence)
+        evidence_rows = session.execute(
+            select(CandidateEvidence, GoldBatch)
+            .join(GoldBatch, GoldBatch.id == CandidateEvidence.batch_id)
             .where(CandidateEvidence.candidate_id == candidate.id)
-            .order_by(CandidateEvidence.observed_at.asc(), CandidateEvidence.id.asc())
+            .order_by(
+                CandidateEvidence.observed_at.asc(),
+                GoldBatch.source_generated_at.asc(),
+                CandidateEvidence.id.asc(),
+            )
         ).all()
+        unique_evidence: list[CandidateEvidence] = []
+        evidence_keys: set[tuple[object, ...]] = set()
+        for evidence, _batch in evidence_rows:
+            key = (
+                evidence.signal,
+                evidence.observed_at,
+                evidence.previous_value,
+                evidence.current_value,
+                evidence.source,
+            )
+            if key in evidence_keys:
+                continue
+            evidence_keys.add(key)
+            unique_evidence.append(evidence)
         candidate_details.append(
             CandidateDetail(
                 id=candidate.id,
@@ -361,7 +352,7 @@ def get_review_case(
                         source=evidence.source,
                         evidence_summary=evidence.evidence_summary,
                     )
-                    for evidence in evidence_rows
+                    for evidence in unique_evidence
                 ],
             )
         )

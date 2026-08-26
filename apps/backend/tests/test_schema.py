@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Engine, inspect, select
+from sqlalchemy import Engine, inspect, select, text
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from watchback_backend.db.models import Base
@@ -50,10 +50,18 @@ def test_metadata_contains_the_operational_schema() -> None:
     )
 
     review_case = Base.metadata.tables["review_cases"]
+    assert review_case.columns["representative_candidate_id"].nullable is False
+    assert review_case.columns["representative_batch_id"].nullable is False
     assert any(
         {column.name for column in constraint.columns} == {"alert_id"}
         for constraint in review_case.constraints
         if constraint.__class__.__name__ == "UniqueConstraint"
+    )
+    assert any(
+        {column.name for column in constraint.columns}
+        == {"representative_candidate_id", "representative_batch_id"}
+        for constraint in review_case.constraints
+        if constraint.__class__.__name__ == "ForeignKeyConstraint"
     )
 
     match = Base.metadata.tables["alert_candidate_matches"]
@@ -100,6 +108,10 @@ def test_migration_is_current(postgres_engine: Engine) -> None:
     assert set(inspect(postgres_engine).get_table_names()) == EXPECTED_TABLES | {
         "alembic_version"
     }
+    assert (
+        inspect(postgres_engine).get_table_comment("alert_candidate_matches")["text"]
+        == "Dependabot Alert와 Gold 위험 후보의 CVE·GHSA 매칭 결과"
+    )
     command.check(Config(Path(__file__).parents[1] / "alembic.ini"))
 
 
@@ -128,6 +140,47 @@ def test_gold_contract_migration_rejects_existing_gold_rows(
     finally:
         with postgres_engine.begin() as connection:
             connection.execute(Base.metadata.tables["gold_batches"].delete())
+        command.upgrade(config, "head")
+
+
+def test_case_representative_migration_rejects_existing_cases(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    case_id = uuid4()
+    command.downgrade(config, "0005")
+    try:
+        with postgres_engine.begin() as connection:
+            connection.execute(text("SET session_replication_role = replica"))
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO review_cases (
+                        id, organization_id, alert_id, status, priority,
+                        review_reason, opened_at, reopened_count
+                    ) VALUES (
+                        :id, :organization_id, :alert_id, 'open', 'high',
+                        'migration precondition', :opened_at, 0
+                    )
+                    """
+                ),
+                {
+                    "id": case_id,
+                    "organization_id": uuid4(),
+                    "alert_id": uuid4(),
+                    "opened_at": datetime.now(UTC),
+                },
+            )
+            connection.execute(text("SET session_replication_role = origin"))
+        with pytest.raises(ProgrammingError, match="대표 Candidate와 Batch"):
+            command.upgrade(config, "head")
+    finally:
+        with postgres_engine.begin() as connection:
+            connection.execute(text("SET session_replication_role = replica"))
+            connection.execute(
+                text("DELETE FROM review_cases WHERE id = :id"), {"id": case_id}
+            )
+            connection.execute(text("SET session_replication_role = origin"))
         command.upgrade(config, "head")
 
 
@@ -174,14 +227,14 @@ def test_repository_display_name_migration_backfills_existing_rows(
             )
             assert display_name == "migration-test-org/example"
             connection.execute(
-                tables["repositories"].delete().where(
-                    tables["repositories"].c.id == repository_id
-                )
+                tables["repositories"]
+                .delete()
+                .where(tables["repositories"].c.id == repository_id)
             )
             connection.execute(
-                tables["organizations"].delete().where(
-                    tables["organizations"].c.id == organization_id
-                )
+                tables["organizations"]
+                .delete()
+                .where(tables["organizations"].c.id == organization_id)
             )
     finally:
         command.upgrade(config, "head")
@@ -258,16 +311,22 @@ def test_dependabot_source_enum_migration_converts_existing_values(
 
         command.upgrade(config, "0003")
         with postgres_engine.begin() as connection:
-            assert connection.scalar(
-                select(tables["security_advisories"].c.severity).where(
-                    tables["security_advisories"].c.id == advisory_id
+            assert (
+                connection.scalar(
+                    select(tables["security_advisories"].c.severity).where(
+                        tables["security_advisories"].c.id == advisory_id
+                    )
                 )
-            ) == "medium"
-            assert connection.scalar(
-                select(tables["dependabot_alerts"].c.dependency_relationship).where(
-                    tables["dependabot_alerts"].c.id == alert_id
+                == "medium"
+            )
+            assert (
+                connection.scalar(
+                    select(tables["dependabot_alerts"].c.dependency_relationship).where(
+                        tables["dependabot_alerts"].c.id == alert_id
+                    )
                 )
-            ) == "transitive"
+                == "transitive"
+            )
             connection.execute(
                 tables["dependabot_alerts"].insert(),
                 {
@@ -294,16 +353,22 @@ def test_dependabot_source_enum_migration_converts_existing_values(
 
         command.downgrade(config, "0002")
         with postgres_engine.begin() as connection:
-            assert connection.scalar(
-                select(tables["security_advisories"].c.severity).where(
-                    tables["security_advisories"].c.id == advisory_id
+            assert (
+                connection.scalar(
+                    select(tables["security_advisories"].c.severity).where(
+                        tables["security_advisories"].c.id == advisory_id
+                    )
                 )
-            ) == "moderate"
-            assert connection.scalar(
-                select(tables["dependabot_alerts"].c.dependency_relationship).where(
-                    tables["dependabot_alerts"].c.id == alert_id
+                == "moderate"
+            )
+            assert (
+                connection.scalar(
+                    select(tables["dependabot_alerts"].c.dependency_relationship).where(
+                        tables["dependabot_alerts"].c.id == alert_id
+                    )
                 )
-            ) == "indirect"
+                == "indirect"
+            )
             auto_row = connection.execute(
                 select(
                     tables["dependabot_alerts"].c.state,
@@ -315,24 +380,24 @@ def test_dependabot_source_enum_migration_converts_existing_values(
             assert auto_row.dismissed_at == now
             assert auto_row.dependency_relationship is None
             connection.execute(
-                tables["dependabot_alerts"].delete().where(
-                    tables["dependabot_alerts"].c.repository_id == repository_id
-                )
+                tables["dependabot_alerts"]
+                .delete()
+                .where(tables["dependabot_alerts"].c.repository_id == repository_id)
             )
             connection.execute(
-                tables["security_advisories"].delete().where(
-                    tables["security_advisories"].c.id == advisory_id
-                )
+                tables["security_advisories"]
+                .delete()
+                .where(tables["security_advisories"].c.id == advisory_id)
             )
             connection.execute(
-                tables["repositories"].delete().where(
-                    tables["repositories"].c.id == repository_id
-                )
+                tables["repositories"]
+                .delete()
+                .where(tables["repositories"].c.id == repository_id)
             )
             connection.execute(
-                tables["organizations"].delete().where(
-                    tables["organizations"].c.id == organization_id
-                )
+                tables["organizations"]
+                .delete()
+                .where(tables["organizations"].c.id == organization_id)
             )
     finally:
         command.upgrade(config, "head")
@@ -488,6 +553,8 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
                 "id": case_id,
                 "organization_id": organization_a,
                 "alert_id": alert_id,
+                "representative_candidate_id": candidate_id,
+                "representative_batch_id": batch_id,
                 "status": "open",
                 "priority": "high",
                 "review_reason": "New candidate",
@@ -562,12 +629,22 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
                 "id": uuid4(),
                 "organization_id": organization_a,
                 "alert_id": alert_id,
+                "representative_candidate_id": candidate_id,
+                "representative_batch_id": batch_id,
                 "status": "open",
                 "priority": "high",
                 "review_reason": "Duplicate case",
                 "opened_at": now,
                 "reopened_count": 0,
             },
+        )
+
+    with expect_integrity_error(postgres_engine) as connection:
+        connection.execute(
+            tables["review_cases"]
+            .update()
+            .where(tables["review_cases"].c.id == case_id)
+            .values(representative_batch_id=uuid4())
         )
 
     with expect_integrity_error(postgres_engine) as connection:
