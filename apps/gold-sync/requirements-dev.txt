@@ -1,0 +1,4 @@
+-r requirements.txt
+alembic==1.16.5
+pytest==8.4.1
+testcontainers[postgres]==4.15.0

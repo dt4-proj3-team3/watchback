@@ -4,7 +4,7 @@
 - 날짜: 2026-08-19
 - 관련 이슈/PR: #85
 - 대체하는 ADR:
-- 대체된 ADR:
+- 대체된 ADR: Candidate의 CVE-only 연결 결정은 ADR-0004로 대체됨
 
 ## Context
 

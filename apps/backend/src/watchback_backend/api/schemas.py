@@ -27,6 +27,18 @@ class Priority(StrEnum):
     CRITICAL = "critical"
 
 
+class CandidatePriority(StrEnum):
+    P0 = "P0"
+    P1 = "P1"
+    P2 = "P2"
+    P3 = "P3"
+
+
+class CandidateSubjectType(StrEnum):
+    CVE = "CVE"
+    GHSA = "GHSA"
+
+
 class AlertState(StrEnum):
     OPEN = "open"
     DISMISSED = "dismissed"
@@ -148,8 +160,11 @@ class AdvisorySummary(ContractModel):
 class CandidateSummary(ContractModel):
     id: UUID
     source_candidate_id: str
-    cve_id: str
-    priority: Priority
+    subject_type: CandidateSubjectType
+    subject_id: str
+    ghsa_id: str
+    cve_id: str | None
+    priority: CandidatePriority
     change_type: str
     reason_summary: str
     selected_at: datetime
@@ -168,12 +183,14 @@ class CandidateDelivery(ContractModel):
 class EvidenceResponse(ContractModel):
     id: UUID
     source_evidence_id: str
+    batch_id: UUID
     signal: str
     value_type: EvidenceValueType
     previous_value: str | None
-    current_value: str
+    current_value: str | None
     observed_at: datetime
     source: str
+    evidence_summary: str
 
 
 class CandidateDetail(CandidateSummary):
@@ -355,8 +372,11 @@ LIST_EXAMPLE = {
             "latest_candidate": {
                 "id": "40000000-0000-0000-0000-000000000001",
                 "source_candidate_id": "candidate-2026-08-20-001",
+                "subject_type": "CVE",
+                "subject_id": "CVE-2026-12345",
+                "ghsa_id": "GHSA-xxxx-yyyy-zzzz",
                 "cve_id": "CVE-2026-12345",
-                "priority": "critical",
+                "priority": "P0",
                 "change_type": "kev_added",
                 "reason_summary": "KEV에 새로 등재되었습니다.",
                 "selected_at": "2026-08-20T00:30:00Z",
@@ -403,12 +423,14 @@ DETAIL_EXAMPLE = {
                 {
                     "id": "60000000-0000-0000-0000-000000000001",
                     "source_evidence_id": "evidence-2026-08-20-001",
+                    "batch_id": "50000000-0000-0000-0000-000000000001",
                     "signal": "kev",
                     "value_type": "boolean",
                     "previous_value": "false",
                     "current_value": "true",
                     "observed_at": "2026-08-20T00:20:00Z",
                     "source": "cisa_kev",
+                    "evidence_summary": "CISA KEV에 새로 등재되었습니다.",
                 }
             ],
         }

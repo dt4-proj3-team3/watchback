@@ -167,8 +167,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
             RiskCandidate(
                 id=ids["candidate_old"],
                 source_candidate_id="candidate-old",
+                subject_type="CVE",
+                subject_id="CVE-2026-0001",
+                ghsa_id="GHSA-aaaa-bbbb-0001",
                 cve_id="CVE-2026-0001",
-                priority="high",
+                priority="P1",
                 change_type="epss_rise",
                 reason_summary="EPSS 상승",
                 selected_at=NOW - timedelta(days=2),
@@ -176,8 +179,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
             RiskCandidate(
                 id=ids["candidate_latest"],
                 source_candidate_id="candidate-latest",
+                subject_type="CVE",
+                subject_id="CVE-2026-0001",
+                ghsa_id="GHSA-aaaa-bbbb-0001",
                 cve_id="CVE-2026-0001",
-                priority="critical",
+                priority="P0",
                 change_type="kev_added",
                 reason_summary="KEV 등재",
                 selected_at=NOW - timedelta(days=1),
@@ -185,8 +191,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
             RiskCandidate(
                 id=ids["candidate_high"],
                 source_candidate_id="candidate-high",
-                cve_id="CVE-2026-0002",
-                priority="high",
+                subject_type="GHSA",
+                subject_id="GHSA-4444-5555-6666",
+                ghsa_id="GHSA-4444-5555-6666",
+                cve_id=None,
+                priority="P1",
                 change_type="epss_rise",
                 reason_summary="EPSS 상승",
                 selected_at=NOW,
@@ -194,8 +203,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
             RiskCandidate(
                 id=ids["unlinked_candidate"],
                 source_candidate_id="candidate-unlinked",
+                subject_type="CVE",
+                subject_id="CVE-2026-9999",
+                ghsa_id="GHSA-aaaa-bbbb-9999",
                 cve_id="CVE-2026-9999",
-                priority="low",
+                priority="P3",
                 change_type="other",
                 reason_summary="미연결",
                 selected_at=NOW,
@@ -299,8 +311,14 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     payload_hash="a" * 64,
                     received_at=NOW - timedelta(days=3),
                 ),
+            ]
+        )
+        session.flush()
+        session.add_all(
+            [
                 CandidateEvidence(
                     source_evidence_id="evidence-new",
+                    batch_id=ids["batch_new"],
                     candidate_id=ids["candidate_latest"],
                     signal="kev",
                     value_type="boolean",
@@ -308,9 +326,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     current_value="true",
                     observed_at=NOW - timedelta(hours=10),
                     source="cisa",
+                    evidence_summary="KEV 등재",
                 ),
                 CandidateEvidence(
                     source_evidence_id="evidence-old",
+                    batch_id=ids["batch_old"],
                     candidate_id=ids["candidate_latest"],
                     signal="epss",
                     value_type="decimal",
@@ -318,6 +338,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     current_value="0.5",
                     observed_at=NOW - timedelta(days=2),
                     source="first",
+                    evidence_summary="EPSS 상승",
                 ),
             ]
         )
@@ -421,6 +442,8 @@ def test_detail_returns_ordered_history_and_nullable_advisory(
         f"/api/v1/review-cases/{api_fixture['case_high']}", headers=headers(api_fixture)
     ).json()
     assert nullable["advisory"]["cve_id"] is None
+    assert nullable["latest_candidate"]["subject_type"] == "GHSA"
+    assert nullable["latest_candidate"]["cve_id"] is None
 
 
 def test_activity_creation_transition_link_and_detail_mapping(

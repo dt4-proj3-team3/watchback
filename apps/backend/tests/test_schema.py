@@ -9,7 +9,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import Engine, inspect, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from watchback_backend.db.models import Base
 
@@ -63,9 +63,11 @@ def test_metadata_contains_the_operational_schema() -> None:
     }
 
     candidate = Base.metadata.tables["risk_candidates"]
-    assert "ghsa_id" not in candidate.columns
+    assert candidate.columns["ghsa_id"].nullable is False
+    assert candidate.columns["subject_type"].nullable is False
+    assert candidate.columns["subject_id"].nullable is False
     assert "observed_at" not in candidate.columns
-    assert candidate.columns["cve_id"].nullable is False
+    assert candidate.columns["cve_id"].nullable is True
     assert any(
         index.columns.keys() == ["cve_id"] and index.unique is False
         for index in candidate.indexes
@@ -78,6 +80,12 @@ def test_metadata_contains_the_operational_schema() -> None:
     batch = Base.metadata.tables["gold_batches"]
     assert "record_count" not in batch.columns
     assert batch.columns["candidate_count"].nullable is False
+    assert batch.columns["ds_run_id"].nullable is True
+
+    evidence = Base.metadata.tables["candidate_evidence"]
+    assert evidence.columns["batch_id"].nullable is False
+    assert evidence.columns["current_value"].nullable is True
+    assert evidence.columns["evidence_summary"].nullable is False
 
     uncommented_columns = [
         f"{table.name}.{column.name}"
@@ -93,6 +101,34 @@ def test_migration_is_current(postgres_engine: Engine) -> None:
         "alembic_version"
     }
     command.check(Config(Path(__file__).parents[1] / "alembic.ini"))
+
+
+def test_gold_contract_migration_rejects_existing_gold_rows(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    command.downgrade(config, "0003")
+    try:
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                Base.metadata.tables["gold_batches"].insert(),
+                {
+                    "id": uuid4(),
+                    "source_batch_id": "migration-precondition",
+                    "as_of": datetime.now(UTC),
+                    "source_generated_at": datetime.now(UTC),
+                    "policy_version": "ver.1",
+                    "schema_version": "1.0",
+                    "candidate_count": 0,
+                    "synced_at": datetime.now(UTC),
+                },
+            )
+        with pytest.raises(ProgrammingError, match="Gold 계약 upgrade"):
+            command.upgrade(config, "head")
+    finally:
+        with postgres_engine.begin() as connection:
+            connection.execute(Base.metadata.tables["gold_batches"].delete())
+        command.upgrade(config, "head")
 
 
 def test_repository_display_name_migration_backfills_existing_rows(
@@ -402,25 +438,14 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
             {
                 "id": candidate_id,
                 "source_candidate_id": "candidate-1",
+                "subject_type": "CVE",
+                "subject_id": "CVE-2026-12345",
+                "ghsa_id": "GHSA-example-candidate",
                 "cve_id": "CVE-2026-12345",
-                "priority": "high",
+                "priority": "P1",
                 "change_type": "kev_added",
                 "reason_summary": "KEV catalog addition",
                 "selected_at": now,
-            },
-        )
-        connection.execute(
-            tables["candidate_evidence"].insert(),
-            {
-                "id": uuid4(),
-                "source_evidence_id": "evidence-1",
-                "candidate_id": candidate_id,
-                "signal": "kev",
-                "value_type": "boolean",
-                "previous_value": "false",
-                "current_value": "true",
-                "observed_at": now,
-                "source": "cisa-kev",
             },
         )
         connection.execute(
@@ -430,6 +455,22 @@ def test_representative_references_and_duplicates(postgres_engine: Engine) -> No
                 "candidate_id": candidate_id,
                 "payload_hash": "a" * 64,
                 "received_at": now,
+            },
+        )
+        connection.execute(
+            tables["candidate_evidence"].insert(),
+            {
+                "id": uuid4(),
+                "source_evidence_id": "evidence-1",
+                "batch_id": batch_id,
+                "candidate_id": candidate_id,
+                "signal": "kev",
+                "value_type": "boolean",
+                "previous_value": "false",
+                "current_value": "true",
+                "observed_at": now,
+                "source": "cisa-kev",
+                "evidence_summary": "CISA KEV 등재",
             },
         )
         connection.execute(
