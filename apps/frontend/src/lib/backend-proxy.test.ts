@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { proxyBackendGet } from './backend-proxy';
+import { proxyBackendGet, proxyBackendPost } from './backend-proxy';
 
 const ORGANIZATION_ID = 'ff178e49-d218-50b7-bf56-ac3513330b99';
 const USER_ID = '7889d975-3d64-536f-8740-3d0a28ee3a1d';
@@ -12,7 +12,10 @@ function configureBackend() {
 }
 
 describe('backend proxy', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
 
   it('forwards the development context and preserves a JSON response', async () => {
     configureBackend();
@@ -38,6 +41,32 @@ describe('backend proxy', () => {
     const response = await proxyBackendGet('/api/v1/review-cases/missing');
     expect(response.status).toBe(404);
     expect(await response.json()).toMatchObject({ code: 'review_case_not_found' });
+  });
+
+  it('forwards activity JSON and preserves the created response', async () => {
+    configureBackend();
+    const payload = {
+      activity_type: 'risk_accepted',
+      candidate_id: '10000000-0000-0000-0000-000000000001',
+      note: '위험을 수용합니다.',
+    };
+    const fetchMock = vi.fn(async (_url, init) => {
+      expect(init.method).toBe('POST');
+      expect(init.headers['Content-Type']).toBe('application/json');
+      expect(JSON.parse(init.body)).toEqual(payload);
+      return new Response(JSON.stringify({ case_status: 'resolved', activity: { id: 'activity-id' } }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await proxyBackendPost(
+      '/api/v1/review-cases/case-id/activities',
+      payload,
+    );
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({ case_status: 'resolved' });
   });
 
   it('sanitizes missing configuration, transport errors, and non-JSON responses', async () => {

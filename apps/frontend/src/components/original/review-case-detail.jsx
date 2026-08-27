@@ -7,12 +7,12 @@ export function ReviewCaseDetail({ values }) {
     {values.isDetailView && (
       <>
         <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:28px 32px 96px")}>
-          <button type="button" style={toReactStyle("display:flex;align-items:center;gap:6px;font:13px inherit;color:#5B6058;cursor:pointer;margin-bottom:20px;width:fit-content;background:none;border:none;padding:0")} onClick={values.backToList}>
+          <button type="button" aria-label="이전 화면으로" style={toReactStyle("display:flex;align-items:center;gap:6px;font:13px inherit;color:#5B6058;cursor:pointer;margin-bottom:20px;width:fit-content;background:none;border:none;padding:0")} onClick={values.backToPrevious}>
             <span>
               {"←"}
             </span>
             <span>
-              {"목록으로"}
+              {"이전 화면으로"}
             </span>
           </button>
           <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:24px 26px;margin-bottom:16px")}>
@@ -95,14 +95,30 @@ export function ReviewCaseDetail({ values }) {
               </div>
             </div>
           </div>
-          {values.showPrUnavailableNotice && (
-            <div style={toReactStyle("background:#FCEFE1;border:1px solid #E9C99A;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#9A5A16")}>
-              {"PR 생성 API 연동 전입니다."}
-            </div>
-          )}
-          {values.showPreviewNotice && (
-            <div style={toReactStyle("background:#EEF0EE;border:1px solid #D2D5CD;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#5B6058")}>
-              {"검토 활동 연동은 후속 구현 범위입니다."}
+          {values.showActionMenu && (
+            <div style={toReactStyle("background:#FFFFFF;border:1px solid #D2D5CD;border-radius:10px;padding:16px 18px;margin-bottom:16px")}>
+              <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px")}>
+                <div>
+                  <div style={toReactStyle("font-size:13px;font-weight:700;margin-bottom:3px")}>{"조치 방법 선택"}</div>
+                  <div style={toReactStyle("font-size:11.5px;color:#8B9086")}>{"외부 협업 도구에서 이어갈 작업을 선택하세요."}</div>
+                </div>
+                <button style={toReactStyle("font-size:12px;font-family:inherit;color:#5B6058;background:none;border:none;cursor:pointer")} onClick={values.closeActionMenu}>{"닫기"}</button>
+              </div>
+              <div style={toReactStyle("display:grid;grid-template-columns:1fr 1fr;gap:10px")}>
+                <button style={toReactStyle("text-align:left;font-family:inherit;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:8px;padding:12px 14px;cursor:pointer")} onClick={values.createIssue}>
+                  <div style={toReactStyle("font-size:12.5px;font-weight:700;color:#1B1E1A;margin-bottom:3px")}>{"GitHub Issue 생성"}</div>
+                  <div style={toReactStyle("font-size:11.5px;color:#8B9086")}>{"담당자가 검토하고 수정할 업무를 만듭니다."}</div>
+                </button>
+                <button style={toReactStyle("text-align:left;font-family:inherit;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:8px;padding:12px 14px;cursor:pointer")} onClick={values.createPullRequest}>
+                  <div style={toReactStyle("font-size:12.5px;font-weight:700;color:#1B1E1A;margin-bottom:3px")}>{"업데이트 PR 생성"}</div>
+                  <div style={toReactStyle("font-size:11.5px;color:#8B9086")}>{"수정 버전으로 의존성을 업데이트합니다."}</div>
+                </button>
+              </div>
+              {values.actionNotice && (
+                <div role="status" style={toReactStyle("background:#FCEFE1;border:1px solid #E9C99A;border-radius:7px;padding:9px 12px;margin-top:10px;font-size:12px;color:#9A5A16")}>
+                  {`${values.actionNotice}`}
+                </div>
+              )}
             </div>
           )}
           <div style={toReactStyle("background:#FFFFFF;border-left:3px solid #8B9086;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:12.5px;line-height:1.6;color:#5B6058")}>
@@ -134,20 +150,24 @@ export function ReviewCaseDetail({ values }) {
                       {group.evidence.map((ev) => (
                       <div key={ev.id} style={toReactStyle("padding:11px 14px;background:#F5F6F3;border-radius:8px")}>
                         <div style={toReactStyle("display:flex;align-items:center;gap:12px;flex-wrap:wrap")}>
-                          <span style={toReactStyle("font-size:12px;font-weight:600;color:#1B1E1A;width:120px;flex:none")}>
+                          <span style={toReactStyle("font-size:12px;font-weight:600;color:#1B1E1A;width:170px;flex:none;white-space:nowrap")}>
                             {`${ev.signalLabel}`}
                           </span>
-                          <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#8B9086")}>
-                            {`${ev.previousValueLabel}`}
-                          </span>
-                          <span style={toReactStyle("color:#D2D5CD")}>
-                            {"→"}
-                          </span>
-                          <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1B1E1A;font-weight:600")}>
-                            {`${ev.currentValueLabel}`}
-                          </span>
-                          <span style={toReactStyle("font-size:11px;color:#8B9086;margin-left:auto")}>
-                            {`${ev.observedLabel} · ${ev.sourceLabel}`}
+                          {ev.observedLabel && (
+                            <span style={toReactStyle("font-size:11px;color:#8B9086")}>
+                              {`${ev.observedLabel}`}
+                            </span>
+                          )}
+                          <span className="watchback-evidence-values" style={toReactStyle("display:flex;align-items:center;gap:12px;margin-left:auto;white-space:nowrap")}>
+                            <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#8B9086")}>
+                              {`${ev.previousValueLabel}`}
+                            </span>
+                            <span style={toReactStyle("color:#D2D5CD")}>
+                              {"→"}
+                            </span>
+                            <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1B1E1A;font-weight:600")}>
+                              {`${ev.currentValueLabel}`}
+                            </span>
                           </span>
                         </div>
                         <div style={toReactStyle("font-size:12.5px;color:#5B6058;line-height:1.5;margin-top:6px")}>
@@ -161,11 +181,10 @@ export function ReviewCaseDetail({ values }) {
                 </div>
               </div>
               <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px")}>
-                <div style={toReactStyle("font-size:14px;font-weight:700;margin-bottom:14px")}>
-                  {"검토 활동"}
-                  <span style={toReactStyle("font-size:10.5px;font-weight:600;color:#8B9086;background:#EEF0EE;border-radius:20px;padding:3px 8px;margin-left:8px")}>
-                    {"입력 기능 미구현"}
-                  </span>
+                <div style={toReactStyle("margin-bottom:14px")}>
+                  <div style={toReactStyle("font-size:14px;font-weight:700")}>
+                    {"검토 활동"}
+                  </div>
                 </div>
                 {values.showActivityForm && (
                   <>
@@ -173,9 +192,9 @@ export function ReviewCaseDetail({ values }) {
                       <div style={toReactStyle("font-size:12.5px;font-weight:600;margin-bottom:8px")}>
                         {`${values.activityFormTitle}`}
                       </div>
-                      <textarea style={toReactStyle("width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.6;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:8px;padding:10px 12px;resize:vertical;min-height:56px")} placeholder="검토 근거나 조치 내용을 기록하세요" value={values.noteDraft} onChange={values.onNoteChange}></textarea>
+                      <textarea aria-label="활동 메모" style={toReactStyle("width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.6;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:8px;padding:10px 12px;resize:vertical;min-height:56px")} placeholder="검토 근거나 판단 사유를 입력하세요" value={values.noteDraft} onChange={values.onNoteChange} disabled={values.isSubmittingActivity}></textarea>
                       <div style={toReactStyle("display:flex;align-items:center;gap:8px;margin-top:10px")}>
-                        <select style={toReactStyle("font-size:12px;font-family:inherit;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:6px 8px")} value={values.linkType} onChange={values.onLinkTypeChange}>
+                        <select aria-label="외부 링크 유형" style={toReactStyle("font-size:12px;font-family:inherit;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:6px 8px")} value={values.linkType} onChange={values.onLinkTypeChange} disabled={values.isSubmittingActivity}>
                           <option value="">
                             {"외부 링크 없음"}
                           </option>
@@ -186,14 +205,19 @@ export function ReviewCaseDetail({ values }) {
                             {"GitHub PR 링크"}
                           </option>
                         </select>
-                        <input style={toReactStyle("flex:1;font-size:12px;font-family:inherit;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:7px 10px")} placeholder="https://github.com/org/repo/issues/21" value={values.linkUrl} onChange={values.onLinkUrlChange} />
-                        <button style={toReactStyle("font-size:12px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;white-space:nowrap")} onClick={values.submitActivity}>
-                          {"기록하기"}
+                        <input aria-label="외부 링크 URL" style={toReactStyle("flex:1;font-size:12px;font-family:inherit;color:#1B1E1A;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:7px 10px")} placeholder="https://github.com/org/repo/issues/21" value={values.linkUrl} onChange={values.onLinkUrlChange} disabled={values.isSubmittingActivity} />
+                        <button style={toReactStyle("font-size:12px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;white-space:nowrap")} onClick={values.submitActivity} disabled={values.isSubmittingActivity}>
+                          {values.isSubmittingActivity ? "기록 중…" : "기록하기"}
                         </button>
-                        <button style={toReactStyle("font-size:12px;font-family:inherit;color:#5B6058;background:none;border:none;cursor:pointer")} onClick={values.cancelActivityForm}>
+                        <button style={toReactStyle("font-size:12px;font-family:inherit;color:#5B6058;background:none;border:none;cursor:pointer")} onClick={values.cancelActivityForm} disabled={values.isSubmittingActivity}>
                           {"취소"}
                         </button>
                       </div>
+                      {values.activityError && (
+                        <div role="alert" style={toReactStyle("font-size:12px;color:#A6321B;margin-top:8px")}>
+                          {`${values.activityError}`}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

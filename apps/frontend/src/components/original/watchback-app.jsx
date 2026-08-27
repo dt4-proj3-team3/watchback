@@ -11,24 +11,30 @@ import { ReviewDataState } from './review-data-state';
 import { Settings } from './settings';
 
 const PRIORITY_META = {
-  critical: { label: '치명적', bg: '#FBEAE6', text: '#A6321B', border: '#E3B6AA', dot: '#C7402A' },
-  high:     { label: '높음',   bg: '#FCEFE1', text: '#9A5A16', border: '#E9C99A', dot: '#C7752A' },
-  medium:   { label: '보통',   bg: '#FBF3D9', text: '#8A6A05', border: '#E4D28C', dot: '#B08900' },
-  low:      { label: '낮음',   bg: '#EEF0EE', text: '#5A6058', border: '#D2D5CD', dot: '#8B9086' },
+  critical: { label: 'Critical', bg: '#FBEAE6', text: '#A6321B', border: '#E3B6AA', dot: '#C7402A' },
+  high:     { label: 'High',     bg: '#FCEFE1', text: '#9A5A16', border: '#E9C99A', dot: '#C7752A' },
+  medium:   { label: 'Medium',   bg: '#FBF3D9', text: '#8A6A05', border: '#E4D28C', dot: '#B08900' },
+  low:      { label: 'Low',      bg: '#EEF0EE', text: '#5A6058', border: '#D2D5CD', dot: '#8B9086' },
 };
 const CHANGE_TYPE_LABEL = {
   kev_added: 'KEV 신규 등재',
+  kev_new: 'KEV 신규 등재',
   epss_spike: 'EPSS 급등',
   epss_rise_d30: 'EPSS 급등',
   epss_top5_entry_d30: 'EPSS 상위 5% 진입',
   patch_available: '패치 버전 등장',
   combined_signal: '다중 신호 동시 변화',
 };
+
+function formatChangeType(value) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return CHANGE_TYPE_LABEL[normalized] || value;
+}
 const SIGNAL_LABEL = {
   kev: 'CISA KEV 등재',
   epss: 'EPSS 점수',
-  epss_score_d30: 'EPSS 악용 가능성',
-  epss_percentile_d30: '전체 CVE 상대 순위',
+  epss_score_d30: '향후 30일 악용 가능성',
+  epss_percentile_d30: '전체 CVE 내 EPSS 순위',
   patch: '패치 버전',
   cvss: 'CVSS 점수',
   advisory_severity: '권고 심각도',
@@ -56,7 +62,7 @@ function fmtEvidenceValue(value, valueType, signal) {
   const number = Number(value);
   if (!Number.isFinite(number)) return value;
   if (signal === 'epss_percentile_d30') {
-    return `${(number * 100).toFixed(1).replace(/\.0$/, '')} 백분위`;
+    return `상위 ${((1 - number) * 100).toFixed(1).replace(/\.0$/, '')}%`;
   }
   if (signal === 'epss_score_d30') {
     const percent = number * 100;
@@ -66,28 +72,46 @@ function fmtEvidenceValue(value, valueType, signal) {
   return number.toFixed(4).replace(/\.?0+$/, '');
 }
 
-function fmtEvidenceReason(reason, signal, currentValue) {
+function fmtEvidenceReason(reason, signal, previousValue, currentValue) {
+  if (signal === 'kev' && previousValue === 'false' && currentValue === 'true') {
+    return 'CISA에서 실제 악용 사례가 확인되었습니다.';
+  }
+  if (signal === 'epss_score_d30') {
+    const previous = Number(previousValue);
+    const current = Number(currentValue);
+    if (Number.isFinite(previous) && Number.isFinite(current)) {
+      const delta = (current - previous) * 100;
+      return `30일 전보다 ${delta.toFixed(1).replace(/\.0$/, '')}%p 상승했습니다.`;
+    }
+  }
   if (signal === 'epss_percentile_d30') {
+    const previous = Number(previousValue);
     const percentile = Number(currentValue);
     if (Number.isFinite(percentile)) {
+      if (Number.isFinite(previous) && previous < 0.95 && percentile >= 0.95) {
+        return '상위 5% 구간에 진입했습니다.';
+      }
       return `전체 CVE 중 상위 ${((1 - percentile) * 100).toFixed(1).replace(/\.0$/, '')}%에 해당합니다.`;
     }
   }
-  return reason.replace(/^\d{4}-\d{2}-\d{2}\s+/, '');
+  return String(reason ?? '').replace(/^\d{4}[-.]\d{2}[-.]\d{2}\s+/, '');
 }
 
 function formatReviewReason(reason) {
   const match = reason.match(/^(\d{4})-(\d{2})-(\d{2})\s+(.+)$/);
-  if (!match) return { dateLabel: null, text: reason };
-  return { dateLabel: `${match[1]}.${match[2]}.${match[3]}`, text: match[4] };
+  const simplify = (text) => text.replace('EPSS D-30 급상승 조건', 'EPSS 급상승 조건');
+  if (!match) return { dateLabel: null, text: simplify(reason) };
+  return { dateLabel: `${match[1]}.${match[2]}.${match[3]}`, text: simplify(match[4]) };
 }
 
 function badgeStyle(meta) {
   return `font-size:11px;font-weight:600;color:${meta.text};background:${meta.bg};border-radius:20px;padding:3px 9px;white-space:nowrap`;
 }
 
-function evidenceTags(evidence = []) {
-  const hasKevAdded = evidence.some(item => item.signal === 'kev' && item.previous_value === 'false' && item.current_value === 'true');
+const KEV_BADGE = { label: 'KEV', style: 'font-size:11px;font-weight:600;color:#A6321B;background:#FBEAE6;border-radius:5px;padding:2px 7px;white-space:nowrap' };
+
+function evidenceTags(evidence = [], isKev = false) {
+  const hasKevAdded = isKev || evidence.some(item => item.signal === 'kev' && item.current_value === 'true');
   const hasEpssSpike = evidence.some(item => item.signal === 'epss_score_d30' && Number(item.current_value) > Number(item.previous_value));
   const hasTopFiveEntry = evidence.some(item => (
     item.signal === 'epss_percentile_d30' &&
@@ -97,7 +121,7 @@ function evidenceTags(evidence = []) {
 
   const tags = [];
   if (hasKevAdded) {
-    tags.push({ label: 'KEV 등재', style: 'font-size:11px;font-weight:600;color:#A6321B;background:#FBEAE6;border-radius:5px;padding:2px 7px;white-space:nowrap' });
+    tags.push(KEV_BADGE);
   }
   if (hasEpssSpike) {
     tags.push({ label: 'EPSS 급등', style: 'font-size:11px;font-weight:600;color:#2F8F5B;background:#E7F3EC;border-radius:5px;padding:2px 7px;white-space:nowrap' });
@@ -108,18 +132,24 @@ function evidenceTags(evidence = []) {
   return tags.slice(0, 2);
 }
 
-function latestCandidateTags(candidate) {
+function latestCandidateTags(candidate, isKev = false) {
   if (!candidate) return [];
   const labels = {
-    kev_added: 'KEV 등재',
     epss_spike: 'EPSS 급등',
     epss_rise_d30: 'EPSS 급등',
     epss_top5_entry_d30: '상위 5%',
     patch_available: '패치 등장',
     combined_signal: '다중 신호',
   };
-  const label = labels[candidate.change_type];
-  return label ? [{ label, style: 'font-size:11px;font-weight:600;color:#2F8F5B;background:#E7F3EC;border-radius:5px;padding:2px 7px;white-space:nowrap' }] : [];
+  const changeType = String(candidate.change_type ?? '').toLowerCase();
+  const tags = isKev || changeType === 'kev_added' || changeType === 'kev_new'
+    ? [KEV_BADGE]
+    : [];
+  const label = labels[changeType];
+  if (label) {
+    tags.push({ label, style: 'font-size:11px;font-weight:600;color:#2F8F5B;background:#E7F3EC;border-radius:5px;padding:2px 7px;white-space:nowrap' });
+  }
+  return tags.slice(0, 2);
 }
 
 export function filterAndSortCases(cases, filters, now = Date.now()) {
@@ -148,7 +178,11 @@ class WatchbackAppView extends Component {
     noteDraft: '',
     linkType: '',
     linkUrl: '',
-    showPrUnavailableNotice: false,
+    activityError: '',
+    isSubmittingActivity: false,
+    justAddedActivity: false,
+    showActionMenu: false,
+    actionNotice: '',
     cases: this.props.initialCases,
     repoImportanceOverrides: {},
     policyMatrix: {
@@ -168,13 +202,12 @@ class WatchbackAppView extends Component {
         view: this.props.initialView,
         selectedId: this.props.initialSelectedId,
         showActivityForm: false,
-        showPrUnavailableNotice: false,
+        showActionMenu: false,
       });
     }
   }
 
   componentWillUnmount() {
-    clearTimeout(this.prNoticeTimer);
     clearTimeout(this.previewNoticeTimer);
   }
 
@@ -183,6 +216,7 @@ class WatchbackAppView extends Component {
     const im = PRIORITY_META[c.repository.importance];
     const sm = PRIORITY_META[c.advisory.severity];
     const reviewReason = formatReviewReason(c.review_reason);
+    const detailedEvidenceTags = evidenceTags(c.evidence, c.is_kev);
     return {
       ...c,
       repoName: c.repository.display_name,
@@ -194,14 +228,17 @@ class WatchbackAppView extends Component {
       importanceBadgeStyle: badgeStyle(im),
       severityLabel: sm.label,
       severityBadgeStyle: badgeStyle(sm),
-      changeTypeLabel: CHANGE_TYPE_LABEL[c.latest_candidate.change_type] || c.latest_candidate.change_type,
-      evidenceTags: evidenceTags(c.evidence).length > 0 ? evidenceTags(c.evidence) : latestCandidateTags(c.latest_candidate),
+      changeTypeLabel: formatChangeType(c.latest_candidate.change_type),
+      evidenceTags: detailedEvidenceTags.length > 0
+        ? detailedEvidenceTags
+        : latestCandidateTags(c.latest_candidate, c.is_kev),
       reviewReasonLabel: reviewReason.text,
       reviewReasonDateLabel: reviewReason.dateLabel,
       isResolved: c.status === 'resolved',
       isReopened: c.reopened_count > 0,
       openedLabel: fmtDate(c.opened_at),
       updatedLabel: fmtDate(c.updated_at),
+      hasDistinctUpdatedDate: fmtDate(c.opened_at) !== fmtDate(c.updated_at),
       onOpen: () => this.openCase(c.id),
     };
   }
@@ -210,8 +247,8 @@ class WatchbackAppView extends Component {
     this.props.router.push(`/review-cases/${id}`);
   }
 
-  backToList() {
-    this.props.router.push('/review-cases');
+  backToPrevious() {
+    this.props.router.back();
   }
 
   goToDashboard() { this.props.router.push('/dashboard'); }
@@ -226,15 +263,38 @@ class WatchbackAppView extends Component {
   setPriorityFilter(v) { this.setState(s => ({ filters: { ...s.filters, priority: v } })); }
   setChangeTypeFilter(v) { this.setState(s => ({ filters: { ...s.filters, changeType: v } })); }
   setSort(v) { this.setState(s => ({ filters: { ...s.filters, sort: v } })); }
-  openActivityForm(kind) { this.setState({ showActivityForm: true, activityKind: kind, noteDraft: '', linkType: '', linkUrl: '' }); }
-  cancelActivityForm() { this.setState({ showActivityForm: false, activityKind: null }); }
-
-  showPrUnavailableNotice() {
-    this.setState({ showPrUnavailableNotice: true });
-    clearTimeout(this.prNoticeTimer);
-    this.prNoticeTimer = setTimeout(() => this.setState({ showPrUnavailableNotice: false }), 3000);
+  openActivityForm(kind) {
+    this.setState({
+      showActivityForm: true,
+      showActionMenu: false,
+      actionNotice: '',
+      activityKind: kind,
+      noteDraft: '',
+      linkType: '',
+      linkUrl: '',
+      activityError: '',
+      justAddedActivity: false,
+    });
+  }
+  cancelActivityForm() {
+    if (this.state.isSubmittingActivity) return;
+    this.setState({ showActivityForm: false, activityKind: null, activityError: '' });
   }
 
+  openActionMenu() {
+    this.setState({ showActionMenu: true, showActivityForm: false, actionNotice: '' });
+  }
+
+  closeActionMenu() {
+    this.setState({ showActionMenu: false, actionNotice: '' });
+  }
+
+  showActionUnavailable(kind) {
+    const message = kind === 'issue'
+      ? 'GitHub Issue 생성 API는 아직 구현되지 않았습니다.'
+      : '업데이트 PR 생성 API는 아직 구현되지 않았습니다.';
+    this.setState({ actionNotice: message });
+  }
 
   showPreviewNotice() {
     this.setState({ showPreviewNotice: true, showActivityForm: false });
@@ -242,8 +302,71 @@ class WatchbackAppView extends Component {
     this.previewNoticeTimer = setTimeout(() => this.setState({ showPreviewNotice: false }), 3000);
   }
 
-  submitActivity() {
-    this.showPreviewNotice();
+  async submitActivity() {
+    if (this.state.isSubmittingActivity) return;
+    const selected = this.props.initialCases.find(c => c.id === this.state.selectedId);
+    const candidateId = selected?.latest_candidate?.id;
+    if (!selected || !candidateId) {
+      this.setState({ activityError: '연결할 최신 위험 후보를 찾을 수 없습니다.' });
+      return;
+    }
+
+    const activityType = this.state.activityKind;
+    const note = this.state.noteDraft.trim();
+    const linkType = this.state.linkType;
+    const linkUrl = this.state.linkUrl.trim();
+    const requiresNote = activityType !== 'external_link_added';
+    if (requiresNote && !note) {
+      this.setState({ activityError: '활동 메모를 입력해 주세요.' });
+      return;
+    }
+    if (activityType === 'external_link_added' && (!linkType || !linkUrl)) {
+      this.setState({ activityError: '연결할 GitHub Issue 또는 PR을 입력해 주세요.' });
+      return;
+    }
+    if ((linkType && !linkUrl) || (!linkType && linkUrl)) {
+      this.setState({ activityError: '외부 링크 유형과 URL을 함께 입력해 주세요.' });
+      return;
+    }
+    if (linkUrl) {
+      const expected = linkType === 'issue' ? 'issues' : 'pull';
+      const pattern = new RegExp(`^https://github\\.com/[^/]+/[^/]+/${expected}/\\d+/?$`);
+      if (!pattern.test(linkUrl)) {
+        this.setState({ activityError: '선택한 유형과 일치하는 GitHub Issue 또는 PR URL을 입력해 주세요.' });
+        return;
+      }
+    }
+
+    const payload = { activity_type: activityType, candidate_id: candidateId };
+    if (note) payload.note = note;
+    if (linkUrl) payload.external_link = { link_type: linkType, url: linkUrl };
+
+    this.setState({ isSubmittingActivity: true, activityError: '' });
+    try {
+      await this.props.onCreateActivity(selected.id, payload);
+      this.setState({
+        showActivityForm: false,
+        activityKind: null,
+        noteDraft: '',
+        linkType: '',
+        linkUrl: '',
+        isSubmittingActivity: false,
+        justAddedActivity: true,
+      });
+    } catch (error) {
+      const messages = {
+        duplicate_activity: '현재 후보에 같은 활동이 이미 기록되어 있습니다.',
+        duplicate_external_link: '이미 연결된 GitHub Issue 또는 PR입니다.',
+        organization_scope_violation: '이 조직의 Case에 활동을 기록할 권한이 없습니다.',
+        review_case_not_found: '재검토 Case를 찾을 수 없습니다.',
+        candidate_not_found: '현재 후보를 이 Case에서 찾을 수 없습니다.',
+        backend_unavailable: 'Backend에 연결할 수 없습니다.',
+      };
+      this.setState({
+        isSubmittingActivity: false,
+        activityError: messages[error?.code] || error?.message || '활동을 기록하지 못했습니다.',
+      });
+    }
   }
 
   renderVals() {
@@ -341,7 +464,7 @@ class WatchbackAppView extends Component {
     const staleCount = cases.filter(c => c.status === 'open' && (Date.now() - new Date(c.opened_at)) / 86400000 >= 3).length;
 
     const kpiCards = [
-      { label: 'critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: isDemo ? '지난주 대비 ▲1건' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
+      { label: 'Critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: isDemo ? '지난주 대비 ▲1건' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
       { label: '3일 이상 미처리', value: `${staleCount}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: isDemo ? '지난주 대비 변화 없음' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
       { label: '시스템성 변동 억제 (미구현)', value: isDemo ? '3건' : '—', hint: 'S1 제외 범위인 UI 미리보기', trend: isDemo ? 'Demo 데이터' : '실제 집계 미연동', cursorStyle: isDemo ? 'pointer' : 'default', onClick: isDemo ? () => this.setState({ showSuppressedPopover: true }) : undefined },
     ];
@@ -434,7 +557,7 @@ class WatchbackAppView extends Component {
         evidenceGroups: raw.candidates.map(candidate => ({
           id: candidate.id,
           selectedLabel: fmtDate(candidate.selected_at),
-          changeTypeLabel: CHANGE_TYPE_LABEL[candidate.change_type] || candidate.change_type,
+          changeTypeLabel: formatChangeType(candidate.change_type),
           reasonSummary: candidate.reason_summary,
           deliveries: candidate.deliveries ?? [],
           evidence: (candidate.evidence ?? []).map(ev => ({
@@ -442,9 +565,13 @@ class WatchbackAppView extends Component {
             previousValueLabel: fmtEvidenceValue(ev.previous_value, ev.value_type, ev.signal),
             currentValueLabel: fmtEvidenceValue(ev.current_value, ev.value_type, ev.signal),
             signalLabel: SIGNAL_LABEL[ev.signal] || ev.signal,
-            observedLabel: fmtDate(ev.observed_at),
-            sourceLabel: ev.source,
-            reasonSummary: ev.evidence_summary || fmtEvidenceReason(candidate.reason_summary, ev.signal, ev.current_value),
+            observedLabel: fmtDate(ev.observed_at) === fmtDate(candidate.selected_at) ? null : fmtDate(ev.observed_at),
+            reasonSummary: fmtEvidenceReason(
+              ev.evidence_summary || candidate.reason_summary,
+              ev.signal,
+              ev.previous_value,
+              ev.current_value,
+            ),
           })),
         })),
         activityTimeline: raw.activities.map((act, i) => ({
@@ -462,17 +589,13 @@ class WatchbackAppView extends Component {
     }
 
     const actionButtons = selected ? [
-      { label: '재검토 보류', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() },
-      { label: '위험 수용', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() },
-      selected.mergeMode === 'fully_auto' ? null :
-      selected.mergeMode === 'click_to_merge'
-        ? { label: 'PR 병합', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() }
-        : selected.mergeMode === 'pr_only'
-        ? { label: '업데이트 PR 생성', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPrUnavailableNotice() }
-        : { label: '조치 요청', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:8px 14px;cursor:pointer', title: selected.automation.reason, onClick: () => this.showPreviewNotice() },
-    ].filter(Boolean) : [];
+      { label: '위험 수용', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.openActivityForm('risk_accepted') },
+      { label: '조치하기', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.openActionMenu() },
+    ] : [];
 
-    const formTitleMap = { review_deferred: '재검토 보류 기록', risk_accepted: '위험 수용 기록', remediation_requested: '조치 요청 기록' };
+    const formTitleMap = {
+      risk_accepted: '위험 수용 기록',
+    };
 
     return {
       isDashboardView: view === 'dashboard',
@@ -523,12 +646,17 @@ class WatchbackAppView extends Component {
       onPriorityChange: e => this.setPriorityFilter(e.target.value),
       onChangeTypeChange: e => this.setChangeTypeFilter(e.target.value),
       onSortChange: e => this.setSort(e.target.value),
-      backToList: () => this.backToList(),
+      backToPrevious: () => this.backToPrevious(),
       selected,
       actionButtons,
-      showPrUnavailableNotice: this.state.showPrUnavailableNotice,
+      showActionMenu: this.state.showActionMenu,
+      closeActionMenu: () => this.closeActionMenu(),
+      createIssue: () => this.showActionUnavailable('issue'),
+      createPullRequest: () => this.showActionUnavailable('pull_request'),
+      actionNotice: this.state.actionNotice,
       showActivityForm,
       activityFormTitle: formTitleMap[activityKind] || '',
+      activityKind,
       noteDraft,
       onNoteChange: e => this.setState({ noteDraft: e.target.value }),
       linkType,
@@ -537,6 +665,8 @@ class WatchbackAppView extends Component {
       onLinkUrlChange: e => this.setState({ linkUrl: e.target.value }),
       submitActivity: () => this.submitActivity(),
       cancelActivityForm: () => this.cancelActivityForm(),
+      activityError: this.state.activityError,
+      isSubmittingActivity: this.state.isSubmittingActivity,
       dataSource: this.props.dataSource,
       isDemo,
       onDataSourceChange: this.props.onDataSourceChange,

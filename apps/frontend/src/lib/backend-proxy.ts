@@ -12,7 +12,10 @@ function backendConfiguration() {
   return { baseUrl, organizationId, userId };
 }
 
-export async function proxyBackendGet(path: string, search = ''): Promise<Response> {
+async function proxyBackend(
+  path: string,
+  { method = 'GET', search = '', body }: { method?: 'GET' | 'POST'; search?: string; body?: unknown } = {},
+): Promise<Response> {
   const config = backendConfiguration();
   if (!config) return Response.json(ERROR_BODY, { status: 502 });
 
@@ -26,12 +29,15 @@ export async function proxyBackendGet(path: string, search = ''): Promise<Respon
 
   try {
     const upstream = await fetch(target, {
+      method,
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         'X-Organization-ID': config.organizationId,
         'X-User-ID': config.userId,
       },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const text = await upstream.text();
     const contentType = upstream.headers.get('content-type') ?? '';
@@ -45,4 +51,12 @@ export async function proxyBackendGet(path: string, search = ''): Promise<Respon
   } catch {
     return Response.json(ERROR_BODY, { status: 502 });
   }
+}
+
+export function proxyBackendGet(path: string, search = ''): Promise<Response> {
+  return proxyBackend(path, { search });
+}
+
+export function proxyBackendPost(path: string, body: unknown): Promise<Response> {
+  return proxyBackend(path, { method: 'POST', body });
 }

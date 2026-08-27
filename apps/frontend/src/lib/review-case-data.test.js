@@ -1,12 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { getDemoReviewCaseSummaries } from './demo-review-cases';
 import {
   DATA_SOURCE_STORAGE_KEY,
   ReviewCaseDataError,
+  createReviewActivity,
   fetchDatabaseReviewCases,
   loadReviewCase,
   readStoredDataSource,
+  resetDemoActivities,
   storeDataSource,
 } from './review-case-data';
 
@@ -75,5 +77,62 @@ describe('review case data providers', () => {
     await expect(fetchDatabaseReviewCases(async () => jsonResponse({
       code: 'backend_unavailable', message: 'Backend에 연결할 수 없습니다.', details: null,
     }, 502))).rejects.toBeInstanceOf(ReviewCaseDataError);
+  });
+
+  it('posts a db activity and preserves contract errors', async () => {
+    const payload = {
+      activity_type: 'note_added',
+      candidate_id: '10000000-0000-0000-0000-000000000001',
+      note: '확인 메모',
+    };
+    const fetcher = async (url, init) => {
+      expect(url).toBe('/api/review-cases/case-id');
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(init.body)).toEqual(payload);
+      return jsonResponse({ case_status: 'open', activity: { id: 'activity-id' } }, 201);
+    };
+    await expect(createReviewActivity('db', 'case-id', payload, fetcher)).resolves.toMatchObject({
+      case_status: 'open',
+    });
+
+    await expect(createReviewActivity('db', 'case-id', payload, async () => jsonResponse({
+      code: 'duplicate_activity', message: '중복 활동', details: null,
+    }, 409))).rejects.toMatchObject({ status: 409, code: 'duplicate_activity' });
+  });
+
+  it('stores demo activities only in the current page runtime', async () => {
+    const fetcher = vi.fn();
+    const reviewCase = getDemoReviewCaseSummaries()[0];
+    const originalDetail = await loadReviewCase('demo', reviewCase.id, fetcher);
+    const payload = {
+      activity_type: 'external_link_added',
+      candidate_id: reviewCase.latest_candidate.id,
+      external_link: {
+        link_type: 'pull_request',
+        url: 'https://github.com/novalink/customer-fe/pull/21',
+      },
+    };
+    await expect(createReviewActivity('demo', reviewCase.id, payload, fetcher)).resolves.toMatchObject({
+      case_status: reviewCase.status,
+      activity: {
+        candidate_id: reviewCase.latest_candidate.id,
+        activity_type: 'external_link_added',
+        actor: { display_name: '김서연' },
+      },
+    });
+    expect(fetcher).not.toHaveBeenCalled();
+    const detail = await loadReviewCase('demo', reviewCase.id, fetcher);
+    expect(detail.activities.at(-1)).toMatchObject({
+      activity_type: 'external_link_added',
+      external_links: [{
+        link_type: 'pull_request',
+        url: 'https://github.com/novalink/customer-fe/pull/21',
+      }],
+    });
+
+    resetDemoActivities();
+    const reloaded = await loadReviewCase('demo', reviewCase.id, fetcher);
+    expect(reloaded.activities).toEqual(originalDetail.activities);
+    expect(reloaded.status).toBe(originalDetail.status);
   });
 });

@@ -96,6 +96,11 @@ export function Dashboard({ values }) {
                       {`${c.reviewReasonLabel}`}
                     </span>
                     <div style={toReactStyle("display:flex;align-items:center;gap:6px;flex:none;margin-left:auto")}>
+                      {c.evidenceTags.map((tag, _index1) => (
+                        <span key={_index1} style={toReactStyle(`${tag.style}`)}>
+                          {`${tag.label}`}
+                        </span>
+                      ))}
                       {c.urgencyLabel && (
                         <>
                           <span style={toReactStyle("font-size:11px;font-weight:600;color:#9A5A16;background:#FCEFE1;border-radius:5px;padding:2px 7px")}>
@@ -103,11 +108,6 @@ export function Dashboard({ values }) {
                           </span>
                         </>
                       )}
-                      {c.evidenceTags.map((tag, _index1) => (
-                        <span key={_index1} style={toReactStyle(`${tag.style}`)}>
-                          {`${tag.label}`}
-                        </span>
-                      ))}
                     </div>
                   </div>
                   <div style={toReactStyle("display:flex;align-items:center;padding:0 18px;color:#D2D5CD;font-size:18px")}>

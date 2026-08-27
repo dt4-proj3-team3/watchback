@@ -7,6 +7,11 @@ import {
 
 export const DATA_SOURCE_STORAGE_KEY = 'watchback.dataSource';
 const DATA_SOURCE_EVENT = 'watchback:data-source-change';
+let demoActivityStore = {};
+const DEMO_ACTOR = {
+  id: '7889d975-3d64-536f-8740-3d0a28ee3a1d',
+  display_name: '김서연',
+};
 
 export class ReviewCaseDataError extends Error {
   constructor(message, status = 500, code = 'review_case_data_error') {
@@ -71,6 +76,28 @@ function assertListPage(page, expectedPage) {
   }
 }
 
+export function resetDemoActivities() {
+  demoActivityStore = {};
+}
+
+function applyDemoActivities(reviewCase) {
+  const added = demoActivityStore[reviewCase.id] ?? [];
+  if (added.length === 0) return reviewCase;
+  const activities = [...(reviewCase.activities ?? []), ...added]
+    .sort((left, right) => new Date(left.occurred_at) - new Date(right.occurred_at));
+  const acceptance = [...activities]
+    .reverse()
+    .find((activity) => activity.activity_type === 'risk_accepted');
+  const latest = activities.at(-1);
+  return {
+    ...reviewCase,
+    status: acceptance ? 'resolved' : reviewCase.status,
+    resolved_at: acceptance?.occurred_at ?? reviewCase.resolved_at,
+    updated_at: latest?.occurred_at ?? reviewCase.updated_at,
+    activities,
+  };
+}
+
 export async function fetchDatabaseReviewCases(fetcher = fetch) {
   const items = [];
   const seenIds = new Set();
@@ -114,8 +141,80 @@ export async function fetchDatabaseReviewCase(caseId, fetcher = fetch) {
   return normalizeReviewCaseDetail(detail);
 }
 
+export async function createReviewActivity(
+  source,
+  caseId,
+  payload,
+  fetcher = fetch,
+) {
+  if (source === 'demo') {
+    const reviewCase = getDemoReviewCase(caseId);
+    if (!reviewCase) {
+      throw new ReviewCaseDataError('재검토 Case를 찾을 수 없습니다.', 404, 'review_case_not_found');
+    }
+    const activities = [...(reviewCase.activities ?? []), ...(demoActivityStore[caseId] ?? [])];
+    if (activities.some((activity) => (
+      activity.candidate_id === payload.candidate_id &&
+      activity.activity_type === payload.activity_type
+    ))) {
+      throw new ReviewCaseDataError(
+        '현재 후보에 같은 활동이 이미 기록되어 있습니다.',
+        409,
+        'duplicate_activity',
+      );
+    }
+    const url = payload.external_link?.url;
+    if (url && Object.values(demoActivityStore).flat().some((activity) => (
+      activity.external_links?.some((link) => link.url === url)
+    ))) {
+      throw new ReviewCaseDataError(
+        '이미 연결된 GitHub Issue 또는 PR입니다.',
+        409,
+        'duplicate_external_link',
+      );
+    }
+    const now = new Date().toISOString();
+    const activityId = crypto.randomUUID();
+    const externalLinks = url ? [{
+      id: crypto.randomUUID(),
+      link_type: payload.external_link.link_type,
+      url,
+      github_owner: new URL(url).pathname.split('/')[1],
+      github_repository: new URL(url).pathname.split('/')[2],
+      github_number: Number(new URL(url).pathname.split('/')[4]),
+      external_state: null,
+      github_updated_at: null,
+      last_synced_at: null,
+    }] : [];
+    const activity = {
+      id: activityId,
+      candidate_id: payload.candidate_id,
+      activity_type: payload.activity_type,
+      note: payload.note ?? null,
+      actor: DEMO_ACTOR,
+      occurred_at: now,
+      created_at: now,
+      external_links: externalLinks,
+    };
+    demoActivityStore[caseId] = [...(demoActivityStore[caseId] ?? []), activity];
+    return {
+      case_status: payload.activity_type === 'risk_accepted' ? 'resolved' : reviewCase.status,
+      activity,
+    };
+  }
+  const response = await fetcher(`/api/review-cases/${encodeURIComponent(caseId)}`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return readJsonResponse(response);
+}
+
 export async function loadReviewCases(source, fetcher = fetch) {
-  return source === 'demo' ? getDemoReviewCaseSummaries() : fetchDatabaseReviewCases(fetcher);
+  return source === 'demo'
+    ? getDemoReviewCaseSummaries().map((reviewCase) => applyDemoActivities(reviewCase))
+    : fetchDatabaseReviewCases(fetcher);
 }
 
 export async function loadReviewCase(source, caseId, fetcher = fetch) {
@@ -124,7 +223,7 @@ export async function loadReviewCase(source, caseId, fetcher = fetch) {
     if (!detail) {
       throw new ReviewCaseDataError('재검토 Case를 찾을 수 없습니다.', 404, 'review_case_not_found');
     }
-    return detail;
+    return applyDemoActivities(detail);
   }
   return fetchDatabaseReviewCase(caseId, fetcher);
 }

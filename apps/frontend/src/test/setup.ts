@@ -1,6 +1,8 @@
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
+import { resetDemoActivities } from '@/lib/review-case-data';
+
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
   get length() { return this.values.size; }
@@ -18,11 +20,13 @@ Object.defineProperty(window, 'localStorage', {
 
 afterEach(() => {
   cleanup();
+  resetDemoActivities();
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
