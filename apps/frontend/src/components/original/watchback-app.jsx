@@ -7,6 +7,7 @@ import { Header } from './header';
 import { Repositories } from './repositories';
 import { ReviewCaseDetail } from './review-case-detail';
 import { ReviewCaseList } from './review-case-list';
+import { ReviewDataState } from './review-data-state';
 import { Settings } from './settings';
 
 const PRIORITY_META = {
@@ -21,7 +22,6 @@ const CHANGE_TYPE_LABEL = {
   epss_rise_d30: 'EPSS 급등',
   epss_top5_entry_d30: 'EPSS 상위 5% 진입',
   patch_available: '패치 버전 등장',
-  systemic_epss_shift: '모델 개편에 따른 집단 변동',
   combined_signal: '다중 신호 동시 변화',
 };
 const SIGNAL_LABEL = {
@@ -108,6 +108,34 @@ function evidenceTags(evidence = []) {
   return tags.slice(0, 2);
 }
 
+function latestCandidateTags(candidate) {
+  if (!candidate) return [];
+  const labels = {
+    kev_added: 'KEV 등재',
+    epss_spike: 'EPSS 급등',
+    epss_rise_d30: 'EPSS 급등',
+    epss_top5_entry_d30: '상위 5%',
+    patch_available: '패치 등장',
+    combined_signal: '다중 신호',
+  };
+  const label = labels[candidate.change_type];
+  return label ? [{ label, style: 'font-size:11px;font-weight:600;color:#2F8F5B;background:#E7F3EC;border-radius:5px;padding:2px 7px;white-space:nowrap' }] : [];
+}
+
+export function filterAndSortCases(cases, filters, now = Date.now()) {
+  let list = cases.filter(c => filters.status === 'all' || c.status === filters.status);
+  if (filters.priority !== 'all') list = list.filter(c => c.priority === filters.priority);
+  if (filters.changeType !== 'all') list = list.filter(c => c.latest_candidate.change_type === filters.changeType);
+  if (filters.importance && filters.importance !== 'all') list = list.filter(c => c.repository.importance === filters.importance);
+  if (filters.staleOnly) list = list.filter(c => (now - new Date(c.opened_at)) / 86400000 >= 3);
+  if (filters.repo && filters.repo !== 'all') list = list.filter(c => c.repository.full_name === filters.repo);
+
+  const order = { critical: 0, high: 1, medium: 2, low: 3 };
+  if (filters.sort === 'priority') return [...list].sort((a, b) => order[a.priority] - order[b.priority] || new Date(b.updated_at) - new Date(a.updated_at));
+  if (filters.sort === 'updated_at') return [...list].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  return [...list].sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at));
+}
+
 
 class WatchbackAppView extends Component {
   state = {
@@ -147,6 +175,7 @@ class WatchbackAppView extends Component {
 
   componentWillUnmount() {
     clearTimeout(this.prNoticeTimer);
+    clearTimeout(this.previewNoticeTimer);
   }
 
   enrich(c) {
@@ -166,7 +195,7 @@ class WatchbackAppView extends Component {
       severityLabel: sm.label,
       severityBadgeStyle: badgeStyle(sm),
       changeTypeLabel: CHANGE_TYPE_LABEL[c.latest_candidate.change_type] || c.latest_candidate.change_type,
-      evidenceTags: evidenceTags(c.evidence),
+      evidenceTags: evidenceTags(c.evidence).length > 0 ? evidenceTags(c.evidence) : latestCandidateTags(c.latest_candidate),
       reviewReasonLabel: reviewReason.text,
       reviewReasonDateLabel: reviewReason.dateLabel,
       isResolved: c.status === 'resolved',
@@ -206,40 +235,24 @@ class WatchbackAppView extends Component {
     this.prNoticeTimer = setTimeout(() => this.setState({ showPrUnavailableNotice: false }), 3000);
   }
 
+
+  showPreviewNotice() {
+    this.setState({ showPreviewNotice: true, showActivityForm: false });
+    clearTimeout(this.previewNoticeTimer);
+    this.previewNoticeTimer = setTimeout(() => this.setState({ showPreviewNotice: false }), 3000);
+  }
+
   submitActivity() {
-    const { selectedId, activityKind, noteDraft, linkType, linkUrl } = this.state;
-    if (!noteDraft.trim()) return;
-    this.setState(s => ({
-      cases: s.cases.map(c => {
-        if (c.id !== selectedId) return c;
-        const newActivity = {
-          activity_type: activityKind,
-          note: noteDraft,
-          actor: { display_name: '나' },
-          occurred_at: new Date().toISOString(),
-          external_link: linkType && linkUrl ? { link_type: linkType, url: linkUrl } : null,
-        };
-        const resolved = activityKind === 'remediation_requested';
-        return { ...c, status: resolved ? 'resolved' : c.status, activities: [...c.activities, newActivity] };
-      }),
-      showActivityForm: false, activityKind: null, noteDraft: '', linkType: '', linkUrl: '', justAddedActivity: true,
-    }));
-    setTimeout(() => this.setState({ justAddedActivity: false }), 2500);
+    this.showPreviewNotice();
   }
 
   renderVals() {
-    const { cases, filters, view, selectedId, showActivityForm, activityKind, noteDraft, linkType, linkUrl } = this.state;
+    const { filters, view, selectedId, showActivityForm, activityKind, noteDraft, linkType, linkUrl } = this.state;
+    const cases = this.props.initialCases;
+    const isDemo = this.props.dataSource === 'demo';
 
-    let list = cases.filter(c => filters.status === 'all' || c.status === filters.status);
-    if (filters.priority !== 'all') list = list.filter(c => c.priority === filters.priority);
-    if (filters.changeType !== 'all') list = list.filter(c => c.latest_candidate.change_type === filters.changeType);
-    if (filters.importance && filters.importance !== 'all') list = list.filter(c => c.repository.importance === filters.importance);
-    if (filters.staleOnly) list = list.filter(c => (Date.now() - new Date(c.opened_at)) / 86400000 >= 3);
-    if (filters.repo && filters.repo !== 'all') list = list.filter(c => c.repository.full_name === filters.repo);
     const order = { critical: 0, high: 1, medium: 2, low: 3 };
-    if (filters.sort === 'priority') list = [...list].sort((a, b) => order[a.priority] - order[b.priority] || new Date(b.updated_at) - new Date(a.updated_at));
-    else if (filters.sort === 'updated_at') list = [...list].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    else list = [...list].sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at));
+    const list = filterAndSortCases(cases, filters);
 
     const filteredCases = list.map(c => this.enrich(c));
     const isEmpty = filteredCases.length === 0;
@@ -277,11 +290,14 @@ class WatchbackAppView extends Component {
         .map(sev => ({ sev, sevLabel: PRIORITY_META[sev].label, mode: this.state.policyMatrix[`${currentImportance}_${sev}`] }))
         .filter(p => p.mode !== 'fully_auto');
       const allModes = importanceLevels.map(sev => this.state.policyMatrix[`${currentImportance}_${sev}`]);
-      const policySummary = allModes.every(mode => mode === 'pr_only')
+      const demoPolicySummary = allModes.every(mode => mode === 'pr_only')
         ? { label: '전체 PR 생성만', color: MODE_COLOR.pr_only, bg: MODE_BG.pr_only }
         : exceptions.length === 0
         ? { label: '전체 자동조치', color: MODE_COLOR.fully_auto, bg: MODE_BG.fully_auto }
         : { label: `${exceptions.map(e => e.sevLabel).join('·')} 심각도는 승인 필요`, color: MODE_COLOR[exceptions[0].mode], bg: MODE_BG[exceptions[0].mode] };
+      const policySummary = isDemo
+        ? demoPolicySummary
+        : { label: '정책 DB 연동 미구현', color: '#8B9086', bg: '#EEF0EE' };
       return {
         ...r,
         importance: currentImportance,
@@ -292,7 +308,7 @@ class WatchbackAppView extends Component {
           this.setState({ filters: { ...filters, repo: r.full_name, status: 'all', importance: 'all', staleOnly: false } });
           this.props.router.push('/review-cases');
         },
-        onImportanceChange: e => this.setState(s => ({ repoImportanceOverrides: { ...s.repoImportanceOverrides, [r.full_name]: e.target.value } })),
+        onImportanceChange: () => this.showPreviewNotice(),
       };
     }).sort((a, b) => order[a.importance] - order[b.importance]);
 
@@ -304,7 +320,7 @@ class WatchbackAppView extends Component {
         return {
           severityLabel: PRIORITY_META[sev].label,
           value: mode,
-          onChange: e => this.setState(s => ({ policyMatrix: { ...s.policyMatrix, [key]: e.target.value } })),
+          onChange: () => this.showPreviewNotice(),
         };
       }),
     }));
@@ -325,9 +341,9 @@ class WatchbackAppView extends Component {
     const staleCount = cases.filter(c => c.status === 'open' && (Date.now() - new Date(c.opened_at)) / 86400000 >= 3).length;
 
     const kpiCards = [
-      { label: 'critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: '지난주 대비 ▲1건', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
-      { label: '3일 이상 미처리', value: `${staleCount}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: '지난주 대비 변화 없음', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
-      { label: '시스템성 변동 억제 (미구현)', value: '3건', hint: 'S1 제외 범위인 UI 미리보기', trend: '실제 집계와 무관', cursorStyle: 'pointer', onClick: () => this.setState({ showSuppressedPopover: true }) },
+      { label: 'critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: isDemo ? '지난주 대비 ▲1건' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
+      { label: '3일 이상 미처리', value: `${staleCount}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: isDemo ? '지난주 대비 변화 없음' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
+      { label: '시스템성 변동 억제 (미구현)', value: isDemo ? '3건' : '—', hint: 'S1 제외 범위인 UI 미리보기', trend: isDemo ? 'Demo 데이터' : '실제 집계 미연동', cursorStyle: isDemo ? 'pointer' : 'default', onClick: isDemo ? () => this.setState({ showSuppressedPopover: true }) : undefined },
     ];
 
     const flowStages = [
@@ -336,11 +352,11 @@ class WatchbackAppView extends Component {
       { label: '해결됨', count: resolvedTotal, hasArrow: false, onClick: () => this.goToFilteredList({ ...filters, status: 'resolved', importance: 'all', staleOnly: false }) },
     ].map(s => ({ ...s, containerStyle: 'display:flex;align-items:center;flex:none' }));
 
-    const suppressedCases = [
+    const suppressedCases = isDemo ? [
       { repoName: 'billing-worker', reason: '모델 개편으로 EPSS가 전반적으로 상승, 개별 위험 변화로 보지 않음' },
       { repoName: 'notification-svc', reason: '동일 사유로 억제됨' },
       { repoName: 'auth-gateway', reason: '동일 사유로 억제됨' },
-    ];
+    ] : [];
 
     const statusOptions = [
       { value: 'open', label: '열림' },
@@ -383,11 +399,12 @@ class WatchbackAppView extends Component {
     };
 
     let selected = null;
-    if (selectedId) {
-      const raw = cases.find(c => c.id === selectedId);
+    const selectedCase = selectedId ? cases.find(c => c.id === selectedId) : null;
+    if (selectedCase) {
+      const raw = selectedCase;
       const e = this.enrich(raw);
       const effectiveImportance = this.state.repoImportanceOverrides[raw.repository.full_name] || raw.repository.importance;
-      const configuredMergeMode = raw.alert.first_patched_version
+      const configuredMergeMode = isDemo && raw.alert.first_patched_version
         ? this.state.policyMatrix[`${effectiveImportance}_${raw.advisory.severity}`]
         : null;
       const automation = {
@@ -404,54 +421,55 @@ class WatchbackAppView extends Component {
         scopeLabel: SCOPE_LABEL[raw.alert.dependency_scope] || '-',
         relationshipLabel: REL_LABEL[raw.alert.dependency_relationship] || '-',
         hasKnownRelationship: raw.alert.dependency_relationship !== 'unknown',
-        systemicLabel: raw.latest_candidate.change_type === 'systemic_epss_shift' ? '집단 변동으로 억제됨' : '개별 변화로 확인됨',
-        systemicColor: raw.latest_candidate.change_type === 'systemic_epss_shift' ? '#9A5A16' : '#2F8F5B',
-        systemicBg: raw.latest_candidate.change_type === 'systemic_epss_shift' ? '#FCEFE1' : '#E7F3EC',
-        automationStatusLabel: { fully_auto: '완전 자동조치', click_to_merge: 'PR 병합 대기', pr_only: 'PR 생성 대상' }[configuredMergeMode] || '자동조치 대상 아님',
+        systemicLabel: '개별 변화로 확인됨',
+        systemicColor: '#2F8F5B',
+        systemicBg: '#E7F3EC',
+        automationStatusLabel: { fully_auto: '완전 자동조치 (미구현)', click_to_merge: 'PR 병합 대기 (미구현)', pr_only: 'PR 생성 대상 (미구현)' }[configuredMergeMode] || '자동조치 미구현',
         automationStatusColor: automation.eligible ? '#2F8F5B' : '#8B9086',
         automationStatusBg: automation.eligible ? '#E7F3EC' : '#EEF0EE',
         hasPr: !!automation.prUrl,
         mergeMode: configuredMergeMode,
         patchLabelShort: raw.alert.first_patched_version || '패치 없음',
         patchColor: raw.alert.first_patched_version ? '#2F8F5B' : '#8B9086',
-        evidence: raw.evidence.map(ev => {
-          const cand = raw.candidates.reduce((best, c) => {
-            const d = Math.abs(new Date(c.selected_at) - new Date(ev.observed_at));
-            return (!best || d < best.d) ? { c, d } : best;
-          }, null).c;
-          return {
+        evidenceGroups: raw.candidates.map(candidate => ({
+          id: candidate.id,
+          selectedLabel: fmtDate(candidate.selected_at),
+          changeTypeLabel: CHANGE_TYPE_LABEL[candidate.change_type] || candidate.change_type,
+          reasonSummary: candidate.reason_summary,
+          deliveries: candidate.deliveries ?? [],
+          evidence: (candidate.evidence ?? []).map(ev => ({
             ...ev,
             previousValueLabel: fmtEvidenceValue(ev.previous_value, ev.value_type, ev.signal),
             currentValueLabel: fmtEvidenceValue(ev.current_value, ev.value_type, ev.signal),
             signalLabel: SIGNAL_LABEL[ev.signal] || ev.signal,
             observedLabel: fmtDate(ev.observed_at),
-            changeTypeLabel: CHANGE_TYPE_LABEL[cand.change_type] || cand.change_type,
-            reasonSummary: fmtEvidenceReason(cand.reason_summary, ev.signal, ev.current_value),
-          };
-        }),
+            sourceLabel: ev.source,
+            reasonSummary: ev.evidence_summary || fmtEvidenceReason(candidate.reason_summary, ev.signal, ev.current_value),
+          })),
+        })),
         activityTimeline: raw.activities.map((act, i) => ({
           typeLabel: ACTIVITY_LABEL[act.activity_type] || act.activity_type,
           actorLabel: act.actor ? act.actor.display_name : 'System',
           occurredLabel: fmtDate(act.occurred_at),
           hasNote: !!act.note,
           note: act.note,
-          hasLink: !!act.external_link,
-          linkUrl: act.external_link ? act.external_link.url : '',
-          linkLabel: act.external_link ? (act.external_link.link_type === 'issue' ? '연결된 Issue' : '연결된 PR') : '',
+          hasLink: (act.external_links ?? []).length > 0,
+          linkUrl: act.external_links?.[0]?.url ?? '',
+          linkLabel: act.external_links?.[0]?.link_type === 'issue' ? '연결된 Issue' : '연결된 PR',
           rowStyle: (i === raw.activities.length - 1 && this.state.justAddedActivity) ? 'display:flex;gap:12px;padding:12px;margin:0 -12px;border-top:1px solid #F0F1EE;background:#E7F3EC;border-radius:8px' : 'display:flex;gap:12px;padding:12px 0;border-top:1px solid #F0F1EE',
         })),
       };
     }
 
     const actionButtons = selected ? [
-      { label: '재검토 보류', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.openActivityForm('review_deferred') },
-      { label: '위험 수용', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.openActivityForm('risk_accepted') },
+      { label: '재검토 보류', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() },
+      { label: '위험 수용', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#FFFFFF;border:1px solid #D2D5CD;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() },
       selected.mergeMode === 'fully_auto' ? null :
       selected.mergeMode === 'click_to_merge'
-        ? { label: 'PR 병합', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.openActivityForm('remediation_requested') }
+        ? { label: 'PR 병합', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPreviewNotice() }
         : selected.mergeMode === 'pr_only'
         ? { label: '업데이트 PR 생성', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:none;border-radius:7px;padding:8px 14px;cursor:pointer', onClick: () => this.showPrUnavailableNotice() }
-        : { label: '조치 요청', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:8px 14px;cursor:pointer', title: selected.automation.reason, onClick: () => this.openActivityForm('remediation_requested') },
+        : { label: '조치 요청', style: 'font-size:12.5px;font-weight:600;font-family:inherit;color:#5B6058;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:8px 14px;cursor:pointer', title: selected.automation.reason, onClick: () => this.showPreviewNotice() },
     ].filter(Boolean) : [];
 
     const formTitleMap = { review_deferred: '재검토 보류 기록', risk_accepted: '위험 수용 기록', remediation_requested: '조치 요청 기록' };
@@ -463,6 +481,7 @@ class WatchbackAppView extends Component {
       isReposView: view === 'repos',
       isSettingsView: view === 'settings',
       repoRows,
+      hasRepositories: repoRows.length > 0,
       policyMatrixRows,
       importanceLevelOptions: importanceLevels.map(k => ({ value: k, label: PRIORITY_META[k].label })),
       modeSelectOptions: [
@@ -479,11 +498,16 @@ class WatchbackAppView extends Component {
       navTabs,
       kpiCards,
       topCases,
+      hasDashboardCases: topCases.length > 0,
       flowStages,
       showSuppressedPopover: this.state.showSuppressedPopover || false,
       suppressedCases,
       closeSuppressedPopover: () => this.setState({ showSuppressedPopover: false }),
-      weekRangeLabel: '8/18 ~ 8/24',
+      weekRangeLabel: isDemo ? '8/18 ~ 8/24' : '현재 DB 기준',
+      dashboardDescription: isDemo
+        ? '지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요.'
+        : '현재 DB에 저장된 재검토 현황을 확인하세요.',
+      flowTitle: isDemo ? '이번 주 처리 흐름' : '전체 처리 흐름',
       goToDashboard: () => this.goToDashboard(),
       goToAllList: () => this.goToAllList(),
       filteredCases,
@@ -513,6 +537,11 @@ class WatchbackAppView extends Component {
       onLinkUrlChange: e => this.setState({ linkUrl: e.target.value }),
       submitActivity: () => this.submitActivity(),
       cancelActivityForm: () => this.cancelActivityForm(),
+      dataSource: this.props.dataSource,
+      isDemo,
+      onDataSourceChange: this.props.onDataSourceChange,
+      isPreview: this.props.isPreview,
+      showPreviewNotice: this.state.showPreviewNotice || false,
     };
   }
 
@@ -521,11 +550,21 @@ class WatchbackAppView extends Component {
     return (
       <div style={{ minHeight: '100vh', background: '#FAFBFA', fontFamily: "'Noto Sans KR',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif", color: '#1B1E1A' }}>
         <Header values={values} />
-        <Dashboard values={values} />
-        <Repositories values={values} />
-        <Settings values={values} />
-        <ReviewCaseList values={values} />
-        <ReviewCaseDetail values={values} />
+        {this.props.loadState !== 'ready' ? (
+          <ReviewDataState
+            state={this.props.loadState}
+            message={this.props.loadError}
+            onRetry={this.props.onRetry}
+          />
+        ) : (
+          <>
+            <Dashboard values={values} />
+            <Repositories values={values} />
+            <Settings values={values} />
+            <ReviewCaseList values={values} />
+            <ReviewCaseDetail values={values} />
+          </>
+        )}
       </div>
     );
   }

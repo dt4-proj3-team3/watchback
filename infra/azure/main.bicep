@@ -17,6 +17,10 @@ param location string = resourceGroup().location
 param environmentName string = 'dev'
 param postgresAdminUser string = 'watchbackadmin'
 param databaseName string = 'watchback'
+@description('S1 Frontend가 Backend 요청 헤더로 전달할 개발 조직 ID')
+param frontendOrganizationId string = 'ff178e49-d218-50b7-bf56-ac3513330b99'
+@description('S1 Frontend가 Backend 요청 헤더로 전달할 개발 사용자 ID')
+param frontendUserId string = '7889d975-3d64-536f-8740-3d0a28ee3a1d'
 
 var suffix = substring(uniqueString(subscription().subscriptionId, resourceGroup().id, 'watchback-${environmentName}'), 0, 7)
 var registryName = 'acrwatchback${environmentName}${suffix}'
@@ -291,6 +295,14 @@ resource frontend 'Microsoft.App/containerApps@2025-01-01' = {
             {
               name: 'WATCHBACK_API_BASE_URL'
               value: 'https://${backend.properties.configuration.ingress.fqdn}'
+            }
+            {
+              name: 'WATCHBACK_ORGANIZATION_ID'
+              value: frontendOrganizationId
+            }
+            {
+              name: 'WATCHBACK_USER_ID'
+              value: frontendUserId
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

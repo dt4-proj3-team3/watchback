@@ -18,7 +18,7 @@ Watchback의 개발용 PostgreSQL, Container Apps와 수동 Job을 Bicep으로 �
 - DB 초기화 및 Dependabot 동기화 Container Apps Job
 - Log Analytics Workspace와 Application Insights
 
-Frontend는 현재 `data/demo`를 사용하며 Backend의 DB 조회 API와 연결되지 않는다. Gold Sync Job도 구현 전이므로 배포하지 않는다. `modules/container-app-job.bicep`은 후속 Gold Sync Worker에서도 재사용할 수 있다.
+Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 사용한다. Bicep은 S1 기준 조직·사용자 ID를 Frontend Route Handler에 전달하며, 설정에서 명시적으로 Demo를 선택할 수 있다. 대시보드·저장소·자동조치 정책은 계속 Demo 기반 읽기 전용 `UI Preview`다. Gold Sync Job은 별도 배포 범위이며 `modules/container-app-job.bicep`을 재사용한다.
 
 ## 사전 조건
 
