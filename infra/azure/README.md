@@ -13,7 +13,7 @@ Watchback의 개발용 PostgreSQL, Container Apps와 수동 Job을 Bicep으로 �
 
 - Azure Database for PostgreSQL Flexible Server 16
 - Azure Container Registry Basic
-- Azure Key Vault와 사용자 할당 Managed Identity
+- Azure Key Vault와 런타임·CD용 사용자 할당 Managed Identity
 - Azure Container Apps Frontend·Backend
 - DB 초기화 및 Dependabot 동기화 Container Apps Job
 - Log Analytics Workspace와 Application Insights
@@ -23,11 +23,53 @@ Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 
 ## 사전 조건
 
 - Azure CLI 로그인과 Bicep CLI
+- GitHub CLI와 jq(CD Repository variables 설정 시)
 - 현재 구독에서 리소스·역할 할당을 생성할 권한
 - `Dependabot alerts: read` 권한이 있는 `GITHUB_TOKEN`
 - Git, curl, OpenSSL
 
 토큰 없이 배포하면 Dependabot Job만 생략한다. 비밀값은 파라미터 파일이나 Git에 저장하지 않는다.
+
+## 애플리케이션 자동 배포
+
+`main`에서 Backend, Frontend 또는 데모 데이터가 변경되면 GitHub Actions가 두 이미지를 전체 커밋 SHA 태그로 ACR에 게시하고 기존 Container Apps를 갱신한다. DB Migration, Seed와 Sync Job은 자동 실행하지 않는다.
+
+Azure 로그인에는 장기 Client Secret 대신 `main` 브랜치만 신뢰하는 OIDC와 전용 Managed Identity를 사용한다. 최초 Bicep 배포 후 다음 Repository variables를 설정한다.
+
+```bash
+az deployment group create \
+  --resource-group 4dt_3rdproject_team_3 \
+  --name watchback-dev-app-cd \
+  --template-file infra/azure/app-cd.bicep
+
+deployment_outputs="$(az deployment group show \
+  --resource-group 4dt_3rdproject_team_3 \
+  --name watchback-dev-app-cd \
+  --query properties.outputs \
+  --output json)"
+
+gh variable set AZURE_CLIENT_ID \
+  --body "$(jq -r '.cdClientId.value' <<<"$deployment_outputs")"
+gh variable set AZURE_TENANT_ID \
+  --body "$(jq -r '.tenantId.value' <<<"$deployment_outputs")"
+gh variable set AZURE_SUBSCRIPTION_ID \
+  --body "$(jq -r '.subscriptionId.value' <<<"$deployment_outputs")"
+```
+
+Workflow는 새 Revision이 `Provisioned`, `Healthy`, `RunningAtMaxScale`인지 확인하고 Backend `/openapi.json`과 Frontend `/dashboard`를 호출한다. 실패하면 두 앱을 직전 이미지로 롤백한다. GitHub Actions의 `Deploy development apps`에서 수동 재실행할 수 있다.
+
+특정 ACR 태그로 수동 배포하거나 롤백할 때는 Azure 로그인 후 같은 스크립트를 사용한다.
+
+```bash
+az acr repository show-tags \
+  --name acrwatchbackdevbaursz7 \
+  --repository watchback-backend \
+  --orderby time_desc \
+  --top 10 \
+  --output table
+
+IMAGE_TAG='<commit-sha-or-previous-tag>' infra/azure/scripts/deploy-app-images.sh
+```
 
 ## 배포
 
@@ -36,6 +78,7 @@ Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 
 ```bash
 az bicep build --file infra/azure/foundation.bicep
 az bicep build --file infra/azure/main.bicep
+az bicep build --file infra/azure/app-cd.bicep
 ```
 
 작업 트리의 검증된 커밋을 이미지 태그로 사용한다. 전체 배포는 다음 명령으로 실행한다.
@@ -54,6 +97,7 @@ unset GITHUB_TOKEN
 4. Backend, Frontend, Dependabot Worker 이미지를 ACR에서 빌드한다.
 5. PostgreSQL, Container Apps, Job과 로그 리소스를 배포한다.
 6. 개발자 IP와 Azure 서비스 허용 규칙으로 PostgreSQL 접근을 제한한다.
+7. GitHub Actions용 OIDC Identity와 최소 배포 권한을 구성한다.
 
 기본 이미지 태그는 현재 Git commit SHA 12자리다. 다른 태그가 필요하면 `IMAGE_TAG`를 명시한다. 개발자 공인 IP 자동 조회가 불가능하면 `DEVELOPER_IP`를 지정한다.
 
@@ -100,7 +144,9 @@ Azure 서비스 허용 규칙은 다른 Azure 고객의 리소스에서도 서�
 
 ## 비용과 정리
 
-주요 지속 비용은 PostgreSQL `Standard_B1ms` 32GiB, ACR Basic, Log Analytics 수집량이다. Container Apps는 최소 Replica가 0이지만 요청과 Job 실행량에 따라 비용이 발생한다.
+주요 지속 비용은 PostgreSQL `Standard_B1ms` 32GiB, ACR Basic, Log Analytics 수집량과 Frontend·Backend의 상시 최소 Replica 1개다. Job은 실행량에 따라 비용이 발생한다.
+
+콜드스타트보다 비용 절감이 우선이면 `infra/azure/main.bicep`의 두 `minReplicas`를 0으로 되돌리고 Bicep을 재배포한다.
 
 개발을 중단할 때 PostgreSQL을 일시 정지할 수 있다.
 

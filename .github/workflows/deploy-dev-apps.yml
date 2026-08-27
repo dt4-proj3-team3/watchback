@@ -1,0 +1,69 @@
+name: Deploy development apps
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/backend/**
+      - apps/frontend/**
+      - data/demo/**
+      - .dockerignore
+      - infra/azure/scripts/deploy-app-images.sh
+      - .github/workflows/deploy-dev-apps.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: watchback-development-apps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AZURE_RESOURCE_GROUP: 4dt_3rdproject_team_3
+      AZURE_ACR_NAME: acrwatchbackdevbaursz7
+      AZURE_BACKEND_APP: ca-watchback-api-dev
+      AZURE_FRONTEND_APP: ca-watchback-web-dev
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name "$AZURE_ACR_NAME"
+
+      - name: Build images
+        run: |
+          registry_server="$AZURE_ACR_NAME.azurecr.io"
+          docker build \
+            --file apps/backend/Dockerfile \
+            --tag "$registry_server/watchback-backend:$IMAGE_TAG" \
+            apps/backend
+          docker build \
+            --file apps/frontend/Dockerfile \
+            --tag "$registry_server/watchback-frontend:$IMAGE_TAG" \
+            .
+
+      - name: Push images
+        run: |
+          registry_server="$AZURE_ACR_NAME.azurecr.io"
+          docker push "$registry_server/watchback-backend:$IMAGE_TAG"
+          docker push "$registry_server/watchback-frontend:$IMAGE_TAG"
+
+      - name: Deploy and verify
+        run: infra/azure/scripts/deploy-app-images.sh
