@@ -253,6 +253,9 @@ class CreatedReviewActivityResponse(ReviewActivityResponse):
 
 class ReviewCaseSummary(ContractModel):
     id: UUID
+    is_kev: bool = Field(
+        description="연결된 위험 후보의 가장 최근 KEV 근거가 등재 상태인지 여부"
+    )
     status: CaseStatus
     priority: Priority
     review_reason: str
@@ -339,6 +342,7 @@ LIST_EXAMPLE = {
     "items": [
         {
             "id": "30000000-0000-0000-0000-000000000001",
+            "is_kev": True,
             "status": "open",
             "priority": "critical",
             "review_reason": "KEV 등재와 패치 버전 등장을 다시 검토해야 합니다.",

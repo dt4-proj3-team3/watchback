@@ -86,6 +86,21 @@ def require_context(
 
 
 def _summary_query() -> Select[tuple[Any, ...]]:
+    latest_kev_value = (
+        select(CandidateEvidence.current_value)
+        .join(
+            AlertCandidateMatch,
+            AlertCandidateMatch.candidate_id == CandidateEvidence.candidate_id,
+        )
+        .where(
+            AlertCandidateMatch.alert_id == ReviewCase.alert_id,
+            CandidateEvidence.signal == "kev",
+        )
+        .order_by(CandidateEvidence.observed_at.desc(), CandidateEvidence.id.desc())
+        .limit(1)
+        .correlate(ReviewCase)
+        .scalar_subquery()
+    )
     return (
         select(
             ReviewCase,
@@ -102,6 +117,7 @@ def _summary_query() -> Select[tuple[Any, ...]]:
             RiskCandidate.change_type,
             RiskCandidate.reason_summary,
             RiskCandidate.selected_at,
+            latest_kev_value.label("latest_kev_value"),
         )
         .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
         .join(Repository, Repository.id == DependabotAlert.repository_id)
@@ -135,6 +151,7 @@ def _summary_from_row(row: Any) -> ReviewCaseSummary:
     advisory = row.SecurityAdvisory
     return ReviewCaseSummary(
         id=review_case.id,
+        is_kev=str(row.latest_kev_value).strip().lower() == "true",
         status=review_case.status,
         priority=review_case.priority,
         review_reason=review_case.review_reason,

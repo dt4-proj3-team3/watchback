@@ -54,6 +54,21 @@ def test_every_demo_case_has_a_matching_detail() -> None:
         assert detail.alert.github_alert_number == summary.alert.github_alert_number
         assert detail.latest_candidate == summary.latest_candidate
         assert detail.candidates[-1].id == detail.latest_candidate.id
+        latest_kev_evidence = max(
+            (
+                evidence
+                for candidate in detail.candidates
+                for evidence in candidate.evidence
+                if evidence.signal == "kev"
+            ),
+            key=lambda evidence: (evidence.observed_at, evidence.id),
+            default=None,
+        )
+        expected_kev = (
+            latest_kev_evidence is not None
+            and latest_kev_evidence.current_value == "true"
+        )
+        assert detail.is_kev == summary.is_kev == expected_kev
 
 
 def test_duplicate_manifest_alerts_share_candidate_but_not_case() -> None:
