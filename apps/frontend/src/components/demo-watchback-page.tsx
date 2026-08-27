@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { WatchbackApp } from '@/components/original/watchback-app';
 import {
+  createReviewActivity,
   loadReviewCase,
   loadReviewCases,
   readStoredDataSource,
@@ -69,6 +70,13 @@ export function DemoWatchbackPage({
     storeDataSource(window.localStorage, source);
   }
 
+  async function recordActivity(caseId: string, payload: unknown) {
+    await createReviewActivity(dataSource, caseId, payload);
+    const detail = await loadReviewCase(dataSource, caseId);
+    setCases([detail]);
+    return detail;
+  }
+
   return (
     <WatchbackApp
       initialView={view}
@@ -83,6 +91,7 @@ export function DemoWatchbackPage({
         setLoadError('');
         setRetryKey((key) => key + 1);
       }}
+      onCreateActivity={recordActivity}
       isPreview={view === 'settings'}
     />
   );

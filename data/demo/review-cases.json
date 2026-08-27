@@ -3,6 +3,7 @@
     "items": [
       {
         "id": "30d08f52-163a-5a19-9edf-d5fb5eedca6b",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -48,6 +49,7 @@
       },
       {
         "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
@@ -93,6 +95,7 @@
       },
       {
         "id": "cf32cb01-3f19-5447-be2c-a674c59a2122",
+        "is_kev": true,
         "status": "open",
         "priority": "critical",
         "review_reason": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
@@ -138,6 +141,7 @@
       },
       {
         "id": "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -183,6 +187,7 @@
       },
       {
         "id": "621de432-372a-5f56-8ac7-db770e69034e",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -228,6 +233,7 @@
       },
       {
         "id": "67b489b1-46b1-5266-a483-19d8bbdf4123",
+        "is_kev": true,
         "status": "open",
         "priority": "critical",
         "review_reason": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -273,6 +279,7 @@
       },
       {
         "id": "3c2e9c92-a87e-589c-af25-cd25c7cbe876",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
@@ -318,6 +325,7 @@
       },
       {
         "id": "36884e9b-d3b5-50f8-829b-a7be454d2722",
+        "is_kev": false,
         "status": "open",
         "priority": "critical",
         "review_reason": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
@@ -363,6 +371,7 @@
       },
       {
         "id": "561f880a-8930-5bae-999e-dbe28be0c2fd",
+        "is_kev": false,
         "status": "open",
         "priority": "high",
         "review_reason": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
@@ -408,6 +417,7 @@
       },
       {
         "id": "5cab1f43-afbd-51a1-b688-a546ad05af7c",
+        "is_kev": true,
         "status": "open",
         "priority": "critical",
         "review_reason": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",
@@ -465,6 +475,7 @@
   "details": {
     "30d08f52-163a-5a19-9edf-d5fb5eedca6b": {
       "id": "30d08f52-163a-5a19-9edf-d5fb5eedca6b",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2025-04-21 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -574,6 +585,7 @@
     },
     "cc71c818-622d-59bc-9874-078c64f5c592": {
       "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
@@ -708,6 +720,7 @@
     },
     "cf32cb01-3f19-5447-be2c-a674c59a2122": {
       "id": "cf32cb01-3f19-5447-be2c-a674c59a2122",
+      "is_kev": true,
       "status": "open",
       "priority": "critical",
       "review_reason": "2026-01-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
@@ -879,6 +892,7 @@
     },
     "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f": {
       "id": "7929ac9c-bc79-5eb3-b2e0-208a49b22e0f",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -976,6 +990,7 @@
     },
     "621de432-372a-5f56-8ac7-db770e69034e": {
       "id": "621de432-372a-5f56-8ac7-db770e69034e",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2026-05-14 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -1073,6 +1088,7 @@
     },
     "67b489b1-46b1-5266-a483-19d8bbdf4123": {
       "id": "67b489b1-46b1-5266-a483-19d8bbdf4123",
+      "is_kev": true,
       "status": "open",
       "priority": "critical",
       "review_reason": "2026-01-03 EPSS D-30 급상승 조건을 충족했습니다.",
@@ -1219,6 +1235,7 @@
     },
     "3c2e9c92-a87e-589c-af25-cd25c7cbe876": {
       "id": "3c2e9c92-a87e-589c-af25-cd25c7cbe876",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2026-07-24 EPSS 위험도가 상위 5%에 진입했습니다.",
@@ -1353,6 +1370,7 @@
     },
     "36884e9b-d3b5-50f8-829b-a7be454d2722": {
       "id": "36884e9b-d3b5-50f8-829b-a7be454d2722",
+      "is_kev": false,
       "status": "open",
       "priority": "critical",
       "review_reason": "2025-05-05 EPSS가 30일 전보다 크게 상승했습니다.",
@@ -1462,6 +1480,7 @@
     },
     "561f880a-8930-5bae-999e-dbe28be0c2fd": {
       "id": "561f880a-8930-5bae-999e-dbe28be0c2fd",
+      "is_kev": false,
       "status": "open",
       "priority": "high",
       "review_reason": "2026-05-18 EPSS 위험도가 상위 5%에 진입했습니다.",
@@ -1596,6 +1615,7 @@
     },
     "5cab1f43-afbd-51a1-b688-a546ad05af7c": {
       "id": "5cab1f43-afbd-51a1-b688-a546ad05af7c",
+      "is_kev": true,
       "status": "open",
       "priority": "critical",
       "review_reason": "2026-06-07 EPSS가 30일 전보다 크게 상승했습니다.",

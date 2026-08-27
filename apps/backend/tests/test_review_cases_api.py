@@ -406,6 +406,7 @@ def test_list_filters_latest_candidate_and_paginates(
     response = client.get("/api/v1/review-cases", headers=base_headers)
     assert response.status_code == 200
     assert response.json()["items"][0]["latest_candidate"]["change_type"] == "kev_added"
+    assert response.json()["items"][0]["is_kev"] is True
     assert response.json()["total"] == 1
 
     all_cases = client.get(
@@ -432,6 +433,28 @@ def test_list_filters_latest_candidate_and_paginates(
     assert client.get(
         "/api/v1/review-cases?priority=low", headers=base_headers
     ).json() == {"items": [], "page": 1, "page_size": 20, "total": 0}
+
+
+def test_list_keeps_kev_status_when_latest_change_is_epss(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    with Session(postgres_engine) as session:
+        candidate = session.get(RiskCandidate, api_fixture["candidate_latest"])
+        assert candidate is not None
+        candidate.change_type = "epss_rise"
+        session.commit()
+
+    items = client.get(
+        "/api/v1/review-cases?status=all",
+        headers=headers(api_fixture),
+    ).json()["items"]
+    by_id = {item["id"]: item for item in items}
+
+    assert by_id[str(api_fixture["case"])]["latest_candidate"]["change_type"] == "epss_rise"
+    assert by_id[str(api_fixture["case"])]["is_kev"] is True
+    assert by_id[str(api_fixture["case_high"])]["is_kev"] is False
 
 
 @pytest.mark.parametrize("sort", ["priority", "opened_at", "updated_at"])

@@ -20,7 +20,7 @@ WATCHBACK_ORGANIZATION_ID=ff178e49-d218-50b7-bf56-ac3513330b99
 WATCHBACK_USER_ID=7889d975-3d64-536f-8740-3d0a28ee3a1d
 ```
 
-기본 데이터 소스는 `db`다. 설정 화면에서 사용자가 명시적으로 선택한 `db|demo` 값만 브라우저에 저장하며, DB 오류가 발생해도 Demo로 자동 전환하지 않는다. 대시보드·저장소·자동조치 정책은 Demo 기반 읽기 전용 `UI Preview`다.
+기본 데이터 소스는 `db`다. 설정 화면에서 사용자가 명시적으로 선택한 `db|demo` 값만 브라우저에 저장하며, DB 오류가 발생해도 Demo로 자동 전환하지 않는다. 상세 화면에서는 최신 Candidate에 검토 활동과 GitHub Issue·PR 링크를 기록할 수 있다. Demo 활동은 현재 탭의 `sessionStorage`에만 보존되어 탭 세션이 끝나면 사라지며, 실제 DB나 GitHub를 변경하지 않는다. 대시보드·저장소·자동조치 정책은 Demo 기반 `UI Preview`다.
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 연다.
 

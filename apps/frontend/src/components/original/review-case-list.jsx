@@ -160,7 +160,7 @@ export function ReviewCaseList({ values }) {
                           </span>
                         </div>
                         <div style={toReactStyle("font-size:14px;line-height:1.6;color:#1B1E1A;margin-bottom:6px")}>
-                          {`${c.review_reason}`}
+                          {`${c.reviewReasonLabel}`}
                         </div>
                         <div style={toReactStyle("display:flex;align-items:center;gap:6px")}>
                           {c.evidenceTags.map((tag, _index1) => (
@@ -173,9 +173,11 @@ export function ReviewCaseList({ values }) {
                           <span>
                             {`생성 ${c.openedLabel}`}
                           </span>
-                          <span>
-                            {`업데이트 ${c.updatedLabel}`}
-                          </span>
+                          {c.hasDistinctUpdatedDate && (
+                            <span>
+                              {`업데이트 ${c.updatedLabel}`}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={toReactStyle("display:flex;align-items:center;padding:0 18px;color:#D2D5CD;font-size:18px")}>
