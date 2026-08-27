@@ -2,7 +2,7 @@
 
 - 상태: Accepted
 - 날짜: 2026-08-25
-- 관련 이슈/PR: #120
+- 관련 이슈/PR: #120, #134
 - 대체하는 ADR:
 - 대체된 ADR:
 
@@ -16,9 +16,10 @@ Watchback은 Fabric 외부에서 Dependabot Alert를 수집하고 운영 DB와 W
 - 이미지는 관리자 계정을 비활성화한 ACR에 저장하고 Container Apps는 사용자 할당 Managed Identity로 Pull한다.
 - 비밀값은 RBAC 기반 Key Vault에 저장하고 Container Apps에서 Managed Identity로 참조한다.
 - PostgreSQL Flexible Server는 개발용 Burstable SKU와 공개 네트워크를 사용한다. 로컬 접속은 개발자 공인 IP로 제한하고, Container Apps와 Job은 Azure 서비스 허용 규칙을 사용한다.
-- Frontend와 Backend는 Container Apps Consumption으로 실행하고 최소 Replica를 0으로 둔다.
+- Frontend와 Backend는 Container Apps Consumption으로 실행하고 최소 Replica를 1로 둔다.
 - DB 초기화와 Dependabot 동기화는 수동 Container Apps Job으로 실행한다. 공통 Job 모듈은 후속 Gold Sync Worker에서 재사용한다.
-- 배포는 로컬 Azure CLI로 재현한다. GitHub Actions는 배포 경로와 권한이 안정된 뒤 별도 도입한다.
+- 전체 인프라는 로컬 Azure CLI로 재현한다. 애플리케이션은 `main` 변경 시 GitHub Actions가 커밋 SHA 태그로 ACR에 게시하고 기존 Container Apps를 갱신한다.
+- GitHub Actions는 전용 사용자 할당 Managed Identity와 OIDC로 Azure에 로그인한다. 이 Identity에는 ACR Push와 두 Container App 배포 권한만 부여한다.
 - Container Apps 로그는 Log Analytics에 수집한다. Application Insights는 리소스와 연결 정보만 준비하고 애플리케이션 계측은 후속 구현으로 남긴다.
 
 ## Alternatives
@@ -33,6 +34,8 @@ Watchback은 Fabric 외부에서 Dependabot Alert를 수집하고 운영 DB와 W
 ## Consequences
 
 - 배포·정리 절차가 코드로 재현되며 이미지 Pull과 비밀 전달에 장기 자격 증명이 필요하지 않다.
+- 최소 Replica 1개를 유지해 콜드스타트를 줄이는 대신 Frontend와 Backend의 유휴 비용이 계속 발생한다.
+- 애플리케이션 배포가 실패하면 직전 두 이미지를 다시 배포한다. DB Migration과 Job 실행은 자동 배포에 포함하지 않는다.
 - Azure 서비스 허용 규칙은 다른 Azure 고객의 리소스까지 네트워크 접근을 허용한다. PostgreSQL 인증과 TLS를 적용하되 이 선택은 개발 환경에만 한정한다.
 - Container Apps outbound IP 변경을 추적하거나 개별 방화벽 규칙을 동기화하지 않아도 된다.
 - 운영 환경은 PostgreSQL Private Access와 전용 네트워크를 사용해야 한다.

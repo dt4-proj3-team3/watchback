@@ -15,10 +15,24 @@ output() {
 backend_url="$(output backendUrl)"
 frontend_url="$(output frontendUrl)"
 postgres_name="$(output postgresName)"
+backend_app="ca-watchback-api-dev"
+frontend_app="ca-watchback-web-dev"
 
 curl --fail --silent --show-error "$backend_url/openapi.json" >/dev/null
 curl --fail --silent --show-error "$backend_url/docs" >/dev/null
 curl --fail --silent --show-error "$frontend_url/dashboard" >/dev/null
+
+for app_name in "$backend_app" "$frontend_app"; do
+  min_replicas="$(az containerapp show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$app_name" \
+    --query properties.template.scale.minReplicas \
+    --output tsv)"
+  if [[ "$min_replicas" != "1" ]]; then
+    echo "$app_name 최소 Replica가 1이 아닙니다." >&2
+    exit 1
+  fi
+done
 
 if [[ "$(az acr show --name "$(output registryName)" --query adminUserEnabled --output tsv)" != "false" ]]; then
   echo "ACR 관리자 계정이 비활성화되어 있지 않습니다." >&2
@@ -44,5 +58,5 @@ if az postgres flexible-server firewall-rule list \
   exit 1
 fi
 
-printf '{"backend":"%s","frontend":"%s","acr_admin":false,"azure_services_firewall":true}\n' \
+printf '{"backend":"%s","frontend":"%s","acr_admin":false,"min_replicas":1,"azure_services_firewall":true}\n' \
   "$backend_url" "$frontend_url"

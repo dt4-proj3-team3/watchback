@@ -6,6 +6,7 @@ RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-4dt_3rdproject_team_3}"
 LOCATION="${AZURE_LOCATION:-koreacentral}"
 FOUNDATION_DEPLOYMENT="watchback-dev-foundation"
 MAIN_DEPLOYMENT="${AZURE_DEPLOYMENT_NAME:-watchback-dev}"
+APP_CD_DEPLOYMENT="${AZURE_APP_CD_DEPLOYMENT_NAME:-watchback-dev-app-cd}"
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
 frontend_context=""
@@ -107,6 +108,13 @@ az deployment group create \
     developerIp="$developer_ip" \
     deployDependabotJob="$deploy_dependabot_job" \
     postgresAdminPassword="$postgres_password" \
+  --output none
+
+az deployment group create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_CD_DEPLOYMENT" \
+  --template-file "$REPOSITORY_ROOT/infra/azure/app-cd.bicep" \
+  --parameters location="$LOCATION" \
   --output none
 
 echo "Azure 개발 환경 배포가 완료되었습니다. imageTag=$IMAGE_TAG"
