@@ -6,13 +6,13 @@ export function Dashboard({ values }) {
     <>
     {values.isDashboardView && (
       <>
-        <div style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
+        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
           <div style={toReactStyle("margin-bottom:28px")}>
             <h1 style={toReactStyle("font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
               {"오늘의 재검토 현황"}
             </h1>
             <p style={toReactStyle("font-size:14px;color:#5B6058;margin:0 0 4px;line-height:1.6")}>
-              {"지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요."}
+              {`${values.dashboardDescription}`}
             </p>
             <span style={toReactStyle("font-size:12px;color:#8B9086")}>
               {`${values.weekRangeLabel}`}
@@ -73,6 +73,11 @@ export function Dashboard({ values }) {
             </span>
           </div>
           <div style={toReactStyle("display:flex;flex-direction:column;gap:10px;margin-bottom:28px")}>
+            {!values.hasDashboardCases && (
+              <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:28px 20px;text-align:center;font-size:13px;color:#8B9086")}>
+                {"현재 재검토 항목이 없습니다."}
+              </div>
+            )}
             {values.topCases.map((c, _index0) => (
               <Fragment key={_index0}>
                 <div style={toReactStyle("display:flex;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;overflow:hidden;cursor:pointer")} onClick={c.onOpen}>
@@ -113,7 +118,7 @@ export function Dashboard({ values }) {
             ))}
           </div>
           <div style={toReactStyle("font-size:15px;font-weight:700;margin-bottom:14px")}>
-            {"이번 주 처리 흐름"}
+            {`${values.flowTitle}`}
           </div>
           <div style={toReactStyle("display:grid;grid-template-columns:repeat(3,1fr);gap:12px")}>
             {values.flowStages.map((stage, _index0) => (

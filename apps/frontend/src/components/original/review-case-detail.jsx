@@ -6,15 +6,15 @@ export function ReviewCaseDetail({ values }) {
     <>
     {values.isDetailView && (
       <>
-        <div style={toReactStyle("max-width:960px;margin:0 auto;padding:28px 32px 96px")}>
-          <div style={toReactStyle("display:flex;align-items:center;gap:6px;font-size:13px;color:#5B6058;cursor:pointer;margin-bottom:20px;width:fit-content")} onClick={values.backToList}>
+        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:28px 32px 96px")}>
+          <button type="button" style={toReactStyle("display:flex;align-items:center;gap:6px;font:13px inherit;color:#5B6058;cursor:pointer;margin-bottom:20px;width:fit-content;background:none;border:none;padding:0")} onClick={values.backToList}>
             <span>
               {"←"}
             </span>
             <span>
               {"목록으로"}
             </span>
-          </div>
+          </button>
           <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:24px 26px;margin-bottom:16px")}>
             <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap")}>
               <div>
@@ -100,10 +100,15 @@ export function ReviewCaseDetail({ values }) {
               {"PR 생성 API 연동 전입니다."}
             </div>
           )}
+          {values.showPreviewNotice && (
+            <div style={toReactStyle("background:#EEF0EE;border:1px solid #D2D5CD;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#5B6058")}>
+              {"검토 활동 연동은 후속 구현 범위입니다."}
+            </div>
+          )}
           <div style={toReactStyle("background:#FFFFFF;border-left:3px solid #8B9086;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:12.5px;line-height:1.6;color:#5B6058")}>
             {"Watchback은 위험 변화 신호를 제공하며, 실제 악용 여부와 조치 필요성은 검토자가 판단합니다."}
           </div>
-          <div style={toReactStyle("display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start")}>
+          <div className="watchback-detail-grid" style={toReactStyle("display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start")}>
             <div style={toReactStyle("display:flex;flex-direction:column;gap:20px;min-width:0")}>
               <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px")}>
                 <div style={toReactStyle("display:flex;align-items:center;gap:8px;margin-bottom:14px")}>
@@ -114,11 +119,21 @@ export function ReviewCaseDetail({ values }) {
                     {`${values.selected.systemicLabel}`}
                   </span>
                 </div>
-                <div style={toReactStyle("display:flex;flex-direction:column;gap:10px")}>
-                  {values.selected.evidence.map((ev, _index0) => (
-                    <Fragment key={_index0}>
-                      <div style={toReactStyle("padding:11px 14px;background:#F5F6F3;border-radius:8px")}>
-                        <div style={toReactStyle("display:flex;align-items:center;gap:12px")}>
+                <div style={toReactStyle("display:flex;flex-direction:column;gap:14px")}>
+                  {values.selected.evidenceGroups.map((group) => (
+                    <div key={group.id} style={toReactStyle("padding-left:14px;border-left:2px solid #D2D5CD")}>
+                      <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap")}>
+                        <span style={toReactStyle("font-size:12px;font-weight:700;color:#1B1E1A")}>
+                          {group.changeTypeLabel}
+                        </span>
+                        <span style={toReactStyle("font-size:11px;color:#8B9086")}>
+                          {`후보 선정 ${group.selectedLabel}`}
+                        </span>
+                      </div>
+                      <div style={toReactStyle("display:flex;flex-direction:column;gap:8px")}>
+                      {group.evidence.map((ev) => (
+                      <div key={ev.id} style={toReactStyle("padding:11px 14px;background:#F5F6F3;border-radius:8px")}>
+                        <div style={toReactStyle("display:flex;align-items:center;gap:12px;flex-wrap:wrap")}>
                           <span style={toReactStyle("font-size:12px;font-weight:600;color:#1B1E1A;width:120px;flex:none")}>
                             {`${ev.signalLabel}`}
                           </span>
@@ -132,20 +147,25 @@ export function ReviewCaseDetail({ values }) {
                             {`${ev.currentValueLabel}`}
                           </span>
                           <span style={toReactStyle("font-size:11px;color:#8B9086;margin-left:auto")}>
-                            {`${ev.observedLabel}`}
+                            {`${ev.observedLabel} · ${ev.sourceLabel}`}
                           </span>
                         </div>
                         <div style={toReactStyle("font-size:12.5px;color:#5B6058;line-height:1.5;margin-top:6px")}>
                           {`${ev.reasonSummary}`}
                         </div>
                       </div>
-                    </Fragment>
+                      ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
               <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px")}>
                 <div style={toReactStyle("font-size:14px;font-weight:700;margin-bottom:14px")}>
                   {"검토 활동"}
+                  <span style={toReactStyle("font-size:10.5px;font-weight:600;color:#8B9086;background:#EEF0EE;border-radius:20px;padding:3px 8px;margin-left:8px")}>
+                    {"입력 기능 미구현"}
+                  </span>
                 </div>
                 {values.showActivityForm && (
                   <>

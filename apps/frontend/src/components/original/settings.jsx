@@ -6,7 +6,7 @@ export function Settings({ values }) {
     <>
     {values.isSettingsView && (
       <>
-        <div style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
+        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
           <div style={toReactStyle("margin-bottom:28px")}>
             <h1 style={toReactStyle("font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
               {"자동조치 정책"}
@@ -15,7 +15,9 @@ export function Settings({ values }) {
               {"저장소 중요도와 취약점 심각도 조합에 따라 조직 전체에 적용되는 자동조치 방식을 관리합니다."}
             </p>
             <p style={toReactStyle("font-size:12.5px;color:#8B9086;margin:6px 0 0;line-height:1.6")}>
-              {"현재 모든 위험도 조합은 자동 병합 없이 업데이트 PR 생성까지만 허용합니다."}
+              {values.isDemo
+                ? "현재 모든 위험도 조합은 자동 병합 없이 업데이트 PR 생성까지만 허용합니다."
+                : "실제 자동조치 정책은 아직 DB와 연동되지 않았습니다."}
             </p>
           </div>
           <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
@@ -24,20 +26,21 @@ export function Settings({ values }) {
                 {"데이터 소스"}
               </div>
               <div style={toReactStyle("font-size:12.5px;color:#8B9086;line-height:1.5")}>
-                {"현재는 데모 데이터로 화면을 확인할 수 있습니다."}
+                {"대시보드, 재검토 목록·상세와 저장소에서 사용할 데이터 소스를 선택합니다. DB 오류 시 Demo로 자동 전환하지 않습니다."}
               </div>
             </div>
             <div style={toReactStyle("display:flex;align-items:center;gap:8px")}>
-              <button type="button" style={toReactStyle("font-size:12.5px;font-weight:600;font-family:inherit;color:#FFFFFF;background:#2F8F5B;border:1px solid #2F8F5B;border-radius:7px;padding:7px 12px")}>
+              <button type="button" onClick={() => values.onDataSourceChange('demo')} aria-pressed={values.dataSource === 'demo'} style={toReactStyle(`font-size:12.5px;font-weight:600;font-family:inherit;color:${values.dataSource === 'demo' ? '#FFFFFF' : '#5B6058'};background:${values.dataSource === 'demo' ? '#2F8F5B' : '#FFFFFF'};border:1px solid ${values.dataSource === 'demo' ? '#2F8F5B' : '#D2D5CD'};border-radius:7px;padding:7px 12px;cursor:pointer`)}>
                 {"Demo"}
               </button>
-              <button type="button" disabled title="DB 연동 전입니다." style={toReactStyle("font-size:12.5px;font-weight:600;font-family:inherit;color:#A3A79F;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:7px 12px;cursor:not-allowed")}>
-                {"DB · 연동 전"}
+              <button type="button" onClick={() => values.onDataSourceChange('db')} aria-pressed={values.dataSource === 'db'} style={toReactStyle(`font-size:12.5px;font-weight:600;font-family:inherit;color:${values.dataSource === 'db' ? '#FFFFFF' : '#5B6058'};background:${values.dataSource === 'db' ? '#2F8F5B' : '#FFFFFF'};border:1px solid ${values.dataSource === 'db' ? '#2F8F5B' : '#D2D5CD'};border-radius:7px;padding:7px 12px;cursor:pointer`)}>
+                {"DB"}
               </button>
             </div>
           </div>
-          <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px;overflow-x:auto")}>
-            <table style={toReactStyle("border-collapse:collapse;width:100%;font-size:13px")}>
+          {values.isDemo ? (
+            <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px;overflow-x:auto")}>
+              <table style={toReactStyle("border-collapse:collapse;width:100%;font-size:13px")}>
               <thead>
                 <tr>
                   <th style={toReactStyle("text-align:left;padding:8px 12px;color:#8B9086;font-size:11px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid #E4E6E1")}>
@@ -62,7 +65,7 @@ export function Settings({ values }) {
                       {row.cells.map((cell, _index1) => (
                         <Fragment key={_index1}>
                           <td style={toReactStyle("padding:8px 10px;border-bottom:1px solid #F0F1EE")}>
-                            <select style={toReactStyle("font-size:12.5px;font-family:inherit;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:6px 8px;cursor:pointer;width:100%")} value={cell.value} onChange={cell.onChange}>
+                            <select disabled title="UI Preview · 후속 구현" style={toReactStyle("font-size:12.5px;font-family:inherit;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:6px 8px;cursor:not-allowed;width:100%;color:#8B9086")} value={cell.value} onChange={cell.onChange}>
                               {values.modeSelectOptions.map((opt, _index2) => (
                                 <Fragment key={_index2}>
                                   <option value={opt.value}>
@@ -78,7 +81,22 @@ export function Settings({ values }) {
                   </Fragment>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
+          ) : (
+            <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:36px 22px;text-align:center")}>
+              <div style={toReactStyle("font-size:14px;font-weight:600;margin-bottom:6px")}>
+                {"자동조치 정책 DB 연동은 아직 구현되지 않았습니다."}
+              </div>
+              <div style={toReactStyle("font-size:12.5px;color:#8B9086;line-height:1.6")}>
+                {"DB 모드에서는 합성 정책을 표시하지 않습니다."}
+              </div>
+            </div>
+          )}
+          <div style={toReactStyle("font-size:12px;color:#8B9086;margin-top:12px")}>
+            {values.isDemo
+              ? "자동조치 정책은 UI Preview이며 이 화면에서 변경되지 않습니다."
+              : "실제 정책 조회·변경은 후속 구현 범위입니다."}
           </div>
         </div>
       </>

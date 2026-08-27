@@ -6,7 +6,7 @@ export function ReviewCaseList({ values }) {
     <>
     {values.isListView && (
       <>
-        <div style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
+        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
           <div style={toReactStyle("margin-bottom:28px")}>
             <h1 style={toReactStyle("font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
               {"재검토 목록"}
@@ -17,9 +17,9 @@ export function ReviewCaseList({ values }) {
               <div style={toReactStyle("display:flex;background:#EEF0EE;border-radius:8px;padding:3px;gap:2px")}>
                 {values.statusOptions.map((opt, _index0) => (
                   <Fragment key={_index0}>
-                    <div style={toReactStyle(`${opt.pillStyle}`)} onClick={opt.onClick}>
+                    <button type="button" style={toReactStyle(`${opt.pillStyle};border:none;font-family:inherit`)} onClick={opt.onClick}>
                       {`${opt.label}`}
-                    </div>
+                    </button>
                   </Fragment>
                 ))}
               </div>
@@ -46,10 +46,10 @@ export function ReviewCaseList({ values }) {
               </span>
               {values.priorityChipOptions.map((opt, _index0) => (
                 <Fragment key={_index0}>
-                  <div style={toReactStyle(`${opt.pillStyle}`)} onClick={opt.onClick}>
+                  <button type="button" style={toReactStyle(`${opt.pillStyle};font-family:inherit`)} onClick={opt.onClick}>
                     <span style={toReactStyle(`width:7px;height:7px;border-radius:50%;background:${opt.dot};display:inline-block`)}></span>
                     {opt.label}
-                  </div>
+                  </button>
                 </Fragment>
               ))}
             </div>
@@ -59,9 +59,9 @@ export function ReviewCaseList({ values }) {
               </span>
               {values.changeTypeChipOptions.map((opt, _index0) => (
                 <Fragment key={_index0}>
-                  <div style={toReactStyle(`${opt.pillStyle}`)} onClick={opt.onClick}>
+                  <button type="button" style={toReactStyle(`${opt.pillStyle};font-family:inherit`)} onClick={opt.onClick}>
                     {`${opt.label}`}
-                  </div>
+                  </button>
                 </Fragment>
               ))}
             </div>
@@ -71,15 +71,15 @@ export function ReviewCaseList({ values }) {
               </span>
               {values.importanceChipOptions.map((opt, _index0) => (
                 <Fragment key={_index0}>
-                  <div style={toReactStyle(`${opt.pillStyle}`)} onClick={opt.onClick}>
+                  <button type="button" style={toReactStyle(`${opt.pillStyle};font-family:inherit`)} onClick={opt.onClick}>
                     <span style={toReactStyle(`width:7px;height:7px;border-radius:50%;background:${opt.dot};display:inline-block`)}></span>
                     {opt.label}
-                  </div>
+                  </button>
                 </Fragment>
               ))}
-              <div style={toReactStyle(`${values.staleToggle.pillStyle}`)} onClick={values.staleToggle.onClick}>
+              <button type="button" style={toReactStyle(`${values.staleToggle.pillStyle};font-family:inherit`)} onClick={values.staleToggle.onClick}>
                 {"3일 이상 미처리만"}
-              </div>
+              </button>
             </div>
           </div>
           {values.activeRepoFilterLabel && (
@@ -115,7 +115,7 @@ export function ReviewCaseList({ values }) {
               <div style={toReactStyle("display:flex;flex-direction:column;gap:12px")}>
                 {values.filteredCases.map((c, _index0) => (
                   <Fragment key={_index0}>
-                    <div style={toReactStyle("display:flex;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s")} onClick={c.onOpen}>
+                    <div role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') c.onOpen(); }} style={toReactStyle("display:flex;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s")} onClick={c.onOpen}>
                       <div style={toReactStyle(`width:4px;flex:none;background:${c.priorityDot}`)}></div>
                       <div style={toReactStyle("flex:1;min-width:0;padding:18px 22px")}>
                         <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px")}>
@@ -153,7 +153,7 @@ export function ReviewCaseList({ values }) {
                           </span>
                           <span style={toReactStyle("width:3px;height:3px;border-radius:50%;background:#D2D5CD")}></span>
                           <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#5B6058")}>
-                            {`${c.advisory.cve_id}`}
+                            {`${c.advisory.cve_id || c.advisory.ghsa_id}`}
                           </span>
                           <span style={toReactStyle("font-size:11px;color:#8B9086")}>
                             {`CVSS ${c.advisory.cvss_score}`}

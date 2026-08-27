@@ -6,6 +6,7 @@
 **/.pytest_cache/
 **/node_modules/
 **/.next/
+**/.env*
 coverage/
 tmp/
 fabric/workspace/.stubs/

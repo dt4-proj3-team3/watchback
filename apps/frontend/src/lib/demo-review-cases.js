@@ -1,28 +1,52 @@
 import fixture from '../../../../data/demo/review-cases.json';
 
-export function getDemoReviewCases() {
-  return Object.values(fixture.details).map((detail) => ({
+function normalizeActivity(activity) {
+  return {
+    ...activity,
+    actor: activity.actor ?? null,
+    external_links: activity.external_links ?? [],
+  };
+}
+
+export function normalizeReviewCaseDetail(detail) {
+  return {
     ...detail,
     automation: {
       eligible: false,
-      reason: '데모 Fixture에는 자동조치 결과가 포함되지 않습니다.',
+      reason: '자동조치 기능은 아직 연결되지 않았습니다.',
       mergeMode: null,
       prUrl: null,
     },
-    candidates: detail.candidates.map((candidate) => ({
-      change_type: candidate.change_type,
-      reason_summary: candidate.reason_summary,
-      selected_at: candidate.selected_at,
-    })),
-    evidence: detail.candidates.flatMap((candidate) => candidate.evidence),
-    activities: detail.activities.map((activity) => ({
-      ...activity,
-      actor: activity.actor ?? null,
-      external_link: activity.external_link ?? null,
-    })),
-  }));
+    candidates: detail.candidates ?? [detail.latest_candidate],
+    evidence: (detail.candidates ?? []).flatMap((candidate) => candidate.evidence ?? []),
+    activities: (detail.activities ?? []).map(normalizeActivity),
+  };
 }
 
-export function hasDemoReviewCase(caseId) {
-  return Object.hasOwn(fixture.details, caseId);
+export function normalizeReviewCaseSummary(summary) {
+  return {
+    ...summary,
+    automation: {
+      eligible: false,
+      reason: '자동조치 기능은 아직 연결되지 않았습니다.',
+      mergeMode: null,
+      prUrl: null,
+    },
+    candidates: [summary.latest_candidate],
+    evidence: [],
+    activities: [],
+  };
+}
+
+export function getDemoReviewCases() {
+  return Object.values(fixture.details).map(normalizeReviewCaseDetail);
+}
+
+export function getDemoReviewCaseSummaries() {
+  return fixture.list.items.map(normalizeReviewCaseSummary);
+}
+
+export function getDemoReviewCase(caseId) {
+  const detail = fixture.details[caseId];
+  return detail ? normalizeReviewCaseDetail(detail) : null;
 }

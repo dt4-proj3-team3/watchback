@@ -6,3 +6,39 @@ body {
 ::selection {
   background: #cfe9db;
 }
+
+button:focus-visible,
+[role="button"]:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid #2f8f5b;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .watchback-header {
+    height: auto !important;
+    min-height: 64px;
+    padding: 10px 16px !important;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .watchback-header-main {
+    min-width: 0;
+    gap: 12px !important;
+  }
+
+  .watchback-nav {
+    max-width: calc(100vw - 150px);
+    overflow-x: auto;
+  }
+
+  .watchback-page {
+    padding: 24px 16px 72px !important;
+  }
+
+  .watchback-detail-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
