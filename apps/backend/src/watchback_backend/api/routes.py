@@ -16,6 +16,7 @@ from watchback_backend.api.schemas import (
     CaseStatusFilter,
     ErrorResponse,
     Priority,
+    ReviewDashboardSummary,
     ReviewActivityCreate,
     ReviewActivityCreated,
     ReviewCaseDetail,
@@ -166,6 +167,20 @@ def list_review_cases(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get(
+    "/dashboard-summary",
+    response_model=ReviewDashboardSummary,
+    summary="재검토 대시보드 주간 비교",
+    responses={403: FORBIDDEN, 422: VALIDATION_ERROR},
+)
+def get_review_dashboard_summary(
+    headers: Annotated[ContextHeaders, Depends(get_context_headers)],
+    session: Annotated[Session, Depends(get_session)],
+) -> ReviewDashboardSummary:
+    context = service.require_context(session, headers.organization_id, headers.user_id)
+    return service.get_review_dashboard_summary(session, context)
 
 
 @router.get(

@@ -24,7 +24,7 @@ Grain: `batch_id` 1행
 | `generated_at` | timestamp | yes | `gold_batches.source_generated_at` | 결과 생성 시각 |
 | `policy_version` | string | yes | `gold_batches.policy_version` | 후보 선정 정책 버전 |
 | `schema_version` | string | yes | `gold_batches.schema_version` | 전달 스키마 버전 |
-| `candidate_count` | int | yes | `gold_batches.candidate_count` | CVE·GHSA-only 후보 합계 |
+| `candidate_count` | int | yes | `gold_batches.candidate_count` | 같은 Batch의 Evidence가 하나 이상 존재하는 CVE 후보 수 |
 
 ## `publish_rereview_candidate`
 
@@ -34,16 +34,18 @@ Grain: `batch_id + candidate_id` 1행
 | --- | --- | --- | --- | --- |
 | `batch_id` | string | yes | `gold_batch_candidates.batch_id` | Candidate가 포함된 Batch |
 | `candidate_id` | string | yes | `risk_candidates.source_candidate_id` | 후보 식별자 |
-| `subject_type` | string | yes | `risk_candidates.subject_type` | `CVE` 또는 `GHSA` |
-| `subject_id` | string | yes | `risk_candidates.subject_id` | 공통 Alert 연결키 |
-| `ghsa_id` | string | yes | `risk_candidates.ghsa_id` | GHSA 원본 식별자 |
-| `cve_id` | string | no | `risk_candidates.cve_id` | CVE가 있을 때의 연결키 |
+| `subject_type` | string | yes | `risk_candidates.subject_type` | S1에서는 `CVE` |
+| `subject_id` | string | yes | `risk_candidates.subject_id` | `cve_id`와 같은 Alert 연결키 |
+| `ghsa_id` | string | no | `risk_candidates.ghsa_id` | GHSA 원본 보조 식별자 |
+| `cve_id` | string | yes | `risk_candidates.cve_id` | Alert 매칭에 사용하는 필수 CVE 식별자 |
 | `priority` | string | yes | `risk_candidates.priority` | `P0`~`P3` 후보 우선순위 |
 | `change_type` | string | yes | `risk_candidates.change_type` | 대표 변화 유형 |
 | `reason_summary` | string | yes | `risk_candidates.reason_summary` | 목록용 선정 사유 |
 | `selected_at` | timestamp | yes | `risk_candidates.selected_at` | 후보 선정 시각 |
 
-`subject_type=CVE`이면 `subject_id=cve_id`이고, `subject_type=GHSA`이면 `cve_id=null`, `subject_id=ghsa_id`여야 한다.
+`subject_type=CVE`, `subject_id=cve_id`여야 한다. `ghsa_id`는 null이어도 되며 GHSA-only Candidate는 S1 계약에서 제외한다.
+
+Publish View는 같은 `(batch_id, candidate_id)`의 Evidence가 하나 이상 존재하는 Candidate만 제공합니다.
 
 ## `publish_rereview_candidate_evidence`
 

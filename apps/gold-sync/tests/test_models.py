@@ -37,11 +37,11 @@ def rows() -> tuple[list[dict], list[dict], list[dict]]:
         },
         {
             "batch_id": "batch-1",
-            "candidate_id": "candidate-ghsa",
-            "subject_type": "GHSA",
-            "subject_id": "GHSA-aaaa-bbbb-0002",
-            "ghsa_id": "GHSA-aaaa-bbbb-0002",
-            "cve_id": None,
+            "candidate_id": "candidate-without-ghsa",
+            "subject_type": "CVE",
+            "subject_id": "CVE-2026-0002",
+            "ghsa_id": None,
+            "cve_id": "CVE-2026-0002",
             "priority": "P3",
             "change_type": "PATCH_NEW",
             "reason_summary": "패치 등장",
@@ -64,7 +64,7 @@ def rows() -> tuple[list[dict], list[dict], list[dict]]:
         {
             "batch_id": "batch-1",
             "evidence_id": "evidence-2",
-            "candidate_id": "candidate-ghsa",
+            "candidate_id": "candidate-without-ghsa",
             "signal": "patch",
             "value_type": "version",
             "previous_value": None,
@@ -77,12 +77,12 @@ def rows() -> tuple[list[dict], list[dict], list[dict]]:
     return batches, candidates, evidence
 
 
-def test_builds_cve_and_ghsa_payload_with_nullable_values() -> None:
+def test_builds_cve_payload_with_nullable_ghsa_and_evidence_values() -> None:
     payloads, failures = build_payloads(*rows())
     assert failures == []
     assert len(payloads) == 1
     assert payloads[0].batch.ds_run_id is None
-    assert payloads[0].candidates[1].cve_id is None
+    assert payloads[0].candidates[1].ghsa_id is None
     assert payloads[0].evidence[1].current_value is None
 
 
@@ -94,7 +94,9 @@ def test_builds_cve_and_ghsa_payload_with_nullable_values() -> None:
         (lambda b, c, e: e.append(deepcopy(e[0])), "중복 evidence_id"),
         (lambda b, c, e: e[0].update(candidate_id="missing"), "Candidate 없는"),
         (lambda b, c, e: c[0].update(priority="critical"), "priority"),
-        (lambda b, c, e: c[1].update(subject_id="CVE-wrong"), "GHSA subject"),
+        (lambda b, c, e: c[1].update(subject_id="CVE-wrong"), "CVE subject"),
+        (lambda b, c, e: c[1].update(cve_id=None), "cve_id"),
+        (lambda b, c, e: c[1].update(subject_type="GHSA"), "subject_type"),
     ],
 )
 def test_rejects_contract_violations(mutate, message: str) -> None:

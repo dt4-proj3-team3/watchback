@@ -71,11 +71,11 @@ def test_metadata_contains_the_operational_schema() -> None:
     }
 
     candidate = Base.metadata.tables["risk_candidates"]
-    assert candidate.columns["ghsa_id"].nullable is False
+    assert candidate.columns["ghsa_id"].nullable is True
     assert candidate.columns["subject_type"].nullable is False
     assert candidate.columns["subject_id"].nullable is False
     assert "observed_at" not in candidate.columns
-    assert candidate.columns["cve_id"].nullable is True
+    assert candidate.columns["cve_id"].nullable is False
     assert any(
         index.columns.keys() == ["cve_id"] and index.unique is False
         for index in candidate.indexes
@@ -110,7 +110,7 @@ def test_migration_is_current(postgres_engine: Engine) -> None:
     }
     assert (
         inspect(postgres_engine).get_table_comment("alert_candidate_matches")["text"]
-        == "Dependabot Alert와 Gold 위험 후보의 CVE·GHSA 매칭 결과"
+        == "Dependabot Alert와 Gold 위험 후보의 CVE 매칭 결과"
     )
     command.check(Config(Path(__file__).parents[1] / "alembic.ini"))
 
@@ -181,6 +181,41 @@ def test_case_representative_migration_rejects_existing_cases(
                 text("DELETE FROM review_cases WHERE id = :id"), {"id": case_id}
             )
             connection.execute(text("SET session_replication_role = origin"))
+        command.upgrade(config, "head")
+
+
+def test_cve_matching_migration_rejects_ghsa_only_candidate(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    candidate_id = uuid4()
+    command.downgrade(config, "0006")
+    try:
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO risk_candidates (
+                        id, source_candidate_id, subject_type, subject_id,
+                        ghsa_id, cve_id, priority, change_type,
+                        reason_summary, selected_at
+                    ) VALUES (
+                        :id, 'ghsa-only-migration-test', 'GHSA',
+                        'GHSA-AAAA-BBBB-CCCC', 'GHSA-AAAA-BBBB-CCCC', NULL,
+                        'P3', 'test', 'migration precondition', :selected_at
+                    )
+                    """
+                ),
+                {"id": candidate_id, "selected_at": datetime.now(UTC)},
+            )
+        with pytest.raises(ProgrammingError, match="CVE 기준으로 변환"):
+            command.upgrade(config, "head")
+    finally:
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM risk_candidates WHERE id = :id"),
+                {"id": candidate_id},
+            )
         command.upgrade(config, "head")
 
 

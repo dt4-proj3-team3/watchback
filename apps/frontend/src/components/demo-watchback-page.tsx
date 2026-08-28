@@ -7,6 +7,7 @@ import {
   createReviewActivity,
   loadReviewCase,
   loadReviewCases,
+  loadDashboardSummary,
   readStoredDataSource,
   storeDataSource,
   subscribeToDataSource,
@@ -34,6 +35,7 @@ export function DemoWatchbackPage({
   );
   const [loadError, setLoadError] = useState('');
   const [cases, setCases] = useState<Awaited<ReturnType<typeof loadReviewCases>>>([]);
+  const [dashboardSummary, setDashboardSummary] = useState<Awaited<ReturnType<typeof loadDashboardSummary>>>(null);
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
@@ -42,18 +44,23 @@ export function DemoWatchbackPage({
     let cancelled = false;
 
     const request = view === 'detail' && selectedId
-      ? loadReviewCase(dataSource, selectedId).then((detail) => [detail])
-      : loadReviewCases(dataSource);
+      ? loadReviewCase(dataSource, selectedId).then((detail) => ({ cases: [detail], dashboardSummary: null }))
+      : Promise.all([
+        loadReviewCases(dataSource),
+        view === 'dashboard' ? loadDashboardSummary(dataSource) : Promise.resolve(null),
+      ]).then(([nextCases, nextSummary]) => ({ cases: nextCases, dashboardSummary: nextSummary }));
 
     request
-      .then((nextCases) => {
+      .then((result) => {
         if (cancelled) return;
-        setCases(nextCases);
+        setCases(result.cases);
+        setDashboardSummary(result.dashboardSummary);
         setLoadState('ready');
       })
       .catch((error) => {
         if (cancelled) return;
         setCases([]);
+        setDashboardSummary(null);
         setLoadError(error instanceof Error ? error.message : '재검토 데이터를 불러오지 못했습니다.');
         setLoadState(error?.status === 404 ? 'not_found' : 'error');
       });
@@ -82,6 +89,7 @@ export function DemoWatchbackPage({
       initialView={view}
       initialSelectedId={selectedId}
       initialCases={cases}
+      dashboardSummary={dashboardSummary}
       dataSource={dataSource}
       onDataSourceChange={changeDataSource}
       loadState={usesCaseData ? loadState : 'ready'}

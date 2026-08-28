@@ -38,7 +38,6 @@ class CandidatePriority(StrEnum):
 
 class CandidateSubjectType(StrEnum):
     CVE = "CVE"
-    GHSA = "GHSA"
 
 
 class AlertState(StrEnum):
@@ -164,8 +163,8 @@ class CandidateSummary(ContractModel):
     source_candidate_id: str
     subject_type: CandidateSubjectType
     subject_id: str
-    ghsa_id: str
-    cve_id: str | None
+    ghsa_id: str | None
+    cve_id: str
     priority: CandidatePriority
     change_type: str
     reason_summary: str
@@ -294,8 +293,26 @@ class ReviewCaseListResponse(ContractModel):
     total: int = Field(ge=0, description="현재 필터에 맞는 전체 Case 수")
 
 
+class DashboardMetric(ContractModel):
+    current_count: int = Field(ge=0)
+    previous_count: int = Field(ge=0)
+    delta: int
+
+
+class ReviewDashboardSummary(ContractModel):
+    reference_at: datetime
+    previous_reference_at: datetime
+    critical_open: DashboardMetric
+    stale_open: DashboardMetric
+    source_impact_open: DashboardMetric
+
+
 class ReviewCaseDetail(ReviewCaseSummary):
     alert: AlertDetail
+    alerts: list[AlertDetail] = Field(
+        default_factory=list,
+        description="같은 저장소와 CVE에 연결된 Dependabot Alert 목록"
+    )
     candidates: list[CandidateDetail] = Field(
         description="선정 시각순 전체 후보이며 동일 Candidate의 재전달 Evidence는 중복 제거"
     )
@@ -396,7 +413,7 @@ LIST_EXAMPLE = {
                 "ghsa_id": "GHSA-xxxx-yyyy-zzzz",
                 "cve_id": "CVE-2026-12345",
                 "priority": "P0",
-                "change_type": "kev_added",
+                "change_type": "kev_new",
                 "reason_summary": "KEV에 새로 등재되었습니다.",
                 "selected_at": "2026-08-20T00:30:00Z",
             },

@@ -121,11 +121,9 @@ def _calculate(
     )
     deliveries = _load_deliveries(connection)
 
-    open_by_cve: dict[tuple[str, str], list[Any]] = defaultdict(list)
-    all_by_cve: dict[tuple[str, str], list[Any]] = defaultdict(list)
-    any_ghsa_by_cve: dict[str, set[str]] = defaultdict(set)
-    open_by_ghsa: dict[str, list[Any]] = defaultdict(list)
-    all_by_ghsa: dict[str, list[Any]] = defaultdict(list)
+    open_by_cve: dict[str, list[Any]] = defaultdict(list)
+    all_by_cve: dict[str, list[Any]] = defaultdict(list)
+    open_ghsas_by_cve: dict[str, set[str]] = defaultdict(set)
     alert_states: Counter[str] = Counter()
     invalid_alerts = 0
 
@@ -137,15 +135,11 @@ def _calculate(
         if ghsa is None or (advisory.cve_id is not None and cve is None):
             invalid_alerts += 1
             continue
-        all_by_ghsa[ghsa].append(row)
-        if alert.state == "open":
-            open_by_ghsa[ghsa].append(row)
         if cve is not None:
-            key = (cve, ghsa)
-            all_by_cve[key].append(row)
-            any_ghsa_by_cve[cve].add(ghsa)
+            all_by_cve[cve].append(row)
             if alert.state == "open":
-                open_by_cve[key].append(row)
+                open_by_cve[cve].append(row)
+                open_ghsas_by_cve[cve].add(ghsa)
 
     existing_rows = list(
         connection.execute(
@@ -166,15 +160,17 @@ def _calculate(
     candidate_alert_counts: Counter[UUID] = Counter()
     alert_candidate_counts: Counter[UUID] = Counter()
     reasons: Counter[str] = Counter()
+    diagnostics: Counter[str] = Counter()
     samples: dict[str, list[dict[str, object]]] = {
         "matched": [],
         "unmatched": [],
         "ambiguous": [],
         "excluded": [],
+        "diagnostics": [],
     }
 
     for candidate in candidates:
-        ghsa = normalize_ghsa(candidate.ghsa_id)
+        candidate_ghsa = normalize_ghsa(candidate.ghsa_id)
         cve = normalize_cve(candidate.cve_id)
         matched_rows: list[Any] = []
         all_rows: list[Any] = []
@@ -182,39 +178,50 @@ def _calculate(
         reason: str | None = None
 
         if candidate.subject_type == "CVE":
-            if cve is None or ghsa is None:
+            if cve is None:
                 reason = "invalid_identifier"
             else:
-                key = (cve, ghsa)
-                matched_rows = open_by_cve.get(key, [])
-                all_rows = all_by_cve.get(key, [])
-                if not matched_rows:
+                all_rows = all_by_cve.get(cve, [])
+                matched_rows = open_by_cve.get(cve, [])
+                distinct_open_ghsas = open_ghsas_by_cve.get(cve, set())
+                if len(distinct_open_ghsas) > 1:
+                    reason = "ambiguous_cve"
+                    related_rows = matched_rows
+                    matched_rows = []
+                elif not matched_rows:
                     if all_rows:
                         reason = "no_open_alert"
-                    elif cve in any_ghsa_by_cve:
-                        reason = "cve_ghsa_conflict"
-                        related_rows = [
-                            row
-                            for key, rows in all_by_cve.items()
-                            if key[0] == cve
-                            for row in rows
-                        ]
                     else:
                         reason = "identifier_not_found"
-        elif candidate.subject_type == "GHSA":
-            if ghsa is None:
-                reason = "invalid_identifier"
-            else:
-                matched_rows = open_by_ghsa.get(ghsa, [])
-                all_rows = all_by_ghsa.get(ghsa, [])
-                if not matched_rows:
-                    reason = "no_open_alert" if all_rows else "identifier_not_found"
+                elif candidate.ghsa_id is not None:
+                    observed_ghsa = next(iter(distinct_open_ghsas))
+                    diagnostic: str | None = None
+                    if candidate_ghsa is None:
+                        diagnostic = "invalid_candidate_ghsa"
+                    elif candidate_ghsa != observed_ghsa:
+                        diagnostic = "candidate_ghsa_mismatch"
+                    if diagnostic is not None:
+                        diagnostics[diagnostic] += 1
+                        if len(samples["diagnostics"]) < SAMPLE_LIMIT:
+                            alert, advisory, repository = matched_rows[0]
+                            samples["diagnostics"].append(
+                                {
+                                    **_match_trace(
+                                        candidate,
+                                        alert,
+                                        advisory,
+                                        repository,
+                                        deliveries,
+                                    ),
+                                    "reason": diagnostic,
+                                }
+                            )
         else:
             reason = "invalid_identifier"
 
         if reason is not None:
             reasons[reason] += 1
-            category = "ambiguous" if reason == "cve_ghsa_conflict" else "unmatched"
+            category = "ambiguous" if reason == "ambiguous_cve" else "unmatched"
             if reason in {"invalid_identifier", "no_open_alert"}:
                 category = "excluded"
             if len(samples[category]) < SAMPLE_LIMIT:
@@ -275,6 +282,7 @@ def _calculate(
                     count for state, count in alert_states.items() if state != "open"
                 ),
             },
+            "diagnostics": dict(sorted(diagnostics.items())),
             "samples": samples,
         },
         new_pairs,

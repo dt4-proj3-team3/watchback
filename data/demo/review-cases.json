@@ -854,7 +854,7 @@
           "source_candidate_id": "expected-cve-2025-31125-2026-01-22",
           "cve_id": "CVE-2025-31125",
           "priority": "P0",
-          "change_type": "kev_added",
+          "change_type": "kev_new",
           "reason_summary": "2026-01-22 CISA KEV 신규 등재가 확인되었습니다.",
           "selected_at": "2026-01-22T00:30:00Z",
           "deliveries": [
@@ -1185,7 +1185,7 @@
           "source_candidate_id": "expected-cve-2025-55182-2025-12-05",
           "cve_id": "CVE-2025-55182",
           "priority": "P0",
-          "change_type": "kev_added",
+          "change_type": "kev_new",
           "reason_summary": "2025-12-05 CISA KEV 신규 등재가 확인되었습니다.",
           "selected_at": "2025-12-05T00:30:00Z",
           "deliveries": [

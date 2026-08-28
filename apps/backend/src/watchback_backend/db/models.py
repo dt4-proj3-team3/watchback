@@ -238,19 +238,18 @@ class RiskCandidate(IdMixin, TimestampMixin, Base):
     __tablename__ = "risk_candidates"
     __table_args__ = (
         CheckConstraint(
-            "subject_type IN ('CVE', 'GHSA')",
+            "subject_type = 'CVE'",
             name="subject_type_values",
         ),
         CheckConstraint(
-            "(subject_type = 'CVE' AND cve_id IS NOT NULL AND subject_id = cve_id) OR "
-            "(subject_type = 'GHSA' AND cve_id IS NULL AND subject_id = ghsa_id)",
+            "subject_type = 'CVE' AND subject_id = cve_id",
             name="subject_consistency",
         ),
         CheckConstraint(
             "priority IN ('P0', 'P1', 'P2', 'P3')",
             name="priority_values",
         ),
-        {"comment": "Gold가 선정한 CVE 또는 GHSA 기준 위험 변화 후보"},
+        {"comment": "Gold가 선정한 CVE 기준 위험 변화 후보"},
     )
 
     source_candidate_id: Mapped[str] = mapped_column(
@@ -258,8 +257,8 @@ class RiskCandidate(IdMixin, TimestampMixin, Base):
     )
     subject_type: Mapped[str] = mapped_column(String(10), nullable=False)
     subject_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
-    ghsa_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
-    cve_id: Mapped[str | None] = mapped_column(String(32), index=True)
+    ghsa_id: Mapped[str | None] = mapped_column(String(40), index=True)
+    cve_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     change_type: Mapped[str] = mapped_column(String(100), nullable=False)
     reason_summary: Mapped[str] = mapped_column(Text, nullable=False)
@@ -324,7 +323,7 @@ class AlertCandidateMatch(Base):
             ["organization_id", "alert_id"],
             ["dependabot_alerts.organization_id", "dependabot_alerts.id"],
         ),
-        {"comment": "Dependabot Alert와 Gold 위험 후보의 CVE·GHSA 매칭 결과"},
+        {"comment": "Dependabot Alert와 Gold 위험 후보의 CVE 매칭 결과"},
     )
 
     organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
@@ -370,7 +369,7 @@ class ReviewCase(IdMixin, TimestampMixin, Base):
         Index(
             "ix_review_cases_organization_updated_at", "organization_id", "updated_at"
         ),
-        {"comment": "Dependabot Alert 한 건의 재검토 수명 주기"},
+        {"comment": "같은 저장소와 CVE에 연결된 Alert들의 재검토 수명 주기"},
     )
 
     organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
@@ -550,10 +549,10 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
     "risk_candidates": {
         "id": "위험 후보 내부 식별자",
         "source_candidate_id": "Gold가 발급한 외부 위험 후보 식별자",
-        "subject_type": "Alert 연결 기준 종류이며 CVE 또는 GHSA",
-        "subject_id": "subject_type에 따른 CVE 또는 GHSA 공통 연결 식별자",
-        "ghsa_id": "Gold 원본 GHSA 식별자",
-        "cve_id": "연결된 CVE 식별자이며 GHSA-only 후보이면 null",
+        "subject_type": "Alert 연결 기준 종류이며 S1에서는 CVE",
+        "subject_id": "CVE 기준 공통 연결 식별자",
+        "ghsa_id": "Gold 원본 GHSA 보조 식별자이며 없으면 null",
+        "cve_id": "Alert 연결에 사용하는 필수 CVE 식별자",
         "priority": "Gold가 부여한 P0~P3 후보 우선순위",
         "change_type": "후보로 선정된 위험 변화 유형",
         "reason_summary": "후보 선정 사유 요약",
@@ -591,7 +590,7 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
     "review_cases": {
         "id": "재검토 Case 내부 식별자",
         "organization_id": "Case가 속한 조직 식별자",
-        "alert_id": "Case가 검토하는 Dependabot Alert 식별자",
+        "alert_id": "Case의 대표 Dependabot Alert 식별자",
         "representative_candidate_id": "Case 목록과 상단 요약에 사용하는 대표 Candidate 식별자",
         "representative_batch_id": "대표 Candidate를 전달한 Gold Batch 식별자",
         "status": "Case의 현재 검토 상태",

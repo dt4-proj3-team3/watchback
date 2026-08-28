@@ -24,6 +24,20 @@ python -m uvicorn watchback_backend.main:app --reload --app-dir src
 - ReDoc: <http://localhost:8000/redoc>
 - OpenAPI JSON: <http://localhost:8000/openapi.json>
 
+Azure 개발 DB의 실데이터를 로컬 Backend에서 확인할 때는 접속 문자열을
+파일에 저장하지 않고 Key Vault에서 실행 시 주입한다.
+
+```bash
+az login
+cd apps/backend
+bash scripts/run-azure-dev-db.sh --reload
+```
+
+기본 Key Vault는 `kv-watchback-dev-baursz7`, 기본 포트는 `8000`이다.
+다른 환경을 사용할 때만 `WATCHBACK_KEY_VAULT_NAME`,
+`WATCHBACK_DATABASE_SECRET_NAME`, `WATCHBACK_BACKEND_PORT`를 지정한다.
+스크립트는 DB 접속 문자열을 출력하거나 파일에 저장하지 않는다.
+
 재검토 API는 `DATABASE_URL`의 PostgreSQL 운영 DB를 조회하고 활동을 저장한다. 애플리케이션 import와 OpenAPI 문서 조회에는 DB 연결이 필요하지 않지만 실제 API 요청에는 연결 가능한 DB가 필요하다.
 
 세 API 모두 S1 임시 요청 컨텍스트로 다음 UUID 헤더를 요구한다.
@@ -100,7 +114,7 @@ PYTHONPATH=src python -m watchback_backend.matching --dry-run
 PYTHONPATH=src python -m watchback_backend.matching
 ```
 
-`--dry-run`은 저장 없이 동일한 매칭 결과를 계산한다. CVE Candidate는 CVE와 GHSA를 함께 확인하고, CVE가 없는 Candidate는 GHSA로 연결한다. 새 연결은 Open Alert에만 만들며 기존 연결은 Alert 상태가 바뀌어도 삭제하지 않는다.
+`--dry-run`은 저장 없이 동일한 매칭 결과를 계산한다. Candidate와 Advisory는 CVE로 연결한다. 하나의 CVE가 서로 다른 복수 GHSA의 Open Alert에 연결되면 `ambiguous_cve`로 제외한다. Candidate의 GHSA는 보조 진단 정보이며 불일치해도 CVE 매칭을 막지 않는다. 새 연결은 Open Alert에만 만들며 기존 연결은 Alert 상태가 바뀌어도 삭제하지 않는다.
 
 실행 결과는 신규·기존 매칭, 1:1·1:N·N:1 관계, 제외 사유와 대표 원천 추적 샘플을 JSON 한 건으로 출력한다. 이 명령은 매칭만 저장하며 Review Case를 생성하지 않는다.
 

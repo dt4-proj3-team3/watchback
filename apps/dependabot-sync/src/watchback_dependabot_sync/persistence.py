@@ -115,7 +115,12 @@ def _upsert_advisory(
     cursor: psycopg.Cursor[Any], advisory: AdvisoryPayload
 ) -> tuple[UUID, str]:
     cursor.execute(
-        "SELECT id, github_updated_at FROM security_advisories WHERE ghsa_id = %s",
+        """
+        SELECT id, cve_id, summary, description, severity, cvss_score,
+               github_published_at, github_updated_at, github_withdrawn_at
+          FROM security_advisories
+         WHERE ghsa_id = %s
+        """,
         (advisory.ghsa_id,),
     )
     existing = cursor.fetchone()
@@ -124,7 +129,7 @@ def _upsert_advisory(
         advisory.summary,
         advisory.description,
         advisory.severity,
-        advisory.cvss.score if advisory.cvss else None,
+        advisory.effective_cvss_score,
         advisory.published_at,
         advisory.updated_at,
         advisory.withdrawn_at,
@@ -141,7 +146,21 @@ def _upsert_advisory(
             (identifier, advisory.ghsa_id, *values),
         )
         return identifier, "created"
-    if advisory.updated_at > existing["github_updated_at"]:
+    stored_values = (
+        existing["cve_id"],
+        existing["summary"],
+        existing["description"],
+        existing["severity"],
+        existing["cvss_score"],
+        existing["github_published_at"],
+        existing["github_updated_at"],
+        existing["github_withdrawn_at"],
+    )
+    should_update = advisory.updated_at > existing["github_updated_at"] or (
+        advisory.updated_at == existing["github_updated_at"]
+        and values != stored_values
+    )
+    if should_update:
         cursor.execute(
             """
             UPDATE security_advisories

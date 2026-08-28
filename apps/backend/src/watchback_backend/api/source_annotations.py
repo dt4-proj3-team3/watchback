@@ -65,12 +65,12 @@ _ANNOTATIONS_BY_DATE = {
 }
 
 
-def annotations_for_as_of(
-    as_of: datetime | None,
+def annotations_for_observed_at(
+    observed_at: datetime | None,
 ) -> tuple[SourceAnnotationDefinition, ...]:
-    if as_of is None:
+    if observed_at is None:
         return ()
-    if as_of.tzinfo is None:
-        as_of = as_of.replace(tzinfo=UTC)
-    snapshot_date = as_of.astimezone(UTC).date()
+    if observed_at.tzinfo is None:
+        observed_at = observed_at.replace(tzinfo=UTC)
+    snapshot_date = observed_at.astimezone(UTC).date()
     return _ANNOTATIONS_BY_DATE.get(snapshot_date, ())

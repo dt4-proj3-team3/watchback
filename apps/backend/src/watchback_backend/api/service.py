@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
@@ -22,6 +22,7 @@ from watchback_backend.api.schemas import (
     CaseStatus,
     CaseStatusFilter,
     CreatedReviewActivityResponse,
+    DashboardMetric,
     EvidenceResponse,
     ExternalLinkResponse,
     Priority,
@@ -32,12 +33,18 @@ from watchback_backend.api.schemas import (
     ReviewCaseDetail,
     ReviewCaseListResponse,
     ReviewCaseSummary,
+    ReviewDashboardSummary,
     SourceAnnotation,
     SortOrder,
     UserActivityType,
     AdvisorySummary,
 )
-from watchback_backend.api.source_annotations import annotations_for_as_of
+from watchback_backend.api.source_annotations import annotations_for_observed_at
+from watchback_backend.api.normalization import (
+    normalize_change_type,
+    normalize_evidence_signal,
+    storage_change_type,
+)
 from watchback_backend.db.models import (
     AlertCandidateMatch,
     CandidateEvidence,
@@ -67,6 +74,14 @@ class RequestContext:
     organization_id: UUID
     user_id: UUID
     display_name: str
+
+
+EPSS_EVIDENCE_SIGNALS = (
+    "epss_score",
+    "epss_percentile",
+    "epss_score_d30",
+    "epss_percentile_d30",
+)
 
 
 def require_context(
@@ -103,9 +118,16 @@ def _summary_query() -> Select[tuple[Any, ...]]:
         .correlate(ReviewCase)
         .scalar_subquery()
     )
-    representative_batch_as_of = (
-        select(GoldBatch.as_of)
-        .where(GoldBatch.id == ReviewCase.representative_batch_id)
+    representative_epss_observed_at = (
+        select(CandidateEvidence.observed_at)
+        .where(
+            CandidateEvidence.candidate_id
+            == ReviewCase.representative_candidate_id,
+            CandidateEvidence.batch_id == ReviewCase.representative_batch_id,
+            CandidateEvidence.signal.in_(EPSS_EVIDENCE_SIGNALS),
+        )
+        .order_by(CandidateEvidence.observed_at.desc(), CandidateEvidence.id.desc())
+        .limit(1)
         .correlate(ReviewCase)
         .scalar_subquery()
     )
@@ -126,7 +148,9 @@ def _summary_query() -> Select[tuple[Any, ...]]:
             RiskCandidate.reason_summary,
             RiskCandidate.selected_at,
             latest_kev_value.label("latest_kev_value"),
-            representative_batch_as_of.label("representative_batch_as_of"),
+            representative_epss_observed_at.label(
+                "representative_epss_observed_at"
+            ),
         )
         .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
         .join(Repository, Repository.id == DependabotAlert.repository_id)
@@ -147,7 +171,7 @@ def _candidate_summary_from_mapping(row: Any) -> CandidateSummary:
         ghsa_id=row.candidate_ghsa_id,
         cve_id=row.cve_id,
         priority=row.candidate_priority,
-        change_type=row.change_type,
+        change_type=normalize_change_type(row.change_type),
         reason_summary=row.reason_summary,
         selected_at=row.selected_at,
     )
@@ -192,21 +216,36 @@ def _summary_from_row(row: Any) -> ReviewCaseSummary:
             cvss_score=advisory.cvss_score,
         ),
         latest_candidate=_candidate_summary_from_mapping(row),
-        source_annotations=_annotation_responses(row.representative_batch_as_of),
+        source_annotations=_annotation_responses(
+            [row.representative_epss_observed_at]
+        ),
     )
 
 
-def _annotation_responses(as_of: datetime | None) -> list[SourceAnnotation]:
-    return [
-        SourceAnnotation(
-            snapshot_date=annotation.snapshot_date,
-            annotation_type=annotation.annotation_type,
-            label=annotation.label,
-            description=annotation.description,
-            source_url=annotation.source_url,
-        )
-        for annotation in annotations_for_as_of(as_of)
-    ]
+def _annotation_responses(
+    observed_ats: list[datetime | None],
+) -> list[SourceAnnotation]:
+    responses: list[SourceAnnotation] = []
+    seen: set[tuple[object, object]] = set()
+    for observed_at in sorted(
+        (value for value in observed_ats if value is not None),
+        key=lambda value: value.astimezone(UTC) if value.tzinfo else value.replace(tzinfo=UTC),
+    ):
+        for annotation in annotations_for_observed_at(observed_at):
+            key = (annotation.snapshot_date, annotation.annotation_type)
+            if key in seen:
+                continue
+            seen.add(key)
+            responses.append(
+                SourceAnnotation(
+                    snapshot_date=annotation.snapshot_date,
+                    annotation_type=annotation.annotation_type,
+                    label=annotation.label,
+                    description=annotation.description,
+                    source_url=annotation.source_url,
+                )
+            )
+    return responses
 
 
 def list_review_cases(
@@ -229,7 +268,7 @@ def list_review_cases(
     if priority is not None:
         query = query.where(ReviewCase.priority == priority.value)
     if change_type is not None:
-        query = query.where(RiskCandidate.change_type == change_type)
+        query = query.where(RiskCandidate.change_type == storage_change_type(change_type))
 
     total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
     direction = "asc" if order is SortOrder.ASC else "desc"
@@ -263,6 +302,113 @@ def list_review_cases(
         page=page,
         page_size=page_size,
         total=total,
+    )
+
+
+def _case_state_at(
+    review_case: ReviewCase,
+    activities: list[ReviewActivity],
+    reference_at: datetime,
+) -> tuple[bool, datetime | None]:
+    is_open = False
+    open_since: datetime | None = None
+    saw_lifecycle_event = False
+    for activity in activities:
+        if activity.occurred_at > reference_at:
+            break
+        if activity.activity_type in {"case_opened", "case_reopened"}:
+            saw_lifecycle_event = True
+            is_open = True
+            open_since = activity.occurred_at
+        elif activity.activity_type in {"case_resolved", "risk_accepted"}:
+            saw_lifecycle_event = True
+            is_open = False
+            open_since = None
+    if saw_lifecycle_event:
+        return is_open, open_since
+
+    if review_case.opened_at > reference_at:
+        return False, None
+    if review_case.status == "resolved" and (
+        review_case.resolved_at is not None
+        and review_case.resolved_at <= reference_at
+    ):
+        return False, None
+    return True, review_case.opened_at
+
+
+def get_review_dashboard_summary(
+    session: Session,
+    context: RequestContext,
+    *,
+    reference_at: datetime | None = None,
+) -> ReviewDashboardSummary:
+    current_at = reference_at or datetime.now(UTC)
+    previous_at = current_at - timedelta(days=7)
+    case_rows = session.execute(
+        select(ReviewCase, Repository)
+        .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
+        .join(Repository, Repository.id == DependabotAlert.repository_id)
+        .where(ReviewCase.organization_id == context.organization_id)
+    ).all()
+    case_ids = [review_case.id for review_case, _repository in case_rows]
+    activities_by_case: dict[UUID, list[ReviewActivity]] = defaultdict(list)
+    if case_ids:
+        activities = session.scalars(
+            select(ReviewActivity)
+            .where(ReviewActivity.review_case_id.in_(case_ids))
+            .order_by(ReviewActivity.occurred_at.asc(), ReviewActivity.id.asc())
+        ).all()
+        for activity in activities:
+            activities_by_case[activity.review_case_id].append(activity)
+
+    annotated_case_ids = {
+        row.ReviewCase.id
+        for row in session.execute(
+            _summary_query().where(
+                ReviewCase.organization_id == context.organization_id
+            )
+        ).all()
+        if _annotation_responses([row.representative_epss_observed_at])
+    }
+
+    def counts_at(cutoff: datetime) -> tuple[int, int, int]:
+        critical_open = 0
+        stale_open = 0
+        source_impact_open = 0
+        stale_cutoff = cutoff - timedelta(days=3)
+        for review_case, repository in case_rows:
+            is_open, open_since = _case_state_at(
+                review_case,
+                activities_by_case[review_case.id],
+                cutoff,
+            )
+            if not is_open:
+                continue
+            if repository.importance == "critical":
+                critical_open += 1
+            if open_since is not None and open_since <= stale_cutoff:
+                stale_open += 1
+            if review_case.id in annotated_case_ids:
+                source_impact_open += 1
+        return critical_open, stale_open, source_impact_open
+
+    current = counts_at(current_at)
+    previous = counts_at(previous_at)
+
+    def metric(index: int) -> DashboardMetric:
+        return DashboardMetric(
+            current_count=current[index],
+            previous_count=previous[index],
+            delta=current[index] - previous[index],
+        )
+
+    return ReviewDashboardSummary(
+        reference_at=current_at,
+        previous_reference_at=previous_at,
+        critical_open=metric(0),
+        stale_open=metric(1),
+        source_impact_open=metric(2),
     )
 
 
@@ -316,10 +462,28 @@ def get_review_case(
     review_case = row.ReviewCase
     alert = row.DependabotAlert
 
+    related_alerts = session.scalars(
+        select(DependabotAlert)
+        .join(
+            AlertCandidateMatch,
+            AlertCandidateMatch.alert_id == DependabotAlert.id,
+        )
+        .join(SecurityAdvisory, SecurityAdvisory.id == DependabotAlert.advisory_id)
+        .where(
+            DependabotAlert.organization_id == review_case.organization_id,
+            DependabotAlert.repository_id == alert.repository_id,
+            SecurityAdvisory.cve_id == row.SecurityAdvisory.cve_id,
+        )
+        .distinct()
+        .order_by(DependabotAlert.github_alert_number.asc())
+    ).all()
+    related_alert_ids = [related_alert.id for related_alert in related_alerts]
+
     candidates = session.scalars(
         select(RiskCandidate)
         .join(AlertCandidateMatch, AlertCandidateMatch.candidate_id == RiskCandidate.id)
-        .where(AlertCandidateMatch.alert_id == review_case.alert_id)
+        .where(AlertCandidateMatch.alert_id.in_(related_alert_ids))
+        .distinct()
         .order_by(RiskCandidate.selected_at.asc(), RiskCandidate.id.asc())
     ).all()
 
@@ -355,6 +519,10 @@ def get_review_case(
                 continue
             evidence_keys.add(key)
             unique_evidence.append(evidence)
+        epss_observed_by_batch: dict[UUID, list[datetime]] = defaultdict(list)
+        for evidence, batch in evidence_rows:
+            if evidence.signal in EPSS_EVIDENCE_SIGNALS:
+                epss_observed_by_batch[batch.id].append(evidence.observed_at)
         candidate_details.append(
             CandidateDetail(
                 id=candidate.id,
@@ -364,7 +532,7 @@ def get_review_case(
                 ghsa_id=candidate.ghsa_id,
                 cve_id=candidate.cve_id,
                 priority=candidate.priority,
-                change_type=candidate.change_type,
+                change_type=normalize_change_type(candidate.change_type),
                 reason_summary=candidate.reason_summary,
                 selected_at=candidate.selected_at,
                 deliveries=[
@@ -376,7 +544,9 @@ def get_review_case(
                         policy_version=batch.policy_version,
                         schema_version=batch.schema_version,
                         received_at=delivery.received_at,
-                        source_annotations=_annotation_responses(batch.as_of),
+                        source_annotations=_annotation_responses(
+                            epss_observed_by_batch[batch.id]
+                        ),
                     )
                     for delivery, batch in delivery_rows
                 ],
@@ -385,7 +555,7 @@ def get_review_case(
                         id=evidence.id,
                         source_evidence_id=evidence.source_evidence_id,
                         batch_id=evidence.batch_id,
-                        signal=evidence.signal,
+                        signal=normalize_evidence_signal(evidence.signal),
                         value_type=evidence.value_type,
                         previous_value=evidence.previous_value,
                         current_value=evidence.current_value,
@@ -435,23 +605,38 @@ def get_review_case(
         for activity, actor in activity_rows
     ]
 
+    alert_details = [
+        AlertDetail(
+            id=related_alert.id,
+            github_alert_number=related_alert.github_alert_number,
+            state=related_alert.state,
+            package_name=related_alert.package_name,
+            ecosystem=related_alert.ecosystem,
+            first_patched_version=related_alert.first_patched_version,
+            html_url=related_alert.html_url,
+            manifest_path=related_alert.manifest_path,
+            dependency_scope=related_alert.dependency_scope,
+            dependency_relationship=related_alert.dependency_relationship,
+            vulnerable_version_range=related_alert.vulnerable_version_range,
+            github_created_at=related_alert.github_created_at,
+            github_updated_at=related_alert.github_updated_at,
+            dismissed_at=related_alert.dismissed_at,
+            dismissed_reason=related_alert.dismissed_reason,
+            dismissed_by=related_alert.dismissed_by,
+            dismissed_comment=related_alert.dismissed_comment,
+            fixed_at=related_alert.fixed_at,
+            auto_dismissed_at=related_alert.auto_dismissed_at,
+        )
+        for related_alert in related_alerts
+    ]
+    representative_alert = next(
+        detail for detail in alert_details if detail.id == alert.id
+    )
+
     return ReviewCaseDetail(
         **summary.model_dump(exclude={"alert"}),
-        alert=AlertDetail(
-            **summary.alert.model_dump(),
-            manifest_path=alert.manifest_path,
-            dependency_scope=alert.dependency_scope,
-            dependency_relationship=alert.dependency_relationship,
-            vulnerable_version_range=alert.vulnerable_version_range,
-            github_created_at=alert.github_created_at,
-            github_updated_at=alert.github_updated_at,
-            dismissed_at=alert.dismissed_at,
-            dismissed_reason=alert.dismissed_reason,
-            dismissed_by=alert.dismissed_by,
-            dismissed_comment=alert.dismissed_comment,
-            fixed_at=alert.fixed_at,
-            auto_dismissed_at=alert.auto_dismissed_at,
-        ),
+        alert=representative_alert,
+        alerts=alert_details,
         candidates=candidate_details,
         activities=activities,
     )
@@ -477,8 +662,18 @@ def create_review_activity(
         candidate_id = payload.candidate_id
         if candidate_id is not None:
             linked = session.scalar(
-                select(AlertCandidateMatch.candidate_id).where(
-                    AlertCandidateMatch.alert_id == review_case.alert_id,
+                select(AlertCandidateMatch.candidate_id)
+                .join(
+                    DependabotAlert,
+                    DependabotAlert.id == AlertCandidateMatch.alert_id,
+                )
+                .join(
+                    SecurityAdvisory,
+                    SecurityAdvisory.id == DependabotAlert.advisory_id,
+                )
+                .where(
+                    DependabotAlert.repository_id == row.DependabotAlert.repository_id,
+                    SecurityAdvisory.cve_id == row.SecurityAdvisory.cve_id,
                     AlertCandidateMatch.candidate_id == candidate_id,
                 )
             )

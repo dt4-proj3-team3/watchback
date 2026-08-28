@@ -5,7 +5,9 @@ import {
   DATA_SOURCE_STORAGE_KEY,
   ReviewCaseDataError,
   createReviewActivity,
+  fetchDatabaseDashboardSummary,
   fetchDatabaseReviewCases,
+  loadReviewCases,
   loadReviewCase,
   readStoredDataSource,
   resetDemoActivities,
@@ -52,6 +54,16 @@ describe('review case data providers', () => {
     expect(cases.every((item) => item.evidence.length === 0)).toBe(true);
   });
 
+  it('shows one review item for the same repository and CVE', async () => {
+    const summaries = getDemoReviewCaseSummaries();
+    const grouped = await loadReviewCases('demo');
+    expect(summaries).toHaveLength(10);
+    expect(grouped).toHaveLength(9);
+    expect(new Set(grouped.map((item) => (
+      `${item.repository.full_name}:${item.advisory.cve_id}`
+    ))).size).toBe(9);
+  });
+
   it('rejects a page sequence that cannot make progress', async () => {
     await expect(fetchDatabaseReviewCases(async () => jsonResponse({
       items: [], page: 1, page_size: 100, total: 1,
@@ -77,6 +89,23 @@ describe('review case data providers', () => {
     await expect(fetchDatabaseReviewCases(async () => jsonResponse({
       code: 'backend_unavailable', message: 'Backend에 연결할 수 없습니다.', details: null,
     }, 502))).rejects.toBeInstanceOf(ReviewCaseDataError);
+  });
+
+  it('loads the database dashboard weekly comparison without demo fallback', async () => {
+    const summary = {
+      reference_at: '2026-08-28T00:00:00Z',
+      previous_reference_at: '2026-08-21T00:00:00Z',
+      critical_open: { current_count: 4, previous_count: 2, delta: 2 },
+      stale_open: { current_count: 1, previous_count: 2, delta: -1 },
+      source_impact_open: { current_count: 3, previous_count: 0, delta: 3 },
+    };
+    const fetcher = vi.fn(async (url) => {
+      expect(url).toBe('/api/review-cases/dashboard-summary');
+      return jsonResponse(summary);
+    });
+
+    await expect(fetchDatabaseDashboardSummary(fetcher)).resolves.toEqual(summary);
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it('posts a db activity and preserves contract errors', async () => {
