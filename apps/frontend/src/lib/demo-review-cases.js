@@ -8,6 +8,17 @@ function normalizeActivity(activity) {
   };
 }
 
+function normalizeCandidate(candidate) {
+  return {
+    ...candidate,
+    deliveries: (candidate.deliveries ?? []).map((delivery) => ({
+      ...delivery,
+      source_annotations: delivery.source_annotations ?? [],
+    })),
+    evidence: candidate.evidence ?? [],
+  };
+}
+
 export function normalizeReviewCaseDetail(detail) {
   return {
     ...detail,
@@ -17,7 +28,8 @@ export function normalizeReviewCaseDetail(detail) {
       mergeMode: null,
       prUrl: null,
     },
-    candidates: detail.candidates ?? [detail.latest_candidate],
+    source_annotations: detail.source_annotations ?? [],
+    candidates: (detail.candidates ?? [detail.latest_candidate]).map(normalizeCandidate),
     evidence: (detail.candidates ?? []).flatMap((candidate) => candidate.evidence ?? []),
     activities: (detail.activities ?? []).map(normalizeActivity),
   };
@@ -26,6 +38,7 @@ export function normalizeReviewCaseDetail(detail) {
 export function normalizeReviewCaseSummary(summary) {
   return {
     ...summary,
+    source_annotations: summary.source_annotations ?? [],
     automation: {
       eligible: false,
       reason: '자동조치 기능은 아직 연결되지 않았습니다.',

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self
 from urllib.parse import urlparse
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+
+from watchback_backend.api.source_annotations import SourceAnnotationType
 
 
 class CaseStatus(StrEnum):
@@ -170,6 +172,14 @@ class CandidateSummary(ContractModel):
     selected_at: datetime
 
 
+class SourceAnnotation(ContractModel):
+    snapshot_date: date
+    annotation_type: SourceAnnotationType
+    label: str
+    description: str
+    source_url: HttpUrl
+
+
 class CandidateDelivery(ContractModel):
     batch_id: UUID
     source_batch_id: str
@@ -178,6 +188,7 @@ class CandidateDelivery(ContractModel):
     policy_version: str
     schema_version: str
     received_at: datetime
+    source_annotations: list[SourceAnnotation] = Field(default_factory=list)
 
 
 class EvidenceResponse(ContractModel):
@@ -269,6 +280,10 @@ class ReviewCaseSummary(ContractModel):
     advisory: AdvisorySummary
     latest_candidate: CandidateSummary = Field(
         description="Case가 현재 대표로 사용하는 Candidate"
+    )
+    source_annotations: list[SourceAnnotation] = Field(
+        default_factory=list,
+        description="대표 Candidate의 최신 Gold Batch 기준 소스 변동 주석"
     )
 
 
@@ -385,6 +400,7 @@ LIST_EXAMPLE = {
                 "reason_summary": "KEV에 새로 등재되었습니다.",
                 "selected_at": "2026-08-20T00:30:00Z",
             },
+            "source_annotations": [],
         }
     ],
     "page": 1,
@@ -414,6 +430,27 @@ DETAIL_EXAMPLE = {
             **LIST_EXAMPLE["items"][0]["latest_candidate"],
             "deliveries": [
                 {
+                    "batch_id": "50000000-0000-0000-0000-000000000002",
+                    "source_batch_id": "gold-2026-06-15T00:40:00Z",
+                    "as_of": "2026-06-15T00:30:00Z",
+                    "source_generated_at": "2026-06-15T00:40:00Z",
+                    "policy_version": "sp1-v1",
+                    "schema_version": "1.0",
+                    "received_at": "2026-06-15T00:45:00Z",
+                    "source_annotations": [
+                        {
+                            "snapshot_date": "2026-06-15",
+                            "annotation_type": "EPSS_MODEL_TRANSITION",
+                            "label": "EPSS 모델 v5 전환일",
+                            "description": (
+                                "FIRST가 공지한 EPSS v5 모델 전환일로, 모델 변경 "
+                                "영향에 따라 후보가 급증했을 가능성이 있는 날짜입니다."
+                            ),
+                            "source_url": "https://www.first.org/epss/data",
+                        }
+                    ],
+                },
+                {
                     "batch_id": "50000000-0000-0000-0000-000000000001",
                     "source_batch_id": "gold-2026-08-20T00:40:00Z",
                     "as_of": "2026-08-20T00:30:00Z",
@@ -421,6 +458,7 @@ DETAIL_EXAMPLE = {
                     "policy_version": "sp1-v1",
                     "schema_version": "1.0",
                     "received_at": "2026-08-20T00:45:00Z",
+                    "source_annotations": [],
                 }
             ],
             "evidence": [

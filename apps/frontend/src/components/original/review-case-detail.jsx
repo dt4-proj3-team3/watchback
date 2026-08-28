@@ -146,6 +146,19 @@ export function ReviewCaseDetail({ values }) {
                           {`후보 선정 ${group.selectedLabel}`}
                         </span>
                       </div>
+                      {group.sourceAnnotations.map((annotation) => (
+                        <div key={`${annotation.snapshot_date}-${annotation.annotation_type}`} style={toReactStyle("background:#FFF8ED;border:1px solid #E9C99A;border-radius:8px;padding:10px 12px;margin-bottom:8px")}>
+                          <div style={toReactStyle("font-size:12px;font-weight:700;color:#9A5A16;margin-bottom:4px")}>
+                            {annotation.label}
+                          </div>
+                          <div style={toReactStyle("font-size:12px;color:#5B6058;line-height:1.5")}>
+                            {annotation.description}
+                          </div>
+                          <a href={annotation.source_url} target="_blank" rel="noreferrer" style={toReactStyle("display:inline-block;font-size:11.5px;color:#2F8F5B;text-decoration:none;margin-top:5px")}>
+                            {"출처 보기 ↗"}
+                          </a>
+                        </div>
+                      ))}
                       <div style={toReactStyle("display:flex;flex-direction:column;gap:8px")}>
                       {group.evidence.map((ev) => (
                       <div key={ev.id} style={toReactStyle("padding:11px 14px;background:#F5F6F3;border-radius:8px")}>

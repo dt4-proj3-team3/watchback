@@ -91,6 +91,23 @@ def test_detail_contract_contains_candidate_batch_evidence_and_activity_history(
         openapi_document, detail["properties"]["candidates"]["items"]["$ref"]
     )
     assert {"deliveries", "evidence"}.issubset(candidate["required"])
+    summary = _resolve_schema(
+        openapi_document,
+        openapi_document["paths"]["/api/v1/review-cases"]["get"]["responses"][
+            "200"
+        ]["content"]["application/json"]["schema"]["$ref"],
+    )
+    list_item = _resolve_schema(
+        openapi_document, summary["properties"]["items"]["items"]["$ref"]
+    )
+    assert "source_annotations" in list_item["properties"]
+    delivery = _resolve_schema(
+        openapi_document, candidate["properties"]["deliveries"]["items"]["$ref"]
+    )
+    assert "source_annotations" in delivery["properties"]
+    assert DETAIL_EXAMPLE["candidates"][0]["deliveries"][0][
+        "source_annotations"
+    ][0]["annotation_type"] == "EPSS_MODEL_TRANSITION"
 
 
 def test_activity_contract_and_examples(openapi_document: dict[str, Any]) -> None:

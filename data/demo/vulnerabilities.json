@@ -7,7 +7,6 @@
     "evaluation_start": "2025-03-21",
     "evaluation_end": "2026-08-20",
     "kev_catalog_version": "2026.08.20",
-    "epss_model_change_excluded_on": "2026-06-15",
     "ghsa_patch_rules_evaluated": false
   },
   "repositories": [
@@ -406,12 +405,11 @@
           "rule_id": "R-EPSS-TOP5-ENTRY-D30",
           "observed_on": "2026-06-15",
           "source": "first_epss",
-          "included_in_s1": false,
+          "included_in_s1": true,
           "previous_epss": "0.05145000",
           "current_epss": "0.35060000",
           "previous_percentile": "0.89968000",
-          "current_percentile": "0.98226000",
-          "exclusion_reason": "EPSS v5 모델 교체일의 시스템성 변동"
+          "current_percentile": "0.98226000"
         }
       ]
     },

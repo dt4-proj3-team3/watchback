@@ -32,7 +32,7 @@ def test_demo_list_and_empty_match_api_contract() -> None:
     repositories = {item.repository.display_name for item in review_cases.items}
     priorities = {item.priority.value for item in review_cases.items}
     assert repositories == {"novalink/customer-fe", "novalink/ai-platform-api"}
-    assert priorities == {"high", "critical"}
+    assert priorities == {"medium", "high", "critical"}
 
 
 def test_every_demo_case_has_a_matching_detail() -> None:
@@ -93,7 +93,6 @@ def test_demo_candidates_only_use_verified_s1_signals() -> None:
         "evaluation_start": "2025-03-21",
         "evaluation_end": "2026-08-20",
         "kev_catalog_version": "2026.08.20",
-        "epss_model_change_excluded_on": "2026-06-15",
         "ghsa_patch_rules_evaluated": False,
     }
     vulnerabilities = source["vulnerabilities"]
@@ -109,7 +108,7 @@ def test_demo_candidates_only_use_verified_s1_signals() -> None:
         "CVE-2026-35029",
         "CVE-2026-39363",
         "CVE-2026-42208",
-        "CVE-2026-44578",
+        "CVE-2025-31486",
     }
     assert {item["advisory"]["cve_id"] for item in payload["list"]["items"]} == expected_case_cves
 
@@ -168,23 +167,28 @@ def test_demo_candidates_only_use_verified_s1_signals() -> None:
     assert len(checked_candidates) == 16
 
 
-def test_systemic_signals_are_not_used_by_demo_cases() -> None:
-    vulnerabilities = _read_json(DEMO_ROOT / "vulnerabilities.json")["vulnerabilities"]
-    excluded = {
-        item["cve_id"]: [
-            signal
-            for signal in item["expected_signals"]
-            if not signal["included_in_s1"]
-        ]
-        for item in vulnerabilities
-    }
-    assert excluded["CVE-2025-31486"]
+def test_vite_source_shift_is_kept_and_annotated_in_one_demo_case() -> None:
+    payload = _review_case_data()
+    summary = next(
+        item
+        for item in payload["list"]["items"]
+        if item["advisory"]["cve_id"] == "CVE-2025-31486"
+    )
+    detail = payload["details"][summary["id"]]
 
-    case_cves = {
-        item["advisory"]["cve_id"] for item in _review_case_data()["list"]["items"]
-    }
-    assert not case_cves.intersection(
-        {"CVE-2025-31486"}
+    assert summary["alert"]["github_alert_number"] == 4
+    assert [
+        candidate["selected_at"][:10] for candidate in detail["candidates"]
+    ] == ["2025-11-18", "2026-06-15"]
+    assert [
+        annotation["annotation_type"]
+        for candidate in detail["candidates"]
+        for delivery in candidate["deliveries"]
+        for annotation in delivery["source_annotations"]
+    ] == ["EPSS_SOURCE_SCORE_SHIFT", "EPSS_MODEL_TRANSITION"]
+    assert all(
+        candidate["selected_at"][:10] != "2026-06-16"
+        for candidate in detail["candidates"]
     )
 
 

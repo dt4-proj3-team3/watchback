@@ -42,7 +42,7 @@ export function Dashboard({ values }) {
                 <div style={toReactStyle("position:absolute;top:calc(100% + 8px);right:0;width:340px;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px 18px;z-index:10")}>
                   <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;margin-bottom:10px")}>
                     <span style={toReactStyle("font-size:13px;font-weight:700")}>
-                      {"억제된 시스템성 변동 3건 (미구현)"}
+                      {`소스 변동 영향 추정 ${values.suppressedCases.length}건`}
                     </span>
                     <span style={toReactStyle("cursor:pointer;color:#8B9086;font-size:13px")} onClick={values.closeSuppressedPopover}>
                       {"✕"}
