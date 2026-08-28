@@ -2,8 +2,8 @@ targetScope = 'resourceGroup'
 
 param location string = resourceGroup().location
 param environmentName string = 'dev'
-@description('개발 환경 CD를 실행하는 GitHub 저장소')
-param githubRepository string = 'dt4-proj3-team3/watchback'
+@description('GitHub OIDC가 발급하는 저장소의 immutable subject prefix')
+param githubSubjectPrefix string = 'repo:dt4-proj3-team3@314105294/watchback@1337157824'
 
 var suffix = substring(uniqueString(subscription().subscriptionId, resourceGroup().id, 'watchback-${environmentName}'), 0, 7)
 var registryName = 'acrwatchback${environmentName}${suffix}'
@@ -41,7 +41,7 @@ resource githubMainFederation 'Microsoft.ManagedIdentity/userAssignedIdentities/
       'api://AzureADTokenExchange'
     ]
     issuer: 'https://token.actions.githubusercontent.com'
-    subject: 'repo:${githubRepository}:ref:refs/heads/main'
+    subject: '${githubSubjectPrefix}:ref:refs/heads/main'
   }
 }
 

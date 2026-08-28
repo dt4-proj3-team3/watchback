@@ -34,7 +34,7 @@ Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 
 
 `main`에서 Backend, Frontend 또는 데모 데이터가 변경되면 GitHub Actions가 두 이미지를 전체 커밋 SHA 태그로 ACR에 게시하고 기존 Container Apps를 갱신한다. DB Migration, Seed와 Sync Job은 자동 실행하지 않는다.
 
-Azure 로그인에는 장기 Client Secret 대신 `main` 브랜치만 신뢰하는 OIDC와 전용 Managed Identity를 사용한다. 최초 Bicep 배포 후 다음 Repository variables를 설정한다.
+Azure 로그인에는 장기 Client Secret 대신 `main` 브랜치만 신뢰하는 OIDC와 전용 Managed Identity를 사용한다. Federated Credential은 GitHub가 발급하는 조직·저장소 불변 ID 기반 subject prefix를 사용한다. GitHub의 OIDC subject 정책이 변경되면 `app-cd.bicep`의 `githubSubjectPrefix`를 실제 발급값과 맞춘다. 최초 Bicep 배포 후 다음 Repository variables를 설정한다.
 
 ```bash
 az deployment group create \
