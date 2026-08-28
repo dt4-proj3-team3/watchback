@@ -90,6 +90,7 @@ describe('Watchback review UI', () => {
     expect(screen.getByText('지난주 대비 ▲2건')).not.toBeNull();
     expect(screen.getByText('지난주 대비 ▼1건')).not.toBeNull();
     expect(screen.getByText('지난주 대비 변화 없음')).not.toBeNull();
+    expect(screen.getByText('8/21 ~ 8/28')).not.toBeNull();
     expect(screen.queryByText('기간 비교 미연동')).toBeNull();
   });
 
