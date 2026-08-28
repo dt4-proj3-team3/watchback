@@ -28,7 +28,7 @@ from watchback_backend.db.session import get_session
 from watchback_backend.main import app
 
 
-NOW = datetime(2026, 8, 20, 12, tzinfo=UTC)
+NOW = datetime(2026, 6, 16, 12, tzinfo=UTC)
 
 
 @pytest.fixture()
@@ -407,6 +407,18 @@ def test_list_filters_latest_candidate_and_paginates(
     assert response.status_code == 200
     assert response.json()["items"][0]["latest_candidate"]["change_type"] == "kev_added"
     assert response.json()["items"][0]["is_kev"] is True
+    assert response.json()["items"][0]["source_annotations"] == [
+        {
+            "snapshot_date": "2026-06-15",
+            "annotation_type": "EPSS_MODEL_TRANSITION",
+            "label": "EPSS 모델 v5 전환일",
+            "description": (
+                "FIRST가 공지한 EPSS v5 모델 전환일로, 모델 변경 영향에 따라 "
+                "후보가 급증했을 가능성이 있는 날짜입니다."
+            ),
+            "source_url": "https://www.first.org/epss/data",
+        }
+    ]
     assert response.json()["total"] == 1
 
     all_cases = client.get(
@@ -485,6 +497,14 @@ def test_detail_returns_ordered_history_and_nullable_advisory(
         "batch-old",
         "batch-new",
     ]
+    assert latest["deliveries"][0]["source_annotations"] == []
+    assert [
+        item["annotation_type"]
+        for item in latest["deliveries"][1]["source_annotations"]
+    ] == ["EPSS_MODEL_TRANSITION"]
+    assert [item["annotation_type"] for item in detail["source_annotations"]] == [
+        "EPSS_MODEL_TRANSITION"
+    ]
     assert [item["source_evidence_id"] for item in latest["evidence"]] == [
         "evidence-old",
         "evidence-new",
@@ -497,6 +517,7 @@ def test_detail_returns_ordered_history_and_nullable_advisory(
     assert nullable["advisory"]["cve_id"] is None
     assert nullable["latest_candidate"]["subject_type"] == "GHSA"
     assert nullable["latest_candidate"]["cve_id"] is None
+    assert nullable["source_annotations"] == []
 
 
 def test_activity_creation_transition_link_and_detail_mapping(

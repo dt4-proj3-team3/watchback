@@ -56,6 +56,19 @@ describe('Watchback review UI', () => {
     expect(screen.queryByText(/EPSS D-30 급상승 조건/)).toBeNull();
   });
 
+  it('summarizes source-change impact using the reviewed annotations', () => {
+    render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
+
+    expect(screen.getByText('소스 변동 영향 추정')).not.toBeNull();
+    expect(screen.getByText('EPSS 모델·소스 변동일과 겹친 재검토 항목')).not.toBeNull();
+    expect(screen.getByText('지난주 대비 +1건')).not.toBeNull();
+    expect(screen.queryByText(/시스템성 변동 억제/)).toBeNull();
+
+    fireEvent.click(screen.getByText('소스 변동 영향 추정').closest('div[style*="cursor"]'));
+    expect(screen.getByText('소스 변동 영향 추정 1건')).not.toBeNull();
+    expect(screen.getByText('2026.06.15 · EPSS 모델 v5 전환일')).not.toBeNull();
+  });
+
   it('shows persistent KEV status before EPSS and stale badges on the dashboard', () => {
     render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
 
@@ -73,6 +86,47 @@ describe('Watchback review UI', () => {
     expect(screen.getByRole('button', { name: '이전 화면으로' })).not.toBeNull();
     expect(screen.getAllByText(/후보 선정/).length).toBeGreaterThan(0);
     expect(screen.getByText('향후 30일 악용 가능성')).not.toBeNull();
+  });
+
+  it('shows the latest source annotation on the list and both annotations on detail', () => {
+    const annotatedCase = cases.find((item) => item.advisory.cve_id === 'CVE-2025-31486');
+    const { rerender } = render(
+      <WatchbackApp {...baseProps} initialView="list" isPreview={false} />,
+    );
+    const card = screen.getByText('CVE-2025-31486').closest('[role="button"]');
+    expect(within(card).getByText('소스 변동 주의')).not.toBeNull();
+
+    rerender(
+      <WatchbackApp
+        {...baseProps}
+        initialView="detail"
+        initialSelectedId={annotatedCase.id}
+        isPreview={false}
+      />,
+    );
+
+    expect(screen.getByText('EPSS 소스 점수 대규모 변동일')).not.toBeNull();
+    expect(screen.getByText('EPSS 모델 v5 전환일')).not.toBeNull();
+    expect(screen.getByText(/2,677개로 확인/)).not.toBeNull();
+    expect(screen.getByText(/모델 변경 영향에 따라/)).not.toBeNull();
+    expect(screen.getAllByRole('link', { name: '출처 보기 ↗' })).toHaveLength(2);
+  });
+
+  it('keeps the individual-change label for a case without source annotations', () => {
+    const regularCase = cases.find((item) => (
+      item.advisory.cve_id !== 'CVE-2025-31486'
+    ));
+    render(
+      <WatchbackApp
+        {...baseProps}
+        initialView="detail"
+        initialSelectedId={regularCase.id}
+        isPreview={false}
+      />,
+    );
+
+    expect(screen.getByText('개별 변화로 확인됨')).not.toBeNull();
+    expect(screen.queryByText('소스 변동 주의')).toBeNull();
   });
 
   it('renders Gold change types naturally without raw sources or duplicate dates', () => {

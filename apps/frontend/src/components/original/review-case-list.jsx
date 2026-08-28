@@ -163,6 +163,11 @@ export function ReviewCaseList({ values }) {
                           {`${c.reviewReasonLabel}`}
                         </div>
                         <div style={toReactStyle("display:flex;align-items:center;gap:6px")}>
+                          {c.hasSourceAnnotation && (
+                            <span style={toReactStyle("font-size:11px;font-weight:600;color:#9A5A16;background:#FCEFE1;border-radius:5px;padding:2px 7px;white-space:nowrap")}>
+                              {"소스 변동 주의"}
+                            </span>
+                          )}
                           {c.evidenceTags.map((tag, _index1) => (
                             <span key={_index1} style={toReactStyle(`${tag.style}`)}>
                               {`${tag.label}`}

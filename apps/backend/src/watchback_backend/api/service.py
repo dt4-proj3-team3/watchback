@@ -32,10 +32,12 @@ from watchback_backend.api.schemas import (
     ReviewCaseDetail,
     ReviewCaseListResponse,
     ReviewCaseSummary,
+    SourceAnnotation,
     SortOrder,
     UserActivityType,
     AdvisorySummary,
 )
+from watchback_backend.api.source_annotations import annotations_for_as_of
 from watchback_backend.db.models import (
     AlertCandidateMatch,
     CandidateEvidence,
@@ -101,6 +103,12 @@ def _summary_query() -> Select[tuple[Any, ...]]:
         .correlate(ReviewCase)
         .scalar_subquery()
     )
+    representative_batch_as_of = (
+        select(GoldBatch.as_of)
+        .where(GoldBatch.id == ReviewCase.representative_batch_id)
+        .correlate(ReviewCase)
+        .scalar_subquery()
+    )
     return (
         select(
             ReviewCase,
@@ -118,6 +126,7 @@ def _summary_query() -> Select[tuple[Any, ...]]:
             RiskCandidate.reason_summary,
             RiskCandidate.selected_at,
             latest_kev_value.label("latest_kev_value"),
+            representative_batch_as_of.label("representative_batch_as_of"),
         )
         .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
         .join(Repository, Repository.id == DependabotAlert.repository_id)
@@ -183,7 +192,21 @@ def _summary_from_row(row: Any) -> ReviewCaseSummary:
             cvss_score=advisory.cvss_score,
         ),
         latest_candidate=_candidate_summary_from_mapping(row),
+        source_annotations=_annotation_responses(row.representative_batch_as_of),
     )
+
+
+def _annotation_responses(as_of: datetime | None) -> list[SourceAnnotation]:
+    return [
+        SourceAnnotation(
+            snapshot_date=annotation.snapshot_date,
+            annotation_type=annotation.annotation_type,
+            label=annotation.label,
+            description=annotation.description,
+            source_url=annotation.source_url,
+        )
+        for annotation in annotations_for_as_of(as_of)
+    ]
 
 
 def list_review_cases(
@@ -353,6 +376,7 @@ def get_review_case(
                         policy_version=batch.policy_version,
                         schema_version=batch.schema_version,
                         received_at=delivery.received_at,
+                        source_annotations=_annotation_responses(batch.as_of),
                     )
                     for delivery, batch in delivery_rows
                 ],

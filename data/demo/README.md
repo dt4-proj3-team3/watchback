@@ -32,7 +32,7 @@ Sprint 1 데모는 한 회사가 운영하는 여러 저장소에서 실제 Depe
 | `next` | `15.2.2` | `CVE-2026-44578`<br>`GHSA-c4j6-fc7j-m34r` | High | `15.5.16` | 2026-06-13 EPSS 급상승, 2026-06-23 상위 5% 진입 |
 | `vite` | `6.2.2` | `CVE-2025-30208`<br>`GHSA-x574-m823-4x7w` | Medium | `6.2.3` | 2025-04-24 EPSS가 크게 상승하고 상위 5%에 진입 |
 | `vite` | `6.2.2` | `CVE-2025-31125`<br>`GHSA-4r4m-qw57-chr8` | Medium | `6.2.4` | 2025-05-01 EPSS 급상승, 2026-01-22 KEV 신규 등재, 다음 날 상위 5% 진입 |
-| `vite` | `6.2.2` | `CVE-2025-31486`<br>`GHSA-xcj6-pq6g-qj4x` | Medium | `6.2.5` | 2025-11-18 EPSS 급상승. 2026-06-15 변화는 모델 교체 영향으로 제외 |
+| `vite` | `6.2.2` | `CVE-2025-31486`<br>`GHSA-xcj6-pq6g-qj4x` | Medium | `6.2.5` | 2025-11-18 EPSS 급상승. 2026-06-15 상위 5% 진입은 후보를 유지하고 EPSS v5 모델 전환 주석과 함께 표시 |
 | `vite` | `6.2.2` | `CVE-2026-39363`<br>`GHSA-p9ff-h696-f583` | High | `6.4.2` | 2026-05-14 EPSS 급상승 |
 | `react-server-dom-webpack` | `19.2.0` | `CVE-2025-55182`<br>`GHSA-fv66-9v8q-g76r` | Critical | `19.2.1` | 2025-12-05 KEV 신규 등재, 2026-01-03 EPSS 급상승과 상위 5% 진입 |
 | `react-server-dom-webpack` | `19.2.0` | `CVE-2025-55183`<br>`GHSA-925w-6v3x-g4j4` | Medium | `19.2.2` | 2026-01-11 EPSS 급상승 |
@@ -89,7 +89,7 @@ BE Snapshot에는 고유 CVE 7개와 Open Alert 14건이 있다.
 - Gold Batch 전달 시각
 - 화면 표시용 조직명·저장소명·중요도
 
-위험 신호의 종류·발생일·전후 값은 공식 원천으로 계산한 사전 기댓값이며, 실제 DS 평가 결과는 아니다. DS 결과와 다르면 원천 시점과 규칙 적용 결과를 다시 대조한다.
+위험 신호의 종류·발생일·전후 값은 공식 소스로 계산한 사전 기댓값이며, 실제 DS 평가 결과는 아니다. DS 결과와 다르면 소스 시점과 규칙 적용 결과를 다시 대조한다.
 
 
 ## Snapshot 기준
@@ -98,6 +98,6 @@ BE Snapshot에는 고유 CVE 7개와 Open Alert 14건이 있다.
 - GitHub REST API 버전: `2022-11-28`
 - EPSS 검증 범위: `2025-03-21`~`2026-08-20`
 - KEV Catalog 버전: `2026.08.20`
-- KEV 원천: [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
-- EPSS 원천: [FIRST EPSS API](https://api.first.org/epss/)
-- 시스템성 변동 기준일: [EPSS v5 적용일 2026-06-15](https://www.first.org/newsroom/releases/202606-036)
+- KEV 소스: [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+- EPSS 소스: [FIRST EPSS API](https://api.first.org/epss/)
+- 소스 변동 기준일: [FIRST EPSS 데이터 및 모델 이력](https://www.first.org/epss/data)

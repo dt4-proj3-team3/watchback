@@ -232,6 +232,7 @@ class WatchbackAppView extends Component {
       evidenceTags: detailedEvidenceTags.length > 0
         ? detailedEvidenceTags
         : latestCandidateTags(c.latest_candidate, c.is_kev),
+      hasSourceAnnotation: (c.source_annotations ?? []).length > 0,
       reviewReasonLabel: reviewReason.text,
       reviewReasonDateLabel: reviewReason.dateLabel,
       isResolved: c.status === 'resolved',
@@ -462,11 +463,29 @@ class WatchbackAppView extends Component {
 
     const criticalOpenCount = cases.filter(c => c.status === 'open' && c.repository.importance === 'critical').length;
     const staleCount = cases.filter(c => c.status === 'open' && (Date.now() - new Date(c.opened_at)) / 86400000 >= 3).length;
+    const sourceImpactCases = cases.filter(c => (
+      c.status === 'open' && (c.source_annotations ?? []).length > 0
+    ));
+    const trendReference = isDemo ? Date.parse('2026-08-25T00:00:00Z') : Date.now();
+    const currentWeekStart = trendReference - (7 * 86400000);
+    const previousWeekStart = trendReference - (14 * 86400000);
+    const currentWeekSourceImpactCount = sourceImpactCases.filter(c => {
+      const openedAt = new Date(c.opened_at).getTime();
+      return openedAt >= currentWeekStart && openedAt < trendReference;
+    }).length;
+    const previousWeekSourceImpactCount = sourceImpactCases.filter(c => {
+      const openedAt = new Date(c.opened_at).getTime();
+      return openedAt >= previousWeekStart && openedAt < currentWeekStart;
+    }).length;
+    const sourceImpactDelta = currentWeekSourceImpactCount - previousWeekSourceImpactCount;
+    const sourceImpactTrend = sourceImpactDelta === 0
+      ? '지난주 대비 변화 없음'
+      : `지난주 대비 ${sourceImpactDelta > 0 ? '+' : ''}${sourceImpactDelta}건`;
 
     const kpiCards = [
       { label: 'Critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: isDemo ? '지난주 대비 ▲1건' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
       { label: '3일 이상 미처리', value: `${staleCount}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: isDemo ? '지난주 대비 변화 없음' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
-      { label: '시스템성 변동 억제 (미구현)', value: isDemo ? '3건' : '—', hint: 'S1 제외 범위인 UI 미리보기', trend: isDemo ? 'Demo 데이터' : '실제 집계 미연동', cursorStyle: isDemo ? 'pointer' : 'default', onClick: isDemo ? () => this.setState({ showSuppressedPopover: true }) : undefined },
+      { label: '소스 변동 영향 추정', value: `${sourceImpactCases.length}건`, hint: 'EPSS 모델·소스 변동일과 겹친 재검토 항목', trend: sourceImpactTrend, cursorStyle: sourceImpactCases.length > 0 ? 'pointer' : 'default', onClick: sourceImpactCases.length > 0 ? () => this.setState({ showSuppressedPopover: true }) : undefined },
     ];
 
     const flowStages = [
@@ -475,11 +494,12 @@ class WatchbackAppView extends Component {
       { label: '해결됨', count: resolvedTotal, hasArrow: false, onClick: () => this.goToFilteredList({ ...filters, status: 'resolved', importance: 'all', staleOnly: false }) },
     ].map(s => ({ ...s, containerStyle: 'display:flex;align-items:center;flex:none' }));
 
-    const suppressedCases = isDemo ? [
-      { repoName: 'billing-worker', reason: '모델 개편으로 EPSS가 전반적으로 상승, 개별 위험 변화로 보지 않음' },
-      { repoName: 'notification-svc', reason: '동일 사유로 억제됨' },
-      { repoName: 'auth-gateway', reason: '동일 사유로 억제됨' },
-    ] : [];
+    const suppressedCases = sourceImpactCases.map(c => ({
+      repoName: c.repository.display_name,
+      reason: (c.source_annotations ?? [])
+        .map(annotation => `${annotation.snapshot_date.replaceAll('-', '.')} · ${annotation.label}`)
+        .join(', '),
+    }));
 
     const statusOptions = [
       { value: 'open', label: '열림' },
@@ -526,6 +546,9 @@ class WatchbackAppView extends Component {
     if (selectedCase) {
       const raw = selectedCase;
       const e = this.enrich(raw);
+      const sourceAnnotations = raw.candidates.flatMap(candidate => (
+        (candidate.deliveries ?? []).flatMap(delivery => delivery.source_annotations ?? [])
+      ));
       const effectiveImportance = this.state.repoImportanceOverrides[raw.repository.full_name] || raw.repository.importance;
       const configuredMergeMode = isDemo && raw.alert.first_patched_version
         ? this.state.policyMatrix[`${effectiveImportance}_${raw.advisory.severity}`]
@@ -544,9 +567,9 @@ class WatchbackAppView extends Component {
         scopeLabel: SCOPE_LABEL[raw.alert.dependency_scope] || '-',
         relationshipLabel: REL_LABEL[raw.alert.dependency_relationship] || '-',
         hasKnownRelationship: raw.alert.dependency_relationship !== 'unknown',
-        systemicLabel: '개별 변화로 확인됨',
-        systemicColor: '#2F8F5B',
-        systemicBg: '#E7F3EC',
+        systemicLabel: sourceAnnotations.length > 0 ? '소스 변동 주의' : '개별 변화로 확인됨',
+        systemicColor: sourceAnnotations.length > 0 ? '#9A5A16' : '#2F8F5B',
+        systemicBg: sourceAnnotations.length > 0 ? '#FCEFE1' : '#E7F3EC',
         automationStatusLabel: { fully_auto: '완전 자동조치 (미구현)', click_to_merge: 'PR 병합 대기 (미구현)', pr_only: 'PR 생성 대상 (미구현)' }[configuredMergeMode] || '자동조치 미구현',
         automationStatusColor: automation.eligible ? '#2F8F5B' : '#8B9086',
         automationStatusBg: automation.eligible ? '#E7F3EC' : '#EEF0EE',
@@ -560,6 +583,9 @@ class WatchbackAppView extends Component {
           changeTypeLabel: formatChangeType(candidate.change_type),
           reasonSummary: candidate.reason_summary,
           deliveries: candidate.deliveries ?? [],
+          sourceAnnotations: (candidate.deliveries ?? []).flatMap(
+            delivery => delivery.source_annotations ?? [],
+          ),
           evidence: (candidate.evidence ?? []).map(ev => ({
             ...ev,
             previousValueLabel: fmtEvidenceValue(ev.previous_value, ev.value_type, ev.signal),

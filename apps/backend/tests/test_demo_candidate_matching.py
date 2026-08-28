@@ -280,20 +280,20 @@ def test_actual_alert_snapshot_matches_realistic_gold_fixture(
         "alert_states": {"fixed": 6, "open": 25},
     }
     assert dry_run["matches"] == {
-        "total": 24,
-        "new": 24,
+        "total": 26,
+        "new": 26,
         "existing": 0,
         "retained_historical": 0,
         "one_to_one": 1,
-        "one_to_many_candidates": 8,
-        "many_to_one_alerts": 9,
+        "one_to_many_candidates": 10,
+        "many_to_one_alerts": 10,
         "inserted": 0,
     }
     assert dry_run["excluded"]["candidate_count"] == 0
     assert dry_run["excluded"]["non_open_alert_count"] == 6
 
     applied = run_matching("", organization_id, engine=postgres_engine)
-    assert applied["matches"]["inserted"] == 24
+    assert applied["matches"]["inserted"] == 26
     assert applied["db_applied"] is True
 
     with postgres_engine.connect() as connection:
@@ -381,7 +381,7 @@ def test_actual_alert_snapshot_matches_realistic_gold_fixture(
 
     rerun = run_matching("", organization_id, engine=postgres_engine)
     assert rerun["matches"]["new"] == 0
-    assert rerun["matches"]["existing"] == 24
+    assert rerun["matches"]["existing"] == 26
     assert rerun["matches"]["inserted"] == 0
 
 
@@ -400,13 +400,13 @@ def test_demo_matches_create_one_case_per_open_alert(
         engine=postgres_engine,
     )
     assert dry_run["inputs"] == {
-        "match_count": 24,
-        "open_alert_count": 14,
+        "match_count": 26,
+        "open_alert_count": 15,
         "non_open_alert_count": 0,
         "existing_case_count": 0,
     }
     assert dry_run["cases"] == {
-        "created": 14,
+        "created": 15,
         "updated": 0,
         "reopened": 0,
         "unchanged": 0,
@@ -419,7 +419,7 @@ def test_demo_matches_create_one_case_per_open_alert(
     applied = run_case_generation(
         "", organization_id, occurred_at=occurred_at, engine=postgres_engine
     )
-    assert applied["cases"]["created"] == 14
+    assert applied["cases"]["created"] == 15
 
     with Session(postgres_engine) as session:
         case_rows = session.execute(
@@ -432,7 +432,7 @@ def test_demo_matches_create_one_case_per_open_alert(
             )
             .where(ReviewCase.organization_id == organization_id)
         ).all()
-        assert len(case_rows) == 14
+        assert len(case_rows) == 15
         assert all(
             row.ReviewCase.priority == row.SecurityAdvisory.severity
             for row in case_rows
@@ -450,7 +450,7 @@ def test_demo_matches_create_one_case_per_open_alert(
                     ReviewActivity.activity_type == "case_opened",
                 )
             )
-            == 14
+            == 15
         )
 
         vite_case = next(
@@ -469,7 +469,7 @@ def test_demo_matches_create_one_case_per_open_alert(
         "created": 0,
         "updated": 0,
         "reopened": 0,
-        "unchanged": 14,
+        "unchanged": 15,
         "excluded": 0,
     }
 
@@ -490,7 +490,7 @@ def test_demo_matches_create_one_case_per_open_alert(
                 .select_from(ReviewActivity)
                 .where(ReviewActivity.organization_id == organization_id)
             )
-            == 14
+            == 15
         )
 
 
@@ -517,11 +517,12 @@ def test_actual_alert_cases_expose_evidence_as_ordered_timeline(
                 .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
                 .where(
                     ReviewCase.organization_id == organization_id,
-                    DependabotAlert.github_alert_number.in_([3, 213]),
+                    DependabotAlert.github_alert_number.in_([3, 4, 213]),
                 )
             )
         }
         vite = get_review_case(session, context, cases_by_alert_number[3])
+        annotated_vite = get_review_case(session, context, cases_by_alert_number[4])
         litellm = get_review_case(session, context, cases_by_alert_number[213])
 
     assert vite.alert.package_name == "vite"
@@ -547,6 +548,28 @@ def test_actual_alert_cases_expose_evidence_as_ordered_timeline(
         ("kev", "2026-01-22", "false", "true"),
         ("epss_percentile_d30", "2026-01-23", "0.87421000", "0.98798000"),
     ]
+
+    assert annotated_vite.advisory.cve_id == "CVE-2025-31486"
+    assert [
+        candidate.source_candidate_id for candidate in annotated_vite.candidates
+    ] == [
+        "expected-cve-2025-31486-2025-11-18",
+        "expected-cve-2025-31486-2026-06-15",
+    ]
+    assert [
+        (
+            delivery.as_of.date().isoformat(),
+            [item.annotation_type for item in delivery.source_annotations],
+        )
+        for candidate in annotated_vite.candidates
+        for delivery in candidate.deliveries
+    ] == [
+        ("2025-11-18", ["EPSS_SOURCE_SCORE_SHIFT"]),
+        ("2026-06-15", ["EPSS_MODEL_TRANSITION"]),
+    ]
+    assert [
+        item.annotation_type for item in annotated_vite.source_annotations
+    ] == ["EPSS_MODEL_TRANSITION"]
 
     assert litellm.alert.package_name == "litellm"
     assert litellm.advisory.cve_id == "CVE-2026-42208"

@@ -48,11 +48,11 @@
         }
       },
       {
-        "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+        "id": "fda2c7e2-b9ad-5b69-85de-f4c89a12e1f4",
         "is_kev": false,
         "status": "open",
-        "priority": "high",
-        "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "priority": "medium",
+        "review_reason": "2026-06-15 EPSS 상위 5% 진입 조건을 충족했습니다.",
         "opened_at": "2026-08-21T01:00:00Z",
         "resolved_at": null,
         "last_reopened_at": null,
@@ -65,33 +65,42 @@
           "importance": "critical"
         },
         "alert": {
-          "id": "7405166d-b8fc-5150-9558-120015acbd61",
-          "github_alert_number": 49,
+          "id": "f574df46-d23c-56e5-87fd-582d8e9d3551",
+          "github_alert_number": 4,
           "state": "open",
-          "package_name": "next",
+          "package_name": "vite",
           "ecosystem": "npm",
-          "first_patched_version": "15.5.16",
-          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/49"
+          "first_patched_version": "6.2.5",
+          "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/4"
         },
         "advisory": {
-          "ghsa_id": "GHSA-c4j6-fc7j-m34r",
-          "cve_id": "CVE-2026-44578",
-          "summary": "Next.js vulnerable to server-side request forgery in applications using WebSocket upgrades",
-          "severity": "high",
-          "cvss_score": 8.6
+          "ghsa_id": "GHSA-xcj6-pq6g-qj4x",
+          "cve_id": "CVE-2025-31486",
+          "summary": "Vite allows server.fs.deny to be bypassed with .svg or relative paths",
+          "severity": "medium",
+          "cvss_score": 5.3
         },
         "latest_candidate": {
-          "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
-          "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
-          "cve_id": "CVE-2026-44578",
+          "id": "a27b2816-b3e9-5c78-b478-2cdf4007696d",
+          "source_candidate_id": "expected-cve-2025-31486-2026-06-15",
+          "cve_id": "CVE-2025-31486",
           "priority": "P3",
           "change_type": "epss_top5_entry_d30",
-          "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-          "selected_at": "2026-06-23T00:30:00Z",
+          "reason_summary": "2026-06-15 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-06-15T00:30:00Z",
           "subject_type": "CVE",
-          "subject_id": "CVE-2026-44578",
-          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
-        }
+          "subject_id": "CVE-2025-31486",
+          "ghsa_id": "GHSA-xcj6-pq6g-qj4x"
+        },
+        "source_annotations": [
+          {
+            "snapshot_date": "2026-06-15",
+            "annotation_type": "EPSS_MODEL_TRANSITION",
+            "label": "EPSS 모델 v5 전환일",
+            "description": "FIRST가 공지한 EPSS v5 모델 전환일로, 모델 변경 영향에 따라 후보가 급증했을 가능성이 있는 날짜입니다.",
+            "source_url": "https://www.first.org/epss/data"
+          }
+        ]
       },
       {
         "id": "cf32cb01-3f19-5447-be2c-a674c59a2122",
@@ -583,12 +592,12 @@
       ],
       "activities": []
     },
-    "cc71c818-622d-59bc-9874-078c64f5c592": {
-      "id": "cc71c818-622d-59bc-9874-078c64f5c592",
+    "fda2c7e2-b9ad-5b69-85de-f4c89a12e1f4": {
+      "id": "fda2c7e2-b9ad-5b69-85de-f4c89a12e1f4",
       "is_kev": false,
       "status": "open",
-      "priority": "high",
-      "review_reason": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
+      "priority": "medium",
+      "review_reason": "2026-06-15 EPSS 상위 5% 진입 조건을 충족했습니다.",
       "opened_at": "2026-08-21T01:00:00Z",
       "resolved_at": null,
       "last_reopened_at": null,
@@ -601,19 +610,19 @@
         "importance": "critical"
       },
       "alert": {
-        "id": "7405166d-b8fc-5150-9558-120015acbd61",
-        "github_alert_number": 49,
+        "id": "f574df46-d23c-56e5-87fd-582d8e9d3551",
+        "github_alert_number": 4,
         "state": "open",
-        "package_name": "next",
+        "package_name": "vite",
         "ecosystem": "npm",
-        "first_patched_version": "15.5.16",
-        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/49",
+        "first_patched_version": "6.2.5",
+        "html_url": "https://github.com/dt4-proj3-team3/watchback-vulnerable-fe-lab/security/dependabot/4",
         "manifest_path": "package-lock.json",
         "dependency_scope": "runtime",
         "dependency_relationship": "direct",
-        "vulnerable_version_range": ">= 13.4.13, < 15.5.16",
-        "github_created_at": "2026-08-10T01:17:30Z",
-        "github_updated_at": "2026-08-10T01:17:30Z",
+        "vulnerable_version_range": ">= 6.2.0, < 6.2.5",
+        "github_created_at": "2026-08-10T01:17:23Z",
+        "github_updated_at": "2026-08-10T01:17:23Z",
         "dismissed_at": null,
         "dismissed_reason": null,
         "dismissed_by": null,
@@ -622,98 +631,125 @@
         "auto_dismissed_at": null
       },
       "advisory": {
-        "ghsa_id": "GHSA-c4j6-fc7j-m34r",
-        "cve_id": "CVE-2026-44578",
-        "summary": "Next.js vulnerable to server-side request forgery in applications using WebSocket upgrades",
-        "severity": "high",
-        "cvss_score": 8.6
+        "ghsa_id": "GHSA-xcj6-pq6g-qj4x",
+        "cve_id": "CVE-2025-31486",
+        "summary": "Vite allows server.fs.deny to be bypassed with .svg or relative paths",
+        "severity": "medium",
+        "cvss_score": 5.3
       },
       "latest_candidate": {
-        "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
-        "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
-        "cve_id": "CVE-2026-44578",
+        "id": "a27b2816-b3e9-5c78-b478-2cdf4007696d",
+        "source_candidate_id": "expected-cve-2025-31486-2026-06-15",
+        "cve_id": "CVE-2025-31486",
         "priority": "P3",
         "change_type": "epss_top5_entry_d30",
-        "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-        "selected_at": "2026-06-23T00:30:00Z",
+        "reason_summary": "2026-06-15 EPSS 상위 5% 진입 조건을 충족했습니다.",
+        "selected_at": "2026-06-15T00:30:00Z",
         "subject_type": "CVE",
-        "subject_id": "CVE-2026-44578",
-        "ghsa_id": "GHSA-c4j6-fc7j-m34r"
+        "subject_id": "CVE-2025-31486",
+        "ghsa_id": "GHSA-xcj6-pq6g-qj4x"
       },
+      "source_annotations": [
+        {
+          "snapshot_date": "2026-06-15",
+          "annotation_type": "EPSS_MODEL_TRANSITION",
+          "label": "EPSS 모델 v5 전환일",
+          "description": "FIRST가 공지한 EPSS v5 모델 전환일로, 모델 변경 영향에 따라 후보가 급증했을 가능성이 있는 날짜입니다.",
+          "source_url": "https://www.first.org/epss/data"
+        }
+      ],
       "candidates": [
         {
-          "id": "e872f496-7c7e-5324-b90a-862d7dfca56e",
-          "source_candidate_id": "expected-cve-2026-44578-2026-06-13",
-          "cve_id": "CVE-2026-44578",
-          "priority": "P2",
+          "id": "398efbcf-5525-59d7-b79e-454c0ad22521",
+          "source_candidate_id": "expected-cve-2025-31486-2025-11-18",
+          "cve_id": "CVE-2025-31486",
+          "priority": "P1",
           "change_type": "epss_rise_d30",
-          "reason_summary": "2026-06-13 EPSS D-30 급상승 조건을 충족했습니다.",
-          "selected_at": "2026-06-13T00:30:00Z",
+          "reason_summary": "2025-11-18 EPSS D-30 급상승 조건을 충족했습니다.",
+          "selected_at": "2025-11-18T00:30:00Z",
           "deliveries": [
             {
-              "batch_id": "d05635d3-384c-5824-9a50-bf7c0304d0ad",
-              "source_batch_id": "expected-gold-2026-06-13",
-              "as_of": "2026-06-13T00:00:00Z",
-              "source_generated_at": "2026-06-13T00:40:00Z",
+              "batch_id": "9c95ec84-2a79-55cc-853e-4aeea11c7bdb",
+              "source_batch_id": "expected-gold-2025-11-18",
+              "as_of": "2025-11-18T00:00:00Z",
+              "source_generated_at": "2025-11-18T00:40:00Z",
               "policy_version": "ver.1",
               "schema_version": "1.0",
-              "received_at": "2026-06-13T00:45:00Z"
+              "received_at": "2025-11-18T00:45:00Z",
+              "source_annotations": [
+                {
+                  "snapshot_date": "2025-11-18",
+                  "annotation_type": "EPSS_SOURCE_SCORE_SHIFT",
+                  "label": "EPSS 소스 점수 대규모 변동일",
+                  "description": "EPSS 점수가 10%p 이상 증가한 CVE가 2,677개로 확인되어, 후보가 평소보다 많이 발생했을 가능성이 있는 날짜입니다.",
+                  "source_url": "https://expel.com/blog/patch-tuesday-december-2025-expels-version/"
+                }
+              ]
             }
           ],
           "evidence": [
             {
-              "id": "4791e876-8d60-50c6-a259-cada0c2c78a6",
-              "source_evidence_id": "expected-cve-2026-44578-r-epss-rise-d30",
+              "id": "b0aaa56c-d72f-5bd3-a23d-019fd9e25179",
+              "source_evidence_id": "expected-cve-2025-31486-r-epss-rise-d30",
               "signal": "epss_score_d30",
               "value_type": "decimal",
-              "previous_value": "0.000320000",
-              "current_value": "0.072150000",
-              "observed_at": "2026-06-13T00:00:00Z",
+              "previous_value": "0.00014000",
+              "current_value": "0.07314000",
+              "observed_at": "2025-11-18T00:00:00Z",
               "source": "first_epss",
-              "batch_id": "d05635d3-384c-5824-9a50-bf7c0304d0ad",
+              "batch_id": "9c95ec84-2a79-55cc-853e-4aeea11c7bdb",
               "evidence_summary": "EPSS 점수가 30일 전보다 크게 상승했습니다."
             }
           ],
           "subject_type": "CVE",
-          "subject_id": "CVE-2026-44578",
-          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
+          "subject_id": "CVE-2025-31486",
+          "ghsa_id": "GHSA-xcj6-pq6g-qj4x"
         },
         {
-          "id": "8197e7f7-dfb9-56a9-9742-f45d0a121ade",
-          "source_candidate_id": "expected-cve-2026-44578-2026-06-23",
-          "cve_id": "CVE-2026-44578",
+          "id": "a27b2816-b3e9-5c78-b478-2cdf4007696d",
+          "source_candidate_id": "expected-cve-2025-31486-2026-06-15",
+          "cve_id": "CVE-2025-31486",
           "priority": "P3",
           "change_type": "epss_top5_entry_d30",
-          "reason_summary": "2026-06-23 EPSS 상위 5% 진입 조건을 충족했습니다.",
-          "selected_at": "2026-06-23T00:30:00Z",
+          "reason_summary": "2026-06-15 EPSS 상위 5% 진입 조건을 충족했습니다.",
+          "selected_at": "2026-06-15T00:30:00Z",
           "deliveries": [
             {
-              "batch_id": "0437d24e-4cea-5e2c-a48d-1ceecadfec0b",
-              "source_batch_id": "expected-gold-2026-06-23",
-              "as_of": "2026-06-23T00:00:00Z",
-              "source_generated_at": "2026-06-23T00:40:00Z",
+              "batch_id": "cde5f71b-a899-5660-93c2-f5e045383381",
+              "source_batch_id": "expected-gold-2026-06-15",
+              "as_of": "2026-06-15T00:00:00Z",
+              "source_generated_at": "2026-06-15T00:40:00Z",
               "policy_version": "ver.1",
               "schema_version": "1.0",
-              "received_at": "2026-06-23T00:45:00Z"
+              "received_at": "2026-06-15T00:45:00Z",
+              "source_annotations": [
+                {
+                  "snapshot_date": "2026-06-15",
+                  "annotation_type": "EPSS_MODEL_TRANSITION",
+                  "label": "EPSS 모델 v5 전환일",
+                  "description": "FIRST가 공지한 EPSS v5 모델 전환일로, 모델 변경 영향에 따라 후보가 급증했을 가능성이 있는 날짜입니다.",
+                  "source_url": "https://www.first.org/epss/data"
+                }
+              ]
             }
           ],
           "evidence": [
             {
-              "id": "0b10ebbb-0b93-50b1-be6a-ea389d1f6762",
-              "source_evidence_id": "expected-cve-2026-44578-r-epss-top5-entry-d30",
+              "id": "f9c459b8-6c21-5fcf-a0b8-1c1286005756",
+              "source_evidence_id": "expected-cve-2025-31486-r-epss-top5-entry-d30",
               "signal": "epss_percentile_d30",
               "value_type": "decimal",
-              "previous_value": "0.89864000",
-              "current_value": "0.98347000",
-              "observed_at": "2026-06-23T00:00:00Z",
+              "previous_value": "0.89968000",
+              "current_value": "0.98226000",
+              "observed_at": "2026-06-15T00:00:00Z",
               "source": "first_epss",
-              "batch_id": "0437d24e-4cea-5e2c-a48d-1ceecadfec0b",
+              "batch_id": "cde5f71b-a899-5660-93c2-f5e045383381",
               "evidence_summary": "EPSS 백분위가 상위 위험 구간에 진입했습니다."
             }
           ],
           "subject_type": "CVE",
-          "subject_id": "CVE-2026-44578",
-          "ghsa_id": "GHSA-c4j6-fc7j-m34r"
+          "subject_id": "CVE-2025-31486",
+          "ghsa_id": "GHSA-xcj6-pq6g-qj4x"
         }
       ],
       "activities": []
