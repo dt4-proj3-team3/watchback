@@ -22,7 +22,9 @@ Web Backend가 검토된 외부 소스 영향일을 정적 카탈로그로 관�
 | 2026-06-15 | `EPSS_MODEL_TRANSITION` | EPSS 모델 v5 전환일 |
 | 2026-06-16 | `EPSS_MODEL_TRANSITION_AFTEREFFECT` | EPSS 모델 전환 직후 영향일 |
 
-주석은 Gold Batch `as_of`를 UTC 날짜로 정규화해 연결한다. 목록은 Case의 대표 Candidate가 가장 최근에 전달된 Batch를 기준으로 하며, 상세는 Candidate의 각 Batch 전달 이력에 주석을 연결한다.
+주석은 EPSS Evidence의 `observed_at`을 UTC 날짜로 정규화해 연결한다. 대상 신호는 EPSS 점수와 EPSS 백분위이며, KEV 등 다른 Evidence가 같은 날짜에 관찰됐다는 이유만으로 EPSS 소스 주석을 연결하지 않는다. 목록은 Case 대표 Candidate의 대표 Batch에 포함된 EPSS Evidence를 기준으로 하며, 상세는 Candidate의 각 Batch 전달에 포함된 EPSS Evidence를 기준으로 주석을 연결한다.
+
+초기 결정이었던 Gold Batch `as_of` 기준 연결은 이 결정으로 대체한다. 일일 Batch에서는 `as_of`와 Evidence 관찰일이 비슷하지만, 여러 과거 관찰일을 한 Batch로 전달하는 백필에서는 `as_of` 하나로 개별 변화 날짜를 식별할 수 없기 때문이다. Batch `as_of`는 데이터 기준 시점과 동기화 추적에만 사용한다.
 
 주석은 해석을 돕는 설명 정보다. Candidate 생성·제거, 점수 보정, Alert 매칭, Case 상태·우선순위와 필터 결과에는 사용하지 않는다. `2025-04-20`, `2025-12-18`처럼 내부 정책이나 분석 경계의 영향을 받은 날짜는 사용자 API에 노출하지 않는다.
 
@@ -43,6 +45,6 @@ Web Backend가 검토된 외부 소스 영향일을 정적 카탈로그로 관�
 ## Verification
 
 - 세 외부 소스 영향일과 인접 날짜의 카탈로그 조회 결과를 단위 테스트로 확인한다.
-- 재검토 목록과 상세 API에서 Batch `as_of`에 맞는 주석과 빈 배열을 확인한다.
+- 재검토 목록과 상세 API에서 EPSS Evidence `observed_at`에 맞는 주석과 빈 배열을 확인한다.
 - 주석 추가 전후 Candidate·Match·Case 생성과 정렬·필터 결과가 동일한지 회귀 테스트로 확인한다.
 - Demo 화면에서 Vite `CVE-2025-31486`의 2025-11-18과 2026-06-15 변화를 주석과 함께 확인한다.

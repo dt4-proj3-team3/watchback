@@ -142,21 +142,30 @@ export function ReviewCaseDetail({ values }) {
                         <span style={toReactStyle("font-size:12px;font-weight:700;color:#1B1E1A")}>
                           {group.changeTypeLabel}
                         </span>
-                        <span style={toReactStyle("font-size:11px;color:#8B9086")}>
-                          {`후보 선정 ${group.selectedLabel}`}
-                        </span>
+                        {group.selectedLabel && (
+                          <span style={toReactStyle("font-size:11px;color:#8B9086")}>
+                            {`후보 선정 ${group.selectedLabel}`}
+                          </span>
+                        )}
                       </div>
                       {group.sourceAnnotations.map((annotation) => (
                         <div key={`${annotation.snapshot_date}-${annotation.annotation_type}`} style={toReactStyle("background:#FFF8ED;border:1px solid #E9C99A;border-radius:8px;padding:10px 12px;margin-bottom:8px")}>
-                          <div style={toReactStyle("font-size:12px;font-weight:700;color:#9A5A16;margin-bottom:4px")}>
-                            {annotation.label}
+                          <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:12px")}>
+                            <div>
+                              <div style={toReactStyle("font-size:12px;font-weight:700;color:#9A5A16")}>
+                                {annotation.label}
+                              </div>
+                              <div style={toReactStyle("font-size:11px;color:#8B9086;margin-top:3px")}>
+                                {`변동일 ${annotation.snapshot_date.replaceAll('-', '.')}`}
+                              </div>
+                            </div>
+                            <a href={annotation.source_url} target="_blank" rel="noreferrer" style={toReactStyle("font-size:11.5px;color:#2F8F5B;text-decoration:none;white-space:nowrap;margin-left:auto")}>
+                              {"출처 보기 ↗"}
+                            </a>
                           </div>
-                          <div style={toReactStyle("font-size:12px;color:#5B6058;line-height:1.5")}>
+                          <div style={toReactStyle("font-size:12px;color:#5B6058;line-height:1.5;margin-top:6px")}>
                             {annotation.description}
                           </div>
-                          <a href={annotation.source_url} target="_blank" rel="noreferrer" style={toReactStyle("display:inline-block;font-size:11.5px;color:#2F8F5B;text-decoration:none;margin-top:5px")}>
-                            {"출처 보기 ↗"}
-                          </a>
                         </div>
                       ))}
                       <div style={toReactStyle("display:flex;flex-direction:column;gap:8px")}>
@@ -166,11 +175,6 @@ export function ReviewCaseDetail({ values }) {
                           <span style={toReactStyle("font-size:12px;font-weight:600;color:#1B1E1A;width:170px;flex:none;white-space:nowrap")}>
                             {`${ev.signalLabel}`}
                           </span>
-                          {ev.observedLabel && (
-                            <span style={toReactStyle("font-size:11px;color:#8B9086")}>
-                              {`${ev.observedLabel}`}
-                            </span>
-                          )}
                           <span className="watchback-evidence-values" style={toReactStyle("display:flex;align-items:center;gap:12px;margin-left:auto;white-space:nowrap")}>
                             <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#8B9086")}>
                               {`${ev.previousValueLabel}`}
@@ -183,7 +187,12 @@ export function ReviewCaseDetail({ values }) {
                             </span>
                           </span>
                         </div>
-                        <div style={toReactStyle("font-size:12.5px;color:#5B6058;line-height:1.5;margin-top:6px")}>
+                        {ev.observedLabel && (
+                          <div style={toReactStyle("font-size:11px;color:#8B9086;margin-top:3px")}>
+                            {`관찰일 ${ev.observedLabel}`}
+                          </div>
+                        )}
+                        <div style={toReactStyle(`font-size:12.5px;color:#5B6058;line-height:1.5;margin-top:${ev.observedLabel ? '5px' : '6px'}`)}>
                           {`${ev.reasonSummary}`}
                         </div>
                       </div>
@@ -322,6 +331,14 @@ export function ReviewCaseDetail({ values }) {
                       </span>
                     </div>
                   )}
+                  <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-height:18px")}>
+                    <span style={toReactStyle("color:#8B9086;line-height:18px;white-space:nowrap")}>
+                      {"영향 파일"}
+                    </span>
+                    <span style={toReactStyle("font-family:ui-monospace,monospace;font-size:11px;line-height:18px;text-align:right;overflow-wrap:anywhere")}>
+                      {values.selected.manifestLabel}
+                    </span>
+                  </div>
                   <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px")}>
                     <span style={toReactStyle("color:#8B9086;line-height:18px")}>
                       {"영향 버전"}

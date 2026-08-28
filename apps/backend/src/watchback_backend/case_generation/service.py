@@ -80,11 +80,11 @@ def _load_bases(
             .where(AlertCandidateMatch.organization_id == organization_id)
         )
     )
-    by_alert: dict[UUID, list[Any]] = defaultdict(list)
+    by_case: dict[tuple[UUID, str], list[Any]] = defaultdict(list)
     non_open_alerts: set[UUID] = set()
     for row in rows:
         if row.DependabotAlert.state == "open":
-            by_alert[row.DependabotAlert.id].append(row)
+            by_case[(row.Repository.id, row.SecurityAdvisory.cve_id)].append(row)
         else:
             non_open_alerts.add(row.DependabotAlert.id)
 
@@ -93,7 +93,7 @@ def _load_bases(
             alert_rows,
             key=lambda row: (row.RiskCandidate.selected_at, str(row.RiskCandidate.id)),
         )
-        for alert_rows in by_alert.values()
+        for alert_rows in by_case.values()
     ]
     candidate_ids = [row.RiskCandidate.id for row in representatives]
     deliveries: dict[UUID, list[Any]] = defaultdict(list)
@@ -148,7 +148,13 @@ def _load_bases(
         ),
         {
             "match_count": len(rows),
-            "open_alert_count": len(by_alert),
+            "open_alert_count": len(
+                {
+                    row.DependabotAlert.id
+                    for rows_for_case in by_case.values()
+                    for row in rows_for_case
+                }
+            ),
             "non_open_alert_count": len(non_open_alerts),
         },
         excluded,
@@ -189,11 +195,20 @@ def run_case_generation(
 
             bases, inputs, excluded = _load_bases(session, organization_id)
             existing_cases = {
-                review_case.alert_id: review_case
-                for review_case in session.scalars(
-                    select(ReviewCase)
+                (repository_id, cve_id): review_case
+                for review_case, repository_id, cve_id in session.execute(
+                    select(
+                        ReviewCase,
+                        DependabotAlert.repository_id,
+                        SecurityAdvisory.cve_id,
+                    )
+                    .join(DependabotAlert, DependabotAlert.id == ReviewCase.alert_id)
+                    .join(
+                        SecurityAdvisory,
+                        SecurityAdvisory.id == DependabotAlert.advisory_id,
+                    )
                     .where(ReviewCase.organization_id == organization_id)
-                    .with_for_update()
+                    .with_for_update(of=ReviewCase)
                 )
             }
             inputs["existing_case_count"] = len(existing_cases)
@@ -207,7 +222,8 @@ def run_case_generation(
             }
 
             for basis in bases:
-                review_case = existing_cases.get(basis.alert.id)
+                case_key = (basis.repository.id, basis.advisory.cve_id)
+                review_case = existing_cases.get(case_key)
                 action: str
                 if review_case is None:
                     action = "created"
@@ -239,7 +255,7 @@ def run_case_generation(
                                 occurred_at=timestamp,
                             )
                         )
-                        existing_cases[basis.alert.id] = review_case
+                        existing_cases[case_key] = review_case
                 elif review_case.status == "resolved":
                     if review_case.representative_candidate_id != basis.candidate.id:
                         action = "reopened"

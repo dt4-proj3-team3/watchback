@@ -385,7 +385,7 @@ def test_actual_alert_snapshot_matches_realistic_gold_fixture(
     assert rerun["matches"]["inserted"] == 0
 
 
-def test_demo_matches_create_one_case_per_open_alert(
+def test_demo_matches_create_one_case_per_repository_cve(
     postgres_engine, demo_matching_data
 ) -> None:
     organization_id = demo_matching_data["organization_id"]
@@ -406,7 +406,7 @@ def test_demo_matches_create_one_case_per_open_alert(
         "existing_case_count": 0,
     }
     assert dry_run["cases"] == {
-        "created": 15,
+        "created": 9,
         "updated": 0,
         "reopened": 0,
         "unchanged": 0,
@@ -419,7 +419,7 @@ def test_demo_matches_create_one_case_per_open_alert(
     applied = run_case_generation(
         "", organization_id, occurred_at=occurred_at, engine=postgres_engine
     )
-    assert applied["cases"]["created"] == 15
+    assert applied["cases"]["created"] == 9
 
     with Session(postgres_engine) as session:
         case_rows = session.execute(
@@ -432,7 +432,7 @@ def test_demo_matches_create_one_case_per_open_alert(
             )
             .where(ReviewCase.organization_id == organization_id)
         ).all()
-        assert len(case_rows) == 15
+        assert len(case_rows) == 9
         assert all(
             row.ReviewCase.priority == row.SecurityAdvisory.severity
             for row in case_rows
@@ -450,7 +450,7 @@ def test_demo_matches_create_one_case_per_open_alert(
                     ReviewActivity.activity_type == "case_opened",
                 )
             )
-            == 15
+            == 9
         )
 
         vite_case = next(
@@ -469,7 +469,7 @@ def test_demo_matches_create_one_case_per_open_alert(
         "created": 0,
         "updated": 0,
         "reopened": 0,
-        "unchanged": 15,
+        "unchanged": 9,
         "excluded": 0,
     }
 
@@ -490,7 +490,7 @@ def test_demo_matches_create_one_case_per_open_alert(
                 .select_from(ReviewActivity)
                 .where(ReviewActivity.organization_id == organization_id)
             )
-            == 15
+            == 9
         )
 
 

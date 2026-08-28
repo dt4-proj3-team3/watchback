@@ -2,6 +2,8 @@
 
 Fabric Lakehouse SQL Analytics Endpoint의 완료된 Gold Publish View를 읽어 PostgreSQL Web 운영 DB에 Batch 단위로 반영하는 독립 CLI Worker다. Backend 패키지를 런타임에 import하지 않는다.
 
+S1 Candidate는 CVE 기준이다. `cve_id`는 필수이고 `ghsa_id`는 선택 보조 식별자다. CVE가 없는 GHSA-only Candidate는 계약 오류로 처리한다.
+
 ## 입력
 
 - Lakehouse: `watchback_lakehouse_dev_v2`

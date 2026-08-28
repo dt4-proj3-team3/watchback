@@ -46,6 +46,7 @@ def test_openapi_exposes_paths_and_required_context_headers(
     paths = openapi_document["paths"]
     for path, method in (
         ("/api/v1/review-cases", "get"),
+        ("/api/v1/review-cases/dashboard-summary", "get"),
         ("/api/v1/review-cases/{case_id}", "get"),
         ("/api/v1/review-cases/{case_id}/activities", "post"),
     ):
@@ -91,6 +92,11 @@ def test_detail_contract_contains_candidate_batch_evidence_and_activity_history(
         openapi_document, detail["properties"]["candidates"]["items"]["$ref"]
     )
     assert {"deliveries", "evidence"}.issubset(candidate["required"])
+    assert {item.get("type") for item in candidate["properties"]["ghsa_id"]["anyOf"]} == {
+        "string",
+        "null",
+    }
+    assert "cve_id" in candidate["required"]
     summary = _resolve_schema(
         openapi_document,
         openapi_document["paths"]["/api/v1/review-cases"]["get"]["responses"][
@@ -108,6 +114,7 @@ def test_detail_contract_contains_candidate_batch_evidence_and_activity_history(
     assert DETAIL_EXAMPLE["candidates"][0]["deliveries"][0][
         "source_annotations"
     ][0]["annotation_type"] == "EPSS_MODEL_TRANSITION"
+    assert LIST_EXAMPLE["items"][0]["latest_candidate"]["change_type"] == "kev_new"
 
 
 def test_activity_contract_and_examples(openapi_document: dict[str, Any]) -> None:

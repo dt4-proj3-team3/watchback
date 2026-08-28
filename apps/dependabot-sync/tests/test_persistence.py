@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import psycopg
 import pytest
 
 from watchback_dependabot_sync.config import REPOSITORIES
 from watchback_dependabot_sync.errors import PersistenceError
-from watchback_dependabot_sync.models import AlertPayload, RepositoryPayload
+from watchback_dependabot_sync.models import (
+    AlertPayload,
+    CvssSeveritiesPayload,
+    RepositoryPayload,
+)
 from watchback_dependabot_sync.persistence import (
     LOCK_KEY,
     normalize_database_url,
@@ -78,6 +83,61 @@ def test_upsert_deduplicates_advisory_preserves_manifest_and_is_idempotent(
             "SELECT github_alert_number, id FROM dependabot_alerts ORDER BY github_alert_number"
         ).fetchall()
     assert ids_after == ids_before
+
+
+@pytest.mark.integration
+def test_equal_timestamp_repairs_cvss_projection_and_then_is_idempotent(
+    seeded_database_url, raw_alerts
+):
+    alerts = source_snapshot(raw_alerts)
+    now = datetime.now(UTC)
+    persist_snapshot(
+        seeded_database_url,
+        repository_payloads(),
+        alerts,
+        collect_advisories(alerts),
+        now,
+    )
+
+    target_ghsa = alerts[list(REPOSITORIES)[0]][0].security_advisory.ghsa_id
+    for repository_alerts in alerts.values():
+        for alert in repository_alerts:
+            advisory = alert.security_advisory
+            if advisory.ghsa_id != target_ghsa:
+                continue
+            advisory.cvss.score = Decimal("0")
+            advisory.cvss.vector_string = None
+            advisory.cvss_severities = CvssSeveritiesPayload.model_validate({
+                "cvss_v4": {
+                    "vector_string": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H",
+                    "score": 8.2,
+                }
+            })
+
+    repaired = persist_snapshot(
+        seeded_database_url,
+        repository_payloads(),
+        alerts,
+        collect_advisories(alerts),
+        now + timedelta(minutes=1),
+    )
+    assert repaired["advisories"]["updated"] == 1
+
+    with psycopg.connect(normalize_database_url(seeded_database_url)) as connection:
+        score = connection.execute(
+            "SELECT cvss_score FROM security_advisories WHERE ghsa_id = %s",
+            (target_ghsa,),
+        ).fetchone()[0]
+    assert score == Decimal("8.20")
+
+    repeated = persist_snapshot(
+        seeded_database_url,
+        repository_payloads(),
+        alerts,
+        collect_advisories(alerts),
+        now + timedelta(minutes=2),
+    )
+    assert repeated["advisories"]["unchanged"] == 4
 
 
 @pytest.mark.integration

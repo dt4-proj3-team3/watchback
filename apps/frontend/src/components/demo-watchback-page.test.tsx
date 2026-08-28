@@ -19,9 +19,17 @@ describe('review page data source selection', () => {
   });
 
   it('uses the db response for the dashboard instead of demo cases', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
-      items: [], page: 1, page_size: 100, total: 0,
-    }), { headers: { 'content-type': 'application/json' } }));
+    const fetchMock = vi.fn(async (url) => new Response(JSON.stringify(
+      url === '/api/review-cases/dashboard-summary'
+        ? {
+          reference_at: '2026-08-28T00:00:00Z',
+          previous_reference_at: '2026-08-21T00:00:00Z',
+          critical_open: { current_count: 0, previous_count: 0, delta: 0 },
+          stale_open: { current_count: 0, previous_count: 0, delta: 0 },
+          source_impact_open: { current_count: 0, previous_count: 0, delta: 0 },
+        }
+        : { items: [], page: 1, page_size: 100, total: 0 },
+    ), { headers: { 'content-type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<DemoWatchbackPage view="dashboard" />);
@@ -29,7 +37,10 @@ describe('review page data source selection', () => {
     expect(screen.getByText('현재 DB 기준')).not.toBeNull();
     expect(screen.queryByText('Demo 데이터')).toBeNull();
     expect(screen.queryByText('지난주 대비 ▲1건')).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledWith('/api/review-cases/dashboard-summary', {
+      cache: 'no-store',
+    });
   });
 
   it('uses the db response for repositories instead of demo cases', async () => {

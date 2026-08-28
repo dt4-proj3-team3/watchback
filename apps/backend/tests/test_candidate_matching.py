@@ -108,21 +108,28 @@ def matching_data(postgres_engine):
             ),
             "other_ghsa": SecurityAdvisory(
                 ghsa_id="GHSA-DDDD-EEEE-FFFF",
-                cve_id="CVE-2026-1001",
-                summary="Same CVE, different GHSA",
+                cve_id="CVE-2026-1002",
+                summary="Ambiguous CVE first advisory",
                 severity="high",
                 github_updated_at=now,
             ),
-            "ghsa_only": SecurityAdvisory(
+            "ambiguous_other": SecurityAdvisory(
                 ghsa_id="GHSA-GGGG-HHHH-IIII",
-                cve_id=None,
-                summary="GHSA only advisory",
+                cve_id="CVE-2026-1002",
+                summary="Ambiguous CVE second advisory",
+                severity="high",
+                github_updated_at=now,
+            ),
+            "unique": SecurityAdvisory(
+                ghsa_id="GHSA-MMMM-NNNN-OOOO",
+                cve_id="CVE-2026-1004",
+                summary="Unique CVE advisory",
                 severity="high",
                 github_updated_at=now,
             ),
             "closed_only": SecurityAdvisory(
                 ghsa_id="GHSA-JJJJ-KKKK-LLLL",
-                cve_id=None,
+                cve_id="CVE-2026-1003",
                 summary="Closed only advisory",
                 severity="medium",
                 github_updated_at=now,
@@ -149,7 +156,7 @@ def matching_data(postgres_engine):
             _alert(
                 organization_id=organization.id,
                 repository_id=repository.id,
-                advisory_id=advisories["ghsa_only"].id,
+                advisory_id=advisories["unique"].id,
                 number=3,
                 manifest="package-lock.json",
             ),
@@ -177,6 +184,13 @@ def matching_data(postgres_engine):
                 state="fixed",
             ),
             _alert(
+                organization_id=organization.id,
+                repository_id=repository.id,
+                advisory_id=advisories["ambiguous_other"].id,
+                number=7,
+                manifest="alternate/package-lock.json",
+            ),
+            _alert(
                 organization_id=other_organization.id,
                 repository_id=other_repository.id,
                 advisory_id=advisories["exact"].id,
@@ -202,7 +216,7 @@ def matching_data(postgres_engine):
                 source_candidate_id="candidate-cve-2",
                 subject_type="CVE",
                 subject_id=" cve-2026-1001 ",
-                ghsa_id=" ghsa-aaaa-bbbb-cccc ",
+                ghsa_id="GHSA-PPPP-QQQQ-RRRR",
                 cve_id=" cve-2026-1001 ",
                 priority="P1",
                 change_type="kev_added",
@@ -210,33 +224,33 @@ def matching_data(postgres_engine):
                 selected_at=now + timedelta(minutes=1),
             ),
             RiskCandidate(
-                source_candidate_id="candidate-ghsa",
-                subject_type="GHSA",
-                subject_id="GHSA-GGGG-HHHH-IIII",
-                ghsa_id="GHSA-GGGG-HHHH-IIII",
-                cve_id=None,
+                source_candidate_id="candidate-cve-without-ghsa",
+                subject_type="CVE",
+                subject_id="CVE-2026-1004",
+                ghsa_id=None,
+                cve_id="CVE-2026-1004",
                 priority="P1",
                 change_type="advisory_changed",
-                reason_summary="GHSA-only change",
+                reason_summary="CVE change without GHSA metadata",
                 selected_at=now + timedelta(minutes=2),
             ),
             RiskCandidate(
-                source_candidate_id="candidate-conflict",
+                source_candidate_id="candidate-ambiguous",
                 subject_type="CVE",
-                subject_id="CVE-2026-1001",
-                ghsa_id="GHSA-MMMM-NNNN-OOOO",
-                cve_id="CVE-2026-1001",
+                subject_id="CVE-2026-1002",
+                ghsa_id="GHSA-DDDD-EEEE-FFFF",
+                cve_id="CVE-2026-1002",
                 priority="P2",
                 change_type="epss_spike",
-                reason_summary="Conflicting identifiers",
+                reason_summary="Ambiguous CVE",
                 selected_at=now + timedelta(minutes=3),
             ),
             RiskCandidate(
                 source_candidate_id="candidate-missing",
-                subject_type="GHSA",
-                subject_id="GHSA-PPPP-QQQQ-RRRR",
-                ghsa_id="GHSA-PPPP-QQQQ-RRRR",
-                cve_id=None,
+                subject_type="CVE",
+                subject_id="CVE-2026-9999",
+                ghsa_id=None,
+                cve_id="CVE-2026-9999",
                 priority="P2",
                 change_type="epss_spike",
                 reason_summary="Missing identifier",
@@ -255,10 +269,10 @@ def matching_data(postgres_engine):
             ),
             RiskCandidate(
                 source_candidate_id="candidate-closed",
-                subject_type="GHSA",
-                subject_id="GHSA-JJJJ-KKKK-LLLL",
+                subject_type="CVE",
+                subject_id="CVE-2026-1003",
                 ghsa_id="GHSA-JJJJ-KKKK-LLLL",
-                cve_id=None,
+                cve_id="CVE-2026-1003",
                 priority="P3",
                 change_type="epss_spike",
                 reason_summary="Only closed alerts",
@@ -410,8 +424,8 @@ def test_matching_is_scoped_dry_run_idempotent_and_preserves_history(
 
     assert dry_run["inputs"] == {
         "candidate_count": 7,
-        "alert_count": 6,
-        "alert_states": {"fixed": 2, "open": 4},
+        "alert_count": 7,
+        "alert_states": {"fixed": 2, "open": 5},
     }
     assert dry_run["matches"] == {
         "total": 5,
@@ -424,13 +438,15 @@ def test_matching_is_scoped_dry_run_idempotent_and_preserves_history(
         "inserted": 0,
     }
     assert dry_run["excluded"]["reasons"] == {
-        "cve_ghsa_conflict": 1,
+        "ambiguous_cve": 1,
         "identifier_not_found": 1,
         "invalid_identifier": 1,
         "no_open_alert": 1,
     }
     assert dry_run["excluded"]["non_open_alert_count"] == 2
-    assert dry_run["samples"]["ambiguous"][0]["alert_number"] == 1
+    assert dry_run["diagnostics"] == {"candidate_ghsa_mismatch": 1}
+    assert dry_run["samples"]["diagnostics"][0]["alert_number"] == 1
+    assert dry_run["samples"]["ambiguous"][0]["alert_number"] == 4
     assert any(
         sample.get("alert_state") == "fixed"
         for sample in dry_run["samples"]["excluded"]
@@ -508,7 +524,7 @@ def test_case_generation_updates_open_case_and_reopens_resolved_case(
         "", organization_id, occurred_at=initial_time, engine=postgres_engine
     )
     assert initial["cases"] == {
-        "created": 3,
+        "created": 2,
         "updated": 0,
         "reopened": 0,
         "unchanged": 0,
@@ -562,7 +578,7 @@ def test_case_generation_updates_open_case_and_reopens_resolved_case(
     )
     assert redelivery["cases"] == {
         "created": 0,
-        "updated": 1,
+        "updated": 0,
         "reopened": 0,
         "unchanged": 2,
         "excluded": 0,
@@ -571,20 +587,16 @@ def test_case_generation_updates_open_case_and_reopens_resolved_case(
         resolved_case = session.scalar(
             select(ReviewCase).where(ReviewCase.alert_id == alert_one.id)
         )
-        open_case = session.scalar(
-            select(ReviewCase).where(ReviewCase.alert_id == alert_two.id)
-        )
-        assert resolved_case is not None and open_case is not None
+        assert resolved_case is not None
         assert resolved_case.status == "resolved"
         assert resolved_case.representative_batch_id == original_batch_id
-        assert open_case.representative_batch_id == repeated_batch.id
         assert (
             session.scalar(
                 select(func.count())
                 .select_from(ReviewActivity)
                 .where(ReviewActivity.organization_id == organization_id)
             )
-            == 3
+            == 2
         )
 
     new_candidate = RiskCandidate(
@@ -647,7 +659,7 @@ def test_case_generation_updates_open_case_and_reopens_resolved_case(
     )
     assert changed["cases"] == {
         "created": 0,
-        "updated": 1,
+        "updated": 0,
         "reopened": 1,
         "unchanged": 1,
         "excluded": 0,

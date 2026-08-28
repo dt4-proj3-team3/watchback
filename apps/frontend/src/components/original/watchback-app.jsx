@@ -40,7 +40,7 @@ const SIGNAL_LABEL = {
   advisory_severity: '권고 심각도',
 };
 const ACTIVITY_LABEL = {
-  case_opened: 'Case 생성', case_reopened: 'Case 재오픈', case_resolved: 'Case 해결',
+  case_reopened: 'Case 재오픈', case_resolved: 'Case 해결',
   review_deferred: '재검토 보류', risk_accepted: '위험 수용', remediation_requested: '조치 요청',
   note_added: '메모 추가', external_link_added: '외부 링크 연결',
 };
@@ -97,6 +97,88 @@ function fmtEvidenceReason(reason, signal, previousValue, currentValue) {
   return String(reason ?? '').replace(/^\d{4}[-.]\d{2}[-.]\d{2}\s+/, '');
 }
 
+export function buildEvidenceGroups(candidates = []) {
+  const groups = new Map();
+
+  candidates.forEach((candidate) => {
+    const changeType = String(candidate.change_type ?? '').trim().toLowerCase();
+    let group = groups.get(changeType);
+    if (!group) {
+      group = {
+        id: changeType,
+        changeTypeLabel: formatChangeType(changeType),
+        candidates: [],
+        sourceAnnotations: [],
+        evidence: [],
+      };
+      groups.set(changeType, group);
+    }
+
+    const sourceAnnotations = (candidate.deliveries ?? []).flatMap(
+      delivery => delivery.source_annotations ?? [],
+    );
+    group.candidates.push(candidate);
+    group.sourceAnnotations.push(...sourceAnnotations);
+    group.evidence.push(...(candidate.evidence ?? []).map(ev => ({
+      ...ev,
+      candidateId: candidate.id,
+      deliveries: candidate.deliveries ?? [],
+      sourceAnnotations,
+      previousValueLabel: fmtEvidenceValue(ev.previous_value, ev.value_type, ev.signal),
+      currentValueLabel: fmtEvidenceValue(ev.current_value, ev.value_type, ev.signal),
+      signalLabel: SIGNAL_LABEL[ev.signal] || ev.signal,
+      observedLabel: fmtDate(ev.observed_at) === fmtDate(candidate.selected_at) ? null : fmtDate(ev.observed_at),
+      reasonSummary: fmtEvidenceReason(
+        ev.evidence_summary || candidate.reason_summary,
+        ev.signal,
+        ev.previous_value,
+        ev.current_value,
+      ),
+    })));
+  });
+
+  return Array.from(groups.values()).map((group) => {
+    const annotationKeys = new Set();
+    const evidenceKeys = new Set();
+    const sourceAnnotations = group.sourceAnnotations.filter((annotation) => {
+      const key = `${annotation.snapshot_date}|${annotation.annotation_type}`;
+      if (annotationKeys.has(key)) return false;
+      annotationKeys.add(key);
+      return true;
+    });
+    const evidence = group.evidence
+      .filter((item) => {
+        const key = [
+          item.signal,
+          item.observed_at,
+          item.previous_value,
+          item.current_value,
+          item.source,
+        ].join('|');
+        if (evidenceKeys.has(key)) return false;
+        evidenceKeys.add(key);
+        return true;
+      })
+      .sort((left, right) => (
+        new Date(left.observed_at) - new Date(right.observed_at) ||
+        String(left.id).localeCompare(String(right.id))
+      ));
+    const firstObservedAt = evidence[0]?.observed_at ?? group.candidates[0]?.selected_at;
+    return {
+      ...group,
+      selectedLabel: group.candidates.length === 1
+        ? fmtDate(group.candidates[0].selected_at)
+        : null,
+      sourceAnnotations,
+      evidence,
+      firstObservedAt,
+    };
+  }).sort((left, right) => (
+    new Date(left.firstObservedAt) - new Date(right.firstObservedAt) ||
+    left.id.localeCompare(right.id)
+  ));
+}
+
 function formatReviewReason(reason) {
   const match = reason.match(/^(\d{4})-(\d{2})-(\d{2})\s+(.+)$/);
   const simplify = (text) => text.replace('EPSS D-30 급상승 조건', 'EPSS 급상승 조건');
@@ -106,6 +188,11 @@ function formatReviewReason(reason) {
 
 function badgeStyle(meta) {
   return `font-size:11px;font-weight:600;color:${meta.text};background:${meta.bg};border-radius:20px;padding:3px 9px;white-space:nowrap`;
+}
+
+function formatWeeklyTrend(delta) {
+  if (delta === 0) return '지난주 대비 변화 없음';
+  return `지난주 대비 ${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}건`;
 }
 
 const KEV_BADGE = { label: 'KEV', style: 'font-size:11px;font-weight:600;color:#A6321B;background:#FBEAE6;border-radius:5px;padding:2px 7px;white-space:nowrap' };
@@ -455,10 +542,14 @@ class WatchbackAppView extends Component {
       .slice(0, 5)
       .map(c => {
         const e = this.enrich(c);
+        const dashboardEvidenceTags = e.evidenceTags.map(tag => ({
+          ...tag,
+          label: tag.label === '상위 5%' ? 'EPSS 상위 5%' : tag.label,
+        }));
         const daysOpen = Math.floor((Date.now() - new Date(c.opened_at)) / 86400000);
         const urgencyLabel = c.reopened_count > 0 ? `재오픈 ${c.reopened_count}회` : (daysOpen >= 3 ? `${daysOpen}일째 미처리` : null);
         const patchLabel = c.latest_candidate.change_type === 'patch_available' && c.alert.first_patched_version ? `패치 ${c.alert.first_patched_version}` : null;
-        return { ...e, urgencyLabel, patchLabel };
+        return { ...e, evidenceTags: dashboardEvidenceTags, urgencyLabel, patchLabel };
       });
 
     const criticalOpenCount = cases.filter(c => c.status === 'open' && c.repository.importance === 'critical').length;
@@ -478,14 +569,18 @@ class WatchbackAppView extends Component {
       return openedAt >= previousWeekStart && openedAt < currentWeekStart;
     }).length;
     const sourceImpactDelta = currentWeekSourceImpactCount - previousWeekSourceImpactCount;
-    const sourceImpactTrend = sourceImpactDelta === 0
-      ? '지난주 대비 변화 없음'
-      : `지난주 대비 ${sourceImpactDelta > 0 ? '+' : ''}${sourceImpactDelta}건`;
+    const dashboardSummary = this.props.dashboardSummary;
+    const criticalMetric = dashboardSummary?.critical_open;
+    const staleMetric = dashboardSummary?.stale_open;
+    const sourceMetric = dashboardSummary?.source_impact_open;
+    const sourceImpactTrend = formatWeeklyTrend(
+      isDemo ? sourceImpactDelta : (sourceMetric?.delta ?? 0),
+    );
 
     const kpiCards = [
-      { label: 'Critical 저장소 미처리', value: `${criticalOpenCount}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: isDemo ? '지난주 대비 ▲1건' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
-      { label: '3일 이상 미처리', value: `${staleCount}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: isDemo ? '지난주 대비 변화 없음' : '기간 비교 미연동', cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
-      { label: '소스 변동 영향 추정', value: `${sourceImpactCases.length}건`, hint: 'EPSS 모델·소스 변동일과 겹친 재검토 항목', trend: sourceImpactTrend, cursorStyle: sourceImpactCases.length > 0 ? 'pointer' : 'default', onClick: sourceImpactCases.length > 0 ? () => this.setState({ showSuppressedPopover: true }) : undefined },
+      { label: 'Critical 저장소 미처리', value: `${isDemo ? criticalOpenCount : (criticalMetric?.current_count ?? criticalOpenCount)}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: formatWeeklyTrend(isDemo ? 1 : (criticalMetric?.delta ?? 0)), cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
+      { label: '3일 이상 미처리', value: `${isDemo ? staleCount : (staleMetric?.current_count ?? staleCount)}건`, hint: '재검토 대상이 된 지 오래된 항목', trend: formatWeeklyTrend(isDemo ? 0 : (staleMetric?.delta ?? 0)), cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'all', staleOnly: true, sort: 'opened_at' }) },
+      { label: '소스 변동 영향 추정', value: `${isDemo ? sourceImpactCases.length : (sourceMetric?.current_count ?? sourceImpactCases.length)}건`, hint: 'EPSS 모델·소스 변동일과 겹친 재검토 항목', trend: sourceImpactTrend, cursorStyle: sourceImpactCases.length > 0 ? 'pointer' : 'default', onClick: sourceImpactCases.length > 0 ? () => this.setState({ showSuppressedPopover: true }) : undefined },
     ];
 
     const flowStages = [
@@ -545,7 +640,11 @@ class WatchbackAppView extends Component {
     const selectedCase = selectedId ? cases.find(c => c.id === selectedId) : null;
     if (selectedCase) {
       const raw = selectedCase;
+      const reviewActivities = raw.activities.filter(
+        activity => activity.activity_type !== 'case_opened',
+      );
       const e = this.enrich(raw);
+      const relatedAlerts = raw.alerts?.length ? raw.alerts : [raw.alert];
       const sourceAnnotations = raw.candidates.flatMap(candidate => (
         (candidate.deliveries ?? []).flatMap(delivery => delivery.source_annotations ?? [])
       ));
@@ -577,30 +676,13 @@ class WatchbackAppView extends Component {
         mergeMode: configuredMergeMode,
         patchLabelShort: raw.alert.first_patched_version || '패치 없음',
         patchColor: raw.alert.first_patched_version ? '#2F8F5B' : '#8B9086',
-        evidenceGroups: raw.candidates.map(candidate => ({
-          id: candidate.id,
-          selectedLabel: fmtDate(candidate.selected_at),
-          changeTypeLabel: formatChangeType(candidate.change_type),
-          reasonSummary: candidate.reason_summary,
-          deliveries: candidate.deliveries ?? [],
-          sourceAnnotations: (candidate.deliveries ?? []).flatMap(
-            delivery => delivery.source_annotations ?? [],
-          ),
-          evidence: (candidate.evidence ?? []).map(ev => ({
-            ...ev,
-            previousValueLabel: fmtEvidenceValue(ev.previous_value, ev.value_type, ev.signal),
-            currentValueLabel: fmtEvidenceValue(ev.current_value, ev.value_type, ev.signal),
-            signalLabel: SIGNAL_LABEL[ev.signal] || ev.signal,
-            observedLabel: fmtDate(ev.observed_at) === fmtDate(candidate.selected_at) ? null : fmtDate(ev.observed_at),
-            reasonSummary: fmtEvidenceReason(
-              ev.evidence_summary || candidate.reason_summary,
-              ev.signal,
-              ev.previous_value,
-              ev.current_value,
-            ),
-          })),
-        })),
-        activityTimeline: raw.activities.map((act, i) => ({
+        relatedAlerts,
+        manifestLabel: relatedAlerts
+          .map(alert => alert.manifest_path)
+          .filter(Boolean)
+          .join(', ') || '-',
+        evidenceGroups: buildEvidenceGroups(raw.candidates),
+        activityTimeline: reviewActivities.map((act, i) => ({
           typeLabel: ACTIVITY_LABEL[act.activity_type] || act.activity_type,
           actorLabel: act.actor ? act.actor.display_name : 'System',
           occurredLabel: fmtDate(act.occurred_at),
@@ -609,7 +691,7 @@ class WatchbackAppView extends Component {
           hasLink: (act.external_links ?? []).length > 0,
           linkUrl: act.external_links?.[0]?.url ?? '',
           linkLabel: act.external_links?.[0]?.link_type === 'issue' ? '연결된 Issue' : '연결된 PR',
-          rowStyle: (i === raw.activities.length - 1 && this.state.justAddedActivity) ? 'display:flex;gap:12px;padding:12px;margin:0 -12px;border-top:1px solid #F0F1EE;background:#E7F3EC;border-radius:8px' : 'display:flex;gap:12px;padding:12px 0;border-top:1px solid #F0F1EE',
+          rowStyle: (i === reviewActivities.length - 1 && this.state.justAddedActivity) ? 'display:flex;gap:12px;padding:12px;margin:0 -12px;border-top:1px solid #F0F1EE;background:#E7F3EC;border-radius:8px' : 'display:flex;gap:12px;padding:12px 0;border-top:1px solid #F0F1EE',
         })),
       };
     }

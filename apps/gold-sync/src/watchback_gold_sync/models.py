@@ -18,7 +18,6 @@ class CandidatePriority(StrEnum):
 
 class SubjectType(StrEnum):
     CVE = "CVE"
-    GHSA = "GHSA"
 
 
 class EvidenceValueType(StrEnum):
@@ -57,8 +56,8 @@ class CandidateRow(SourceModel):
     candidate_id: str = Field(min_length=1)
     subject_type: SubjectType
     subject_id: str = Field(min_length=1)
-    ghsa_id: str = Field(min_length=1)
-    cve_id: str | None = None
+    ghsa_id: str | None = Field(default=None, min_length=1)
+    cve_id: str = Field(min_length=1)
     priority: CandidatePriority
     change_type: str = Field(min_length=1)
     reason_summary: str = Field(min_length=1)
@@ -66,11 +65,8 @@ class CandidateRow(SourceModel):
 
     @model_validator(mode="after")
     def validate_subject(self) -> Self:
-        if self.subject_type is SubjectType.CVE:
-            if self.cve_id is None or self.subject_id != self.cve_id:
-                raise ValueError("CVE subject는 cve_id와 subject_id가 같아야 합니다.")
-        elif self.cve_id is not None or self.subject_id != self.ghsa_id:
-            raise ValueError("GHSA subject는 cve_id가 없고 subject_id가 ghsa_id여야 합니다.")
+        if self.subject_id != self.cve_id:
+            raise ValueError("CVE subject는 cve_id와 subject_id가 같아야 합니다.")
         return self
 
 

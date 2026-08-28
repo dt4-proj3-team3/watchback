@@ -48,6 +48,12 @@ class IdentifierPayload(SourceModel):
 
 class CvssPayload(SourceModel):
     score: Decimal = Field(ge=0, le=10)
+    vector_string: str | None = None
+
+
+class CvssSeveritiesPayload(SourceModel):
+    cvss_v3: CvssPayload | None = None
+    cvss_v4: CvssPayload | None = None
 
 
 class AdvisoryPayload(SourceModel):
@@ -61,6 +67,19 @@ class AdvisoryPayload(SourceModel):
     updated_at: datetime
     withdrawn_at: datetime | None = None
     cvss: CvssPayload | None = None
+    cvss_severities: CvssSeveritiesPayload | None = None
+
+    @property
+    def effective_cvss_score(self) -> Decimal | None:
+        versioned = self.cvss_severities
+        for payload in (
+            versioned.cvss_v4 if versioned else None,
+            versioned.cvss_v3 if versioned else None,
+            self.cvss,
+        ):
+            if payload and (payload.vector_string or payload.score > 0):
+                return payload.score
+        return None
 
     @model_validator(mode="after")
     def derive_and_verify_cve(self) -> Self:

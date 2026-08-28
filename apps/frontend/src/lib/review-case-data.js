@@ -141,6 +141,17 @@ export async function fetchDatabaseReviewCase(caseId, fetcher = fetch) {
   return normalizeReviewCaseDetail(detail);
 }
 
+export async function fetchDatabaseDashboardSummary(fetcher = fetch) {
+  const response = await fetcher('/api/review-cases/dashboard-summary', {
+    cache: 'no-store',
+  });
+  return readJsonResponse(response);
+}
+
+export async function loadDashboardSummary(source, fetcher = fetch) {
+  return source === 'db' ? fetchDatabaseDashboardSummary(fetcher) : null;
+}
+
 export async function createReviewActivity(
   source,
   caseId,
@@ -212,9 +223,23 @@ export async function createReviewActivity(
 }
 
 export async function loadReviewCases(source, fetcher = fetch) {
-  return source === 'demo'
+  const cases = source === 'demo'
     ? getDemoReviewCaseSummaries().map((reviewCase) => applyDemoActivities(reviewCase))
     : fetchDatabaseReviewCases(fetcher);
+  const byRepositoryCve = new Map();
+  for (const reviewCase of await cases) {
+    const subjectId = reviewCase.advisory.cve_id ?? reviewCase.advisory.ghsa_id;
+    const key = `${reviewCase.repository.full_name}\u0000${subjectId}`;
+    const existing = byRepositoryCve.get(key);
+    if (
+      !existing ||
+      new Date(reviewCase.latest_candidate.selected_at) >
+        new Date(existing.latest_candidate.selected_at)
+    ) {
+      byRepositoryCve.set(key, reviewCase);
+    }
+  }
+  return [...byRepositoryCve.values()];
 }
 
 export async function loadReviewCase(source, caseId, fetcher = fetch) {

@@ -45,6 +45,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
             "advisory",
             "nullable_advisory",
             "alert",
+            "alert_lockfile",
             "alert_high",
             "other_alert",
             "candidate_old",
@@ -133,7 +134,11 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
         session.flush()
 
         def alert(
-            identifier: str, repo: str, advisory: str, number: int
+            identifier: str,
+            repo: str,
+            advisory: str,
+            number: int,
+            manifest: str = "package-lock.json",
         ) -> DependabotAlert:
             org = ids["org"] if repo == "repo" else ids["other_org"]
             return DependabotAlert(
@@ -145,7 +150,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                 state="open",
                 package_name="example-package",
                 ecosystem="npm",
-                manifest_path="package-lock.json",
+                manifest_path=manifest,
                 dependency_scope="runtime",
                 dependency_relationship="direct",
                 vulnerable_version_range="<2",
@@ -159,6 +164,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
         session.add_all(
             [
                 alert("alert", "repo", "advisory", 1),
+                alert("alert_lockfile", "repo", "advisory", 3, "uv.lock"),
                 alert("alert_high", "repo", "nullable_advisory", 2),
                 alert("other_alert", "other_repo", "advisory", 1),
             ]
@@ -172,7 +178,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                 ghsa_id="GHSA-aaaa-bbbb-0001",
                 cve_id="CVE-2026-0001",
                 priority="P1",
-                change_type="epss_rise",
+                change_type="EPSS_RISE",
                 reason_summary="EPSS 상승",
                 selected_at=NOW - timedelta(days=2),
             ),
@@ -184,19 +190,19 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                 ghsa_id="GHSA-aaaa-bbbb-0001",
                 cve_id="CVE-2026-0001",
                 priority="P0",
-                change_type="kev_added",
+                change_type="KEV_NEW",
                 reason_summary="KEV 등재",
                 selected_at=NOW - timedelta(days=1),
             ),
             RiskCandidate(
                 id=ids["candidate_high"],
                 source_candidate_id="candidate-high",
-                subject_type="GHSA",
-                subject_id="GHSA-4444-5555-6666",
-                ghsa_id="GHSA-4444-5555-6666",
-                cve_id=None,
+                subject_type="CVE",
+                subject_id="CVE-2026-0002",
+                ghsa_id=None,
+                cve_id="CVE-2026-0002",
                 priority="P1",
-                change_type="epss_rise",
+                change_type="EPSS_RISE",
                 reason_summary="EPSS 상승",
                 selected_at=NOW,
             ),
@@ -226,6 +232,12 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                 AlertCandidateMatch(
                     organization_id=ids["org"],
                     alert_id=ids["alert"],
+                    candidate_id=ids["candidate_latest"],
+                    matched_at=NOW,
+                ),
+                AlertCandidateMatch(
+                    organization_id=ids["org"],
+                    alert_id=ids["alert_lockfile"],
                     candidate_id=ids["candidate_latest"],
                     matched_at=NOW,
                 ),
@@ -335,6 +347,21 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     reopened_count=0,
                 ),
                 CandidateEvidence(
+                    source_evidence_id="evidence-candidate-old",
+                    batch_id=ids["batch_old"],
+                    candidate_id=ids["candidate_old"],
+                    signal="epss_score",
+                    value_type="decimal",
+                    previous_value="3.2E-4",
+                    current_value="0.07215",
+                    observed_at=NOW - timedelta(days=30),
+                    source="FIRST EPSS",
+                    evidence_summary=(
+                        "EPSS가 30일 전 대비 225.47배 상승했습니다. "
+                        "(3.0E-4 -> 0.0722)"
+                    ),
+                ),
+                CandidateEvidence(
                     source_evidence_id="evidence-new",
                     batch_id=ids["batch_new"],
                     candidate_id=ids["candidate_latest"],
@@ -350,7 +377,7 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     source_evidence_id="evidence-old",
                     batch_id=ids["batch_old"],
                     candidate_id=ids["candidate_latest"],
-                    signal="epss",
+                    signal="epss_score",
                     value_type="decimal",
                     previous_value="0.1",
                     current_value="0.5",
@@ -362,13 +389,25 @@ def api_fixture(postgres_engine: Engine) -> Iterator[dict[str, UUID]]:
                     source_evidence_id="evidence-old-redelivery",
                     batch_id=ids["batch_new"],
                     candidate_id=ids["candidate_latest"],
-                    signal="epss",
+                    signal="epss_score",
                     value_type="decimal",
                     previous_value="0.1",
                     current_value="0.5",
                     observed_at=NOW - timedelta(days=2),
                     source="first",
                     evidence_summary="EPSS 상승",
+                ),
+                CandidateEvidence(
+                    source_evidence_id="evidence-annotation",
+                    batch_id=ids["batch_new"],
+                    candidate_id=ids["candidate_latest"],
+                    signal="epss_percentile",
+                    value_type="decimal",
+                    previous_value="0.90",
+                    current_value="0.96",
+                    observed_at=datetime(2026, 6, 15, tzinfo=UTC),
+                    source="first",
+                    evidence_summary="EPSS 상위 5% 진입",
                 ),
             ]
         )
@@ -405,7 +444,7 @@ def test_list_filters_latest_candidate_and_paginates(
     base_headers = headers(api_fixture)
     response = client.get("/api/v1/review-cases", headers=base_headers)
     assert response.status_code == 200
-    assert response.json()["items"][0]["latest_candidate"]["change_type"] == "kev_added"
+    assert response.json()["items"][0]["latest_candidate"]["change_type"] == "kev_new"
     assert response.json()["items"][0]["is_kev"] is True
     assert response.json()["items"][0]["source_annotations"] == [
         {
@@ -437,7 +476,14 @@ def test_list_filters_latest_candidate_and_paginates(
     assert repeated_first_page["items"][0]["id"] == all_cases["items"][0]["id"]
     assert (
         client.get(
-            "/api/v1/review-cases?status=all&change_type=epss_rise",
+            "/api/v1/review-cases?status=all&change_type=epss_rise_d30",
+            headers=base_headers,
+        ).json()["total"]
+        == 1
+    )
+    assert (
+        client.get(
+            "/api/v1/review-cases?status=all&change_type=kev_added",
             headers=base_headers,
         ).json()["total"]
         == 1
@@ -445,6 +491,36 @@ def test_list_filters_latest_candidate_and_paginates(
     assert client.get(
         "/api/v1/review-cases?priority=low", headers=base_headers
     ).json() == {"items": [], "page": 1, "page_size": 20, "total": 0}
+
+
+def test_dashboard_summary_compares_current_and_previous_week(
+    client: TestClient, api_fixture: dict[str, UUID]
+) -> None:
+    response = client.get(
+        "/api/v1/review-cases/dashboard-summary",
+        headers=headers(api_fixture),
+    )
+
+    assert response.status_code == 200
+    summary = response.json()
+    assert datetime.fromisoformat(summary["reference_at"]) - datetime.fromisoformat(
+        summary["previous_reference_at"]
+    ) == timedelta(days=7)
+    assert summary["critical_open"] == {
+        "current_count": 1,
+        "previous_count": 1,
+        "delta": 0,
+    }
+    assert summary["stale_open"] == {
+        "current_count": 1,
+        "previous_count": 1,
+        "delta": 0,
+    }
+    assert summary["source_impact_open"] == {
+        "current_count": 1,
+        "previous_count": 1,
+        "delta": 0,
+    }
 
 
 def test_list_keeps_kev_status_when_latest_change_is_epss(
@@ -455,7 +531,7 @@ def test_list_keeps_kev_status_when_latest_change_is_epss(
     with Session(postgres_engine) as session:
         candidate = session.get(RiskCandidate, api_fixture["candidate_latest"])
         assert candidate is not None
-        candidate.change_type = "epss_rise"
+        candidate.change_type = "EPSS_RISE"
         session.commit()
 
     items = client.get(
@@ -464,7 +540,10 @@ def test_list_keeps_kev_status_when_latest_change_is_epss(
     ).json()["items"]
     by_id = {item["id"]: item for item in items}
 
-    assert by_id[str(api_fixture["case"])]["latest_candidate"]["change_type"] == "epss_rise"
+    assert (
+        by_id[str(api_fixture["case"])]["latest_candidate"]["change_type"]
+        == "epss_rise_d30"
+    )
     assert by_id[str(api_fixture["case"])]["is_kev"] is True
     assert by_id[str(api_fixture["case_high"])]["is_kev"] is False
 
@@ -507,17 +586,62 @@ def test_detail_returns_ordered_history_and_nullable_advisory(
     ]
     assert [item["source_evidence_id"] for item in latest["evidence"]] == [
         "evidence-old",
+        "evidence-annotation",
         "evidence-new",
     ]
+    assert [item["signal"] for item in latest["evidence"]] == [
+        "epss_score_d30",
+        "epss_percentile_d30",
+        "kev",
+    ]
+    assert latest["evidence"][0]["evidence_summary"] == "EPSS 상승"
     assert detail["latest_candidate"]["id"] == str(api_fixture["candidate_latest"])
+    assert [item["github_alert_number"] for item in detail["alerts"]] == [1, 3]
+    assert [item["manifest_path"] for item in detail["alerts"]] == [
+        "package-lock.json",
+        "uv.lock",
+    ]
 
     nullable = client.get(
         f"/api/v1/review-cases/{api_fixture['case_high']}", headers=headers(api_fixture)
     ).json()
     assert nullable["advisory"]["cve_id"] is None
-    assert nullable["latest_candidate"]["subject_type"] == "GHSA"
-    assert nullable["latest_candidate"]["cve_id"] is None
+    assert nullable["latest_candidate"]["subject_type"] == "CVE"
+    assert nullable["latest_candidate"]["cve_id"] == "CVE-2026-0002"
+    assert nullable["latest_candidate"]["ghsa_id"] is None
     assert nullable["source_annotations"] == []
+
+
+def test_detail_preserves_distinct_candidates_with_same_change_type(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    with Session(postgres_engine) as session:
+        latest = session.get(RiskCandidate, api_fixture["candidate_latest"])
+        assert latest is not None
+        latest.change_type = "EPSS_RISE"
+        session.commit()
+
+    detail = client.get(
+        f"/api/v1/review-cases/{api_fixture['case']}",
+        headers=headers(api_fixture),
+    ).json()
+
+    assert [candidate["change_type"] for candidate in detail["candidates"]] == [
+        "epss_rise_d30",
+        "epss_rise_d30",
+    ]
+    observed_at = sorted(
+        evidence["observed_at"]
+        for candidate in detail["candidates"]
+        for evidence in candidate["evidence"]
+        if evidence["signal"] == "epss_score_d30"
+    )
+    assert observed_at == [
+        "2026-05-17T12:00:00Z",
+        "2026-06-14T12:00:00Z",
+    ]
 
 
 def test_activity_creation_transition_link_and_detail_mapping(

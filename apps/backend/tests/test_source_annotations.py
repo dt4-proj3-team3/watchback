@@ -5,7 +5,7 @@ import pytest
 from watchback_backend.api.source_annotations import (
     SOURCE_ANNOTATION_CATALOG,
     SourceAnnotationType,
-    annotations_for_as_of,
+    annotations_for_observed_at,
 )
 
 
@@ -47,7 +47,7 @@ def test_catalog_contains_the_three_reviewed_external_source_dates() -> None:
     ]
 
 
-def test_lookup_normalizes_as_of_to_utc_date() -> None:
+def test_lookup_normalizes_observed_at_to_utc_date() -> None:
     korea_time = datetime(
         2026,
         6,
@@ -57,7 +57,7 @@ def test_lookup_normalizes_as_of_to_utc_date() -> None:
         tzinfo=timezone(timedelta(hours=9)),
     )
 
-    annotations = annotations_for_as_of(korea_time)
+    annotations = annotations_for_observed_at(korea_time)
 
     assert len(annotations) == 1
     assert annotations[0].snapshot_date.isoformat() == "2026-06-15"
@@ -65,7 +65,7 @@ def test_lookup_normalizes_as_of_to_utc_date() -> None:
 
 
 @pytest.mark.parametrize(
-    "as_of",
+    "observed_at",
     [
         datetime(2025, 11, 17, tzinfo=UTC),
         datetime(2025, 11, 19, tzinfo=UTC),
@@ -75,6 +75,6 @@ def test_lookup_normalizes_as_of_to_utc_date() -> None:
     ],
 )
 def test_lookup_returns_no_user_annotation_for_other_dates(
-    as_of: datetime | None,
+    observed_at: datetime | None,
 ) -> None:
-    assert annotations_for_as_of(as_of) == ()
+    assert annotations_for_observed_at(observed_at) == ()

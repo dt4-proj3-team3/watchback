@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from pydantic import ValidationError
 import pytest
 
@@ -39,3 +41,24 @@ def test_equal_timestamp_conflicting_advisory_is_rejected(raw_alerts):
     conflicting.security_advisory.summary = "서로 다른 내용"
     with pytest.raises(Exception, match="동일 시각"):
         collect_advisories({"repo": [alerts[0], conflicting]})
+
+
+def test_prefers_cvss_v4_and_treats_empty_legacy_score_as_missing(raw_alerts):
+    source = raw_alerts[0]
+    source["security_advisory"]["cvss"] = {
+        "vector_string": None,
+        "score": 0.0,
+    }
+    source["security_advisory"]["cvss_severities"] = {
+        "cvss_v3": {"vector_string": None, "score": 0.0},
+        "cvss_v4": {
+            "vector_string": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H",
+            "score": 8.2,
+        },
+    }
+
+    advisory = AlertPayload.model_validate(source).security_advisory
+    assert advisory.effective_cvss_score == Decimal("8.2")
+
+    advisory.cvss_severities = None
+    assert advisory.effective_cvss_score is None
