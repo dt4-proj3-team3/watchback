@@ -34,7 +34,9 @@ describe('review page data source selection', () => {
 
     render(<DemoWatchbackPage view="dashboard" />);
     expect(await screen.findByText('현재 재검토 항목이 없습니다.')).not.toBeNull();
-    expect(screen.getByText('현재 DB 기준')).not.toBeNull();
+    expect(screen.getByText('8/21 ~ 8/28')).not.toBeNull();
+    expect(screen.getByText('지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요.')).not.toBeNull();
+    expect(screen.getByText('이번 주 처리 흐름')).not.toBeNull();
     expect(screen.queryByText('Demo 데이터')).toBeNull();
     expect(screen.queryByText('지난주 대비 ▲1건')).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);

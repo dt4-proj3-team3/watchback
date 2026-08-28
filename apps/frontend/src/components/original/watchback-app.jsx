@@ -53,6 +53,13 @@ function fmtDate(iso) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function fmtMonthDay(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+}
+
 function fmtEvidenceValue(value, valueType, signal) {
   if (signal === 'kev') {
     if (value === 'false') return '미등재';
@@ -576,6 +583,12 @@ class WatchbackAppView extends Component {
     const sourceImpactTrend = formatWeeklyTrend(
       isDemo ? sourceImpactDelta : (sourceMetric?.delta ?? 0),
     );
+    const dashboardPeriodLabel = isDemo
+      ? '8/18 ~ 8/24'
+      : [
+        fmtMonthDay(dashboardSummary?.previous_reference_at),
+        fmtMonthDay(dashboardSummary?.reference_at),
+      ].filter(Boolean).join(' ~ ');
 
     const kpiCards = [
       { label: 'Critical 저장소 미처리', value: `${isDemo ? criticalOpenCount : (criticalMetric?.current_count ?? criticalOpenCount)}건`, hint: '가장 중요한 저장소에 열려있는 항목', trend: formatWeeklyTrend(isDemo ? 1 : (criticalMetric?.delta ?? 0)), cursorStyle: 'pointer', onClick: () => this.goToFilteredList({ ...filters, status: 'open', importance: 'critical', staleOnly: false }) },
@@ -734,11 +747,9 @@ class WatchbackAppView extends Component {
       showSuppressedPopover: this.state.showSuppressedPopover || false,
       suppressedCases,
       closeSuppressedPopover: () => this.setState({ showSuppressedPopover: false }),
-      weekRangeLabel: isDemo ? '8/18 ~ 8/24' : '현재 DB 기준',
-      dashboardDescription: isDemo
-        ? '지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요.'
-        : '현재 DB에 저장된 재검토 현황을 확인하세요.',
-      flowTitle: isDemo ? '이번 주 처리 흐름' : '전체 처리 흐름',
+      weekRangeLabel: dashboardPeriodLabel,
+      dashboardDescription: '지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요.',
+      flowTitle: '이번 주 처리 흐름',
       goToDashboard: () => this.goToDashboard(),
       goToAllList: () => this.goToAllList(),
       filteredCases,
