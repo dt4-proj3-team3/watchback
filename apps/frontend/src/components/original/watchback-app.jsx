@@ -16,6 +16,12 @@ const PRIORITY_META = {
   medium:   { label: 'Medium',   bg: '#FBF3D9', text: '#8A6A05', border: '#E4D28C', dot: '#B08900' },
   low:      { label: 'Low',      bg: '#EEF0EE', text: '#5A6058', border: '#D2D5CD', dot: '#8B9086' },
 };
+const CANDIDATE_PRIORITY_META = {
+  P0: { label: 'Critical', bg: '#FBEAE6', text: '#A6321B', border: '#E3B6AA', dot: '#C7402A' },
+  P1: { label: 'High', bg: '#FCEFE1', text: '#9A5A16', border: '#E9C99A', dot: '#C7752A' },
+  P2: { label: 'Medium', bg: '#E6F3FB', text: '#176B91', border: '#B9DCEB', dot: '#0EA5FF' },
+  P3: { label: 'Low', bg: '#E7F3EC', text: '#2F8F5B', border: '#BFE0CE', dot: '#10B981' },
+};
 const CHANGE_TYPE_LABEL = {
   kev_added: 'KEV 신규 등재',
   kev_new: 'KEV 신규 등재',
@@ -102,6 +108,12 @@ function fmtEvidenceReason(reason, signal, previousValue, currentValue) {
     }
   }
   return String(reason ?? '').replace(/^\d{4}[-.]\d{2}[-.]\d{2}\s+/, '');
+}
+
+export function calculateRereviewScore(candidate) {
+  return ({ P0: 90, P1: 65, P2: 40, P3: 15 })[
+    String(candidate?.priority ?? '').trim().toUpperCase()
+  ] ?? 15;
 }
 
 export function buildEvidenceGroups(candidates = []) {
@@ -248,14 +260,14 @@ function latestCandidateTags(candidate, isKev = false) {
 
 export function filterAndSortCases(cases, filters, now = Date.now()) {
   let list = cases.filter(c => filters.status === 'all' || c.status === filters.status);
-  if (filters.priority !== 'all') list = list.filter(c => c.priority === filters.priority);
+  if (filters.priority !== 'all') list = list.filter(c => c.latest_candidate.priority === filters.priority);
   if (filters.changeType !== 'all') list = list.filter(c => c.latest_candidate.change_type === filters.changeType);
   if (filters.importance && filters.importance !== 'all') list = list.filter(c => c.repository.importance === filters.importance);
   if (filters.staleOnly) list = list.filter(c => (now - new Date(c.opened_at)) / 86400000 >= 3);
   if (filters.repo && filters.repo !== 'all') list = list.filter(c => c.repository.full_name === filters.repo);
 
-  const order = { critical: 0, high: 1, medium: 2, low: 3 };
-  if (filters.sort === 'priority') return [...list].sort((a, b) => order[a.priority] - order[b.priority] || new Date(b.updated_at) - new Date(a.updated_at));
+  const order = { P0: 0, P1: 1, P2: 2, P3: 3 };
+  if (filters.sort === 'priority') return [...list].sort((a, b) => order[a.latest_candidate.priority] - order[b.latest_candidate.priority] || new Date(b.updated_at) - new Date(a.updated_at));
   if (filters.sort === 'updated_at') return [...list].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
   return [...list].sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at));
 }
@@ -306,7 +318,7 @@ class WatchbackAppView extends Component {
   }
 
   enrich(c) {
-    const pm = PRIORITY_META[c.priority];
+    const pm = CANDIDATE_PRIORITY_META[c.latest_candidate.priority];
     const im = PRIORITY_META[c.repository.importance];
     const sm = PRIORITY_META[c.advisory.severity];
     const reviewReason = formatReviewReason(c.review_reason);
@@ -469,7 +481,8 @@ class WatchbackAppView extends Component {
     const cases = this.props.initialCases;
     const isDemo = this.props.dataSource === 'demo';
 
-    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    const candidateOrder = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     const list = filterAndSortCases(cases, filters);
 
     const filteredCases = list.map(c => this.enrich(c));
@@ -477,6 +490,11 @@ class WatchbackAppView extends Component {
     const openTotal = cases.filter(c => c.status === 'open').length;
     const resolvedTotal = cases.filter(c => c.status === 'resolved').length;
     const inProgressTotal = cases.filter(c => c.status === 'open' && c.activities.some(a => a.activity_type === 'remediation_requested')).length;
+    const severityColors = { critical: '#FF4D4F', high: '#F59E0B', medium: '#0EA5FF', low: '#10B981' };
+    const severitySummary = ['critical', 'high', 'medium', 'low'].map(value => {
+      const count = cases.filter(c => c.status === 'open' && c.advisory.severity === value).length;
+      return { value, count, color: severityColors[value], ratio: openTotal ? (count / openTotal) * 100 : 0 };
+    });
 
     const navTabs = [
       { key: 'dashboard', label: '대시보드', onClick: () => this.props.router.push('/dashboard') },
@@ -494,11 +512,11 @@ class WatchbackAppView extends Component {
     const repoMap = new Map();
     cases.forEach(c => {
       const key = c.repository.full_name;
-      if (!repoMap.has(key)) repoMap.set(key, { ...c.repository, openCount: 0, criticalOpenCount: 0 });
+      if (!repoMap.has(key)) repoMap.set(key, { ...c.repository, openCount: 0, p0OpenCount: 0 });
       const r = repoMap.get(key);
       if (c.status === 'open') {
         r.openCount += 1;
-        if (c.priority === 'critical') r.criticalOpenCount += 1;
+        if (c.latest_candidate.priority === 'P0') r.p0OpenCount += 1;
       }
     });
     const repoRows = Array.from(repoMap.values()).map(r => {
@@ -528,7 +546,7 @@ class WatchbackAppView extends Component {
         },
         onImportanceChange: () => this.showPreviewNotice(),
       };
-    }).sort((a, b) => order[a.importance] - order[b.importance]);
+    }).sort((a, b) => severityOrder[a.importance] - severityOrder[b.importance]);
 
     const policyMatrixRows = importanceLevels.map(imp => ({
       importanceLabel: PRIORITY_META[imp].label,
@@ -545,7 +563,7 @@ class WatchbackAppView extends Component {
 
     const topCases = cases
       .filter(c => c.status === 'open')
-      .sort((a, b) => order[a.priority] - order[b.priority] || new Date(b.updated_at) - new Date(a.updated_at))
+      .sort((a, b) => candidateOrder[a.latest_candidate.priority] - candidateOrder[b.latest_candidate.priority] || new Date(b.updated_at) - new Date(a.updated_at))
       .slice(0, 5)
       .map(c => {
         const e = this.enrich(c);
@@ -616,23 +634,30 @@ class WatchbackAppView extends Component {
     ].map(o => ({
       ...o,
       onClick: () => this.setStatusFilter(o.value),
-      pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;${filters.status === o.value ? 'background:#FFFFFF;color:#1B1E1A;box-shadow:0 1px 2px rgba(0,0,0,.06)' : 'background:transparent;color:#8B9086'}`,
+      pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;border:1px solid ${filters.status === o.value ? '#D2D5CD' : '#E4E6E1'};${filters.status === o.value ? 'background:#EEF0EE;color:#1B1E1A' : 'background:#FFFFFF;color:#8B9086'}`,
     }));
 
-    const priorityChipOptions = [{ value: 'all', label: '전체', dot: '#8B9086' }, ...Object.keys(PRIORITY_META).map(k => ({ value: k, label: PRIORITY_META[k].label, dot: PRIORITY_META[k].dot }))].map(o => {
+    const priorityChipOptions = [{ value: 'all', label: '전체', dot: '#8B9086' }, ...Object.keys(CANDIDATE_PRIORITY_META).map(k => ({ value: k, label: CANDIDATE_PRIORITY_META[k].label, dot: CANDIDATE_PRIORITY_META[k].dot }))].map(o => {
       const active = filters.priority === o.value;
       return {
         ...o,
         onClick: () => this.setPriorityFilter(o.value),
-        pillStyle: `display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? PRIORITY_META[o.value] ? PRIORITY_META[o.value].border : '#D2D5CD' : '#E4E6E1'};background:${active ? (PRIORITY_META[o.value] ? PRIORITY_META[o.value].bg : '#EEF0EE') : '#FFFFFF'};color:${active ? (PRIORITY_META[o.value] ? PRIORITY_META[o.value].text : '#1B1E1A') : '#5B6058'}`,
+        pillStyle: `display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? '#D2D5CD' : '#E4E6E1'};background:${active ? '#EEF0EE' : '#FFFFFF'};color:${active ? '#1B1E1A' : '#5B6058'}`,
       };
     });
-    const changeTypeChipOptions = [{ value: 'all', label: '전체' }, ...Object.keys(CHANGE_TYPE_LABEL).map(k => ({ value: k, label: CHANGE_TYPE_LABEL[k] }))].map(o => {
+    const changeTypeChipOptions = [
+      { value: 'all', label: '전체' },
+      { value: 'kev_new', label: 'KEV 신규 등재' },
+      { value: 'epss_rise_d30', label: 'EPSS 급등' },
+      { value: 'epss_top5_entry_d30', label: 'EPSS 상위 5% 진입' },
+      { value: 'patch_available', label: '패치 버전 등장' },
+      { value: 'combined_signal', label: '다중 신호 동시 변화' },
+    ].map(o => {
       const active = filters.changeType === o.value;
       return {
         ...o,
         onClick: () => this.setChangeTypeFilter(o.value),
-        pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? '#2F8F5B' : '#E4E6E1'};background:${active ? '#E7F3EC' : '#FFFFFF'};color:${active ? '#2F8F5B' : '#5B6058'}`,
+        pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? '#D2D5CD' : '#E4E6E1'};background:${active ? '#EEF0EE' : '#FFFFFF'};color:${active ? '#1B1E1A' : '#5B6058'}`,
       };
     });
     const importanceChipOptions = [{ value: 'all', label: '전체', dot: '#8B9086' }, ...Object.keys(PRIORITY_META).map(k => ({ value: k, label: PRIORITY_META[k].label, dot: PRIORITY_META[k].dot }))].map(o => {
@@ -640,19 +665,27 @@ class WatchbackAppView extends Component {
       return {
         ...o,
         onClick: () => this.setState(s => ({ filters: { ...s.filters, importance: o.value } })),
-        pillStyle: `display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? (PRIORITY_META[o.value] ? PRIORITY_META[o.value].border : '#D2D5CD') : '#E4E6E1'};background:${active ? (PRIORITY_META[o.value] ? PRIORITY_META[o.value].bg : '#EEF0EE') : '#FFFFFF'};color:${active ? (PRIORITY_META[o.value] ? PRIORITY_META[o.value].text : '#1B1E1A') : '#5B6058'}`,
+        pillStyle: `display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${active ? '#D2D5CD' : '#E4E6E1'};background:${active ? '#EEF0EE' : '#FFFFFF'};color:${active ? '#1B1E1A' : '#5B6058'}`,
       };
     });
     const staleToggle = {
       active: !!filters.staleOnly,
       onClick: () => this.setState(s => ({ filters: { ...s.filters, staleOnly: !s.filters.staleOnly } })),
-      pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${filters.staleOnly ? '#9A5A16' : '#E4E6E1'};background:${filters.staleOnly ? '#FCEFE1' : '#FFFFFF'};color:${filters.staleOnly ? '#9A5A16' : '#5B6058'}`,
+      pillStyle: `font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;border:1px solid ${filters.staleOnly ? '#D2D5CD' : '#E4E6E1'};background:${filters.staleOnly ? '#EEF0EE' : '#FFFFFF'};color:${filters.staleOnly ? '#1B1E1A' : '#5B6058'}`,
     };
 
     let selected = null;
     const selectedCase = selectedId ? cases.find(c => c.id === selectedId) : null;
     if (selectedCase) {
       const raw = selectedCase;
+      const selectedCandidate = (raw.candidates ?? []).find(
+        candidate => candidate.id === raw.latest_candidate.id,
+      );
+      const latestObservedAt = (selectedCandidate?.evidence ?? [])
+        .map(evidence => evidence.observed_at)
+        .filter(Boolean)
+        .sort()
+        .at(-1);
       const reviewActivities = raw.activities.filter(
         activity => activity.activity_type !== 'case_opened',
       );
@@ -675,6 +708,10 @@ class WatchbackAppView extends Component {
       };
       selected = {
         ...e,
+        reviewReasonDateLabel: latestObservedAt
+          ? fmtDate(latestObservedAt)
+          : e.reviewReasonDateLabel,
+        rereviewScore: calculateRereviewScore(raw.latest_candidate),
         automation,
         scopeLabel: SCOPE_LABEL[raw.alert.dependency_scope] || '-',
         relationshipLabel: REL_LABEL[raw.alert.dependency_relationship] || '-',
@@ -741,6 +778,8 @@ class WatchbackAppView extends Component {
       })(),
       navTabs,
       kpiCards,
+      issueCount: openTotal,
+      severitySummary,
       topCases,
       hasDashboardCases: topCases.length > 0,
       flowStages,
@@ -762,6 +801,15 @@ class WatchbackAppView extends Component {
       importanceChipOptions,
       staleToggle,
       filters,
+      sortOptions: [
+        { value: 'priority', label: '우선순위 순' },
+        { value: 'updated_at', label: '최근 업데이트 순' },
+        { value: 'opened_at', label: '생성일 순' },
+      ].map(option => ({
+        ...option,
+        active: filters.sort === option.value,
+        onClick: () => this.setSort(option.value),
+      })),
       onPriorityChange: e => this.setPriorityFilter(e.target.value),
       onChangeTypeChange: e => this.setChangeTypeFilter(e.target.value),
       onSortChange: e => this.setSort(e.target.value),

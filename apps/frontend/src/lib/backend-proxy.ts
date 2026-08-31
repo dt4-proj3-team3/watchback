@@ -4,6 +4,12 @@ const ERROR_BODY = {
   details: null,
 };
 
+const READ_ONLY_BODY = {
+  code: 'read_only',
+  message: '공개 미리보기에서는 검토 활동을 기록할 수 없습니다.',
+  details: null,
+};
+
 function backendConfiguration() {
   const baseUrl = process.env.WATCHBACK_API_BASE_URL;
   const organizationId = process.env.WATCHBACK_ORGANIZATION_ID;
@@ -58,5 +64,8 @@ export function proxyBackendGet(path: string, search = ''): Promise<Response> {
 }
 
 export function proxyBackendPost(path: string, body: unknown): Promise<Response> {
+  if (process.env.WATCHBACK_READ_ONLY === 'true') {
+    return Promise.resolve(Response.json(READ_ONLY_BODY, { status: 403 }));
+  }
   return proxyBackend(path, { method: 'POST', body });
 }

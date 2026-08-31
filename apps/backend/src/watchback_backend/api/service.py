@@ -17,6 +17,7 @@ from watchback_backend.api.schemas import (
     AlertSummary,
     CandidateDelivery,
     CandidateDetail,
+    CandidatePriority,
     CandidateSummary,
     CaseSort,
     CaseStatus,
@@ -25,7 +26,6 @@ from watchback_backend.api.schemas import (
     DashboardMetric,
     EvidenceResponse,
     ExternalLinkResponse,
-    Priority,
     RepositorySummary,
     ReviewActivityCreate,
     ReviewActivityCreated,
@@ -253,7 +253,7 @@ def list_review_cases(
     context: RequestContext,
     *,
     case_status: CaseStatusFilter,
-    priority: Priority | None,
+    priority: CandidatePriority | None,
     change_type: str | None,
     sort: CaseSort,
     order: SortOrder,
@@ -266,7 +266,7 @@ def list_review_cases(
     if case_status is not CaseStatusFilter.ALL:
         query = query.where(ReviewCase.status == case_status.value)
     if priority is not None:
-        query = query.where(ReviewCase.priority == priority.value)
+        query = query.where(RiskCandidate.priority == priority.value)
     if change_type is not None:
         query = query.where(RiskCandidate.change_type == storage_change_type(change_type))
 
@@ -274,10 +274,10 @@ def list_review_cases(
     direction = "asc" if order is SortOrder.ASC else "desc"
     if sort is CaseSort.PRIORITY:
         priority_rank = case(
-            (ReviewCase.priority == "low", 1),
-            (ReviewCase.priority == "medium", 2),
-            (ReviewCase.priority == "high", 3),
-            (ReviewCase.priority == "critical", 4),
+            (RiskCandidate.priority == "P3", 1),
+            (RiskCandidate.priority == "P2", 2),
+            (RiskCandidate.priority == "P1", 3),
+            (RiskCandidate.priority == "P0", 4),
             else_=0,
         )
         query = query.order_by(

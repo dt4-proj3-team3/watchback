@@ -489,8 +489,16 @@ def test_list_filters_latest_candidate_and_paginates(
         == 1
     )
     assert client.get(
-        "/api/v1/review-cases?priority=low", headers=base_headers
+        "/api/v1/review-cases?priority=P3", headers=base_headers
     ).json() == {"items": [], "page": 1, "page_size": 20, "total": 0}
+    p0_items = client.get(
+        "/api/v1/review-cases?status=all&priority=P0", headers=base_headers
+    ).json()["items"]
+    assert [item["latest_candidate"]["priority"] for item in p0_items] == ["P0"]
+    p1_items = client.get(
+        "/api/v1/review-cases?status=all&priority=P1", headers=base_headers
+    ).json()["items"]
+    assert [item["latest_candidate"]["priority"] for item in p1_items] == ["P1"]
 
 
 def test_dashboard_summary_compares_current_and_previous_week(
@@ -559,6 +567,12 @@ def test_list_all_sort_modes(
     )
     assert response.status_code == 200
     assert len({item["id"] for item in response.json()["items"]}) == 2
+    if sort == "priority":
+        expected = ["P1", "P0"] if order == "asc" else ["P0", "P1"]
+        assert [
+            item["latest_candidate"]["priority"]
+            for item in response.json()["items"]
+        ] == expected
 
 
 def test_detail_returns_ordered_history_and_nullable_advisory(

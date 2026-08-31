@@ -13,7 +13,7 @@ describe('review page data source selection', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<DemoWatchbackPage view="list" />);
-    expect(await screen.findByText('현재 조건에 맞는 재검토 후보가 없습니다')).not.toBeNull();
+    expect(await screen.findByText('현재 조건에 맞는 재검토 후보가 없습니다.')).not.toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Demo 데이터')).toBeNull();
   });
@@ -34,9 +34,8 @@ describe('review page data source selection', () => {
 
     render(<DemoWatchbackPage view="dashboard" />);
     expect(await screen.findByText('현재 재검토 항목이 없습니다.')).not.toBeNull();
-    expect(screen.getByText('8/21 ~ 8/28')).not.toBeNull();
-    expect(screen.getByText('지금 봐야 할 항목과 이번 주 위험 변화 흐름을 한눈에 확인하세요.')).not.toBeNull();
-    expect(screen.getByText('이번 주 처리 흐름')).not.toBeNull();
+    expect(screen.getByText('Review Summary')).not.toBeNull();
+    expect(screen.getByText('Priority Queue')).not.toBeNull();
     expect(screen.queryByText('Demo 데이터')).toBeNull();
     expect(screen.queryByText('지난주 대비 ▲1건')).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -66,7 +65,7 @@ describe('review page data source selection', () => {
     localStorage.setItem(DATA_SOURCE_STORAGE_KEY, 'demo');
     render(<DemoWatchbackPage view="dashboard" />);
     expect(await screen.findByText('Demo 데이터')).not.toBeNull();
-    expect(screen.getAllByText('novalink/customer-fe').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('customer-fe').length).toBeGreaterThan(0);
   });
 
   it('stores demo risk acceptance and PR links in page memory without an API call', async () => {

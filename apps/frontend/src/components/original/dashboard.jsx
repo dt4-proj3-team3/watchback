@@ -2,141 +2,40 @@ import { Fragment } from 'react';
 import { toReactStyle } from './style';
 
 export function Dashboard({ values }) {
+  if (!values.isDashboardView) return null;
+
   return (
-    <>
-    {values.isDashboardView && (
-      <>
-        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
-          <div style={toReactStyle("margin-bottom:28px")}>
-            <h1 style={toReactStyle("font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
-              {"오늘의 재검토 현황"}
-            </h1>
-            <p style={toReactStyle("font-size:14px;color:#5B6058;margin:0 0 4px;line-height:1.6")}>
-              {`${values.dashboardDescription}`}
-            </p>
-            <span style={toReactStyle("font-size:12px;color:#8B9086")}>
-              {`${values.weekRangeLabel}`}
-            </span>
+    <div className="watchback-page watchback-dashboard-page" style={toReactStyle("width:calc(100% - 64px);max-width:1120px;margin:0 auto;padding:46px 0 96px")}>
+      <h1 style={toReactStyle("font-size:25px;line-height:36px;font-weight:700;margin:0 0 24px")}>Review Summary</h1>
+      <div className="watchback-summary-grid" style={toReactStyle("display:grid;grid-template-columns:364px repeat(3,1fr);gap:14px;margin-bottom:42px")}>
+        <div style={toReactStyle("height:110px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:9px;padding:23px")}>
+          <div style={toReactStyle("display:flex;gap:2px;height:11px;border-radius:6px;overflow:hidden;margin-bottom:16px")}>
+            {values.severitySummary.map((item) => <span key={item.value} style={toReactStyle(`width:${item.count ? `calc(${item.ratio}% - 1.5px)` : '0px'};min-width:0;background:${item.color}`)} />)}
           </div>
-          <div style={toReactStyle("display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;position:relative")}>
-            {values.kpiCards.map((kpi, _index0) => (
-              <Fragment key={_index0}>
-                <div style={toReactStyle(`background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:16px 18px;cursor:${kpi.cursorStyle}`)} onClick={kpi.onClick}>
-                  <div style={toReactStyle("font-size:11px;font-weight:600;color:#8B9086;letter-spacing:.02em;margin-bottom:8px")}>
-                    {`${kpi.label}`}
-                  </div>
-                  <div style={toReactStyle("font-size:24px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px")}>
-                    {`${kpi.value}`}
-                  </div>
-                  <div style={toReactStyle("font-size:11.5px;color:#8B9086;line-height:1.4;margin-bottom:6px")}>
-                    {`${kpi.hint}`}
-                  </div>
-                  <div style={toReactStyle("font-size:11.5px;color:#2F8F5B;font-weight:600")}>
-                    {`${kpi.trend}`}
-                  </div>
-                </div>
-              </Fragment>
-            ))}
-            {values.showSuppressedPopover && (
-              <>
-                <div style={toReactStyle("position:absolute;top:calc(100% + 8px);right:0;width:340px;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px 18px;z-index:10")}>
-                  <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;margin-bottom:10px")}>
-                    <span style={toReactStyle("font-size:13px;font-weight:700")}>
-                      {`소스 변동 영향 추정 ${values.suppressedCases.length}건`}
-                    </span>
-                    <span style={toReactStyle("cursor:pointer;color:#8B9086;font-size:13px")} onClick={values.closeSuppressedPopover}>
-                      {"✕"}
-                    </span>
-                  </div>
-                  {values.suppressedCases.map((sc, _index0) => (
-                    <Fragment key={_index0}>
-                      <div style={toReactStyle("padding:8px 0;border-top:1px solid #F0F1EE")}>
-                        <div style={toReactStyle("font-size:12.5px;font-weight:600;margin-bottom:2px")}>
-                          {`${sc.repoName}`}
-                        </div>
-                        <div style={toReactStyle("font-size:12px;color:#8B9086;line-height:1.5")}>
-                          {`${sc.reason}`}
-                        </div>
-                      </div>
-                    </Fragment>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;margin-bottom:14px")}>
-            <div style={toReactStyle("font-size:15px;font-weight:700")}>
-              {"지금 봐야 할 항목"}
-            </div>
-            <span style={toReactStyle("font-size:12.5px;color:#2F8F5B;cursor:pointer;font-weight:600")} onClick={values.goToAllList}>
-              {"전체 재검토 목록 보기 →"}
-            </span>
-          </div>
-          <div style={toReactStyle("display:flex;flex-direction:column;gap:10px;margin-bottom:28px")}>
-            {!values.hasDashboardCases && (
-              <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:28px 20px;text-align:center;font-size:13px;color:#8B9086")}>
-                {"현재 재검토 항목이 없습니다."}
-              </div>
-            )}
-            {values.topCases.map((c, _index0) => (
-              <Fragment key={_index0}>
-                <div style={toReactStyle("display:flex;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;overflow:hidden;cursor:pointer")} onClick={c.onOpen}>
-                  <div style={toReactStyle(`width:4px;flex:none;background:${c.priorityDot}`)}></div>
-                  <div style={toReactStyle("flex:1;min-width:0;padding:14px 0 14px 18px;display:flex;align-items:center;gap:14px")}>
-                    <span style={toReactStyle(`${c.priorityBadgeStyle}`)}>
-                      {`${c.priorityLabel}`}
-                    </span>
-                    <span style={toReactStyle("font-size:13.5px;font-weight:600;flex:none")}>
-                      {`${c.repoName}`}
-                    </span>
-                    <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#8B9086;flex:none")}>
-                      {`${c.alert.package_name}`}
-                    </span>
-                    <span style={toReactStyle("font-size:13px;color:#1B1E1A;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>
-                      {`${c.reviewReasonLabel}`}
-                    </span>
-                    <div style={toReactStyle("display:flex;align-items:center;gap:6px;flex:none;margin-left:auto")}>
-                      {c.evidenceTags.map((tag, _index1) => (
-                        <span key={_index1} style={toReactStyle(`${tag.style}`)}>
-                          {`${tag.label}`}
-                        </span>
-                      ))}
-                      {c.urgencyLabel && (
-                        <>
-                          <span style={toReactStyle("font-size:11px;font-weight:600;color:#9A5A16;background:#FCEFE1;border-radius:5px;padding:2px 7px")}>
-                            {`${c.urgencyLabel}`}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div style={toReactStyle("display:flex;align-items:center;padding:0 18px;color:#D2D5CD;font-size:18px")}>
-                    {"›"}
-                  </div>
-                </div>
-              </Fragment>
-            ))}
-          </div>
-          <div style={toReactStyle("font-size:15px;font-weight:700;margin-bottom:14px")}>
-            {`${values.flowTitle}`}
-          </div>
-          <div style={toReactStyle("display:grid;grid-template-columns:repeat(3,1fr);gap:12px")}>
-            {values.flowStages.map((stage, _index0) => (
-              <Fragment key={_index0}>
-                <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:16px 18px;cursor:pointer")} onClick={stage.onClick}>
-                  <div style={toReactStyle("font-size:11px;font-weight:600;color:#8B9086;letter-spacing:.02em;margin-bottom:8px")}>
-                    {`${stage.label}`}
-                  </div>
-                  <div style={toReactStyle("font-size:24px;font-weight:700;letter-spacing:-0.01em")}>
-                    {`${stage.count}`}
-                  </div>
-                </div>
-              </Fragment>
-            ))}
+          <div style={toReactStyle("display:flex;align-items:center;gap:6px")}>
+            <strong style={toReactStyle("font:500 30px/38px Inter,Arial,sans-serif;color:#0F172A")}>{values.issueCount}</strong>
+            <span style={toReactStyle("font:400 18px/24px Inter,Arial,sans-serif;color:#0F172A;margin-right:auto")}>Issues</span>
+            {values.severitySummary.map((item) => <Fragment key={item.value}><span style={toReactStyle(`width:8px;height:8px;border-radius:1px;background:${item.color}`)} /><span style={toReactStyle("font:500 12px/18px Inter,Arial,sans-serif;color:#0F172A")}>{item.count}</span></Fragment>)}
           </div>
         </div>
-      </>
-    )}
-    </>
+        {values.flowStages.map((stage) => <button key={stage.label} type="button" onClick={stage.onClick} style={toReactStyle("height:110px;text-align:left;font-family:inherit;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:19px 21px;cursor:pointer")}><span style={toReactStyle("display:block;font-size:12px;line-height:17px;font-weight:500;color:#7C8379;margin-bottom:10px")}>{stage.label}</span><strong style={toReactStyle("display:block;font:500 30px/38px Inter,Arial,sans-serif;color:#0F172A")}>{stage.count}</strong></button>)}
+      </div>
+      <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;margin-bottom:23px")}>
+        <h2 style={toReactStyle("font-size:25px;line-height:36px;font-weight:700;margin:0")}>Priority Queue</h2>
+        <button type="button" onClick={values.goToAllList} style={toReactStyle("font-size:13px;line-height:19px;font-weight:700;color:#6B7280;background:none;border:0;padding:0;cursor:pointer")}>All List →</button>
+      </div>
+      <div className="watchback-queue-head" style={toReactStyle("display:grid;grid-template-columns:105px 189px 194px minmax(233px,1fr) 131px;gap:23px;padding:0 22px 12px;font:700 13px/19px Inter,Arial,sans-serif;color:#6B7280;border-bottom:1px solid #E3E7E1")}><span>Priority</span><span>Name</span><span>Repository</span><span>Reason</span><span>Status</span></div>
+      <div style={toReactStyle("display:flex;flex-direction:column;gap:12px;margin-top:16px")}>
+        {!values.hasDashboardCases && <div style={toReactStyle("background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:28px;text-align:center;font-size:13px;color:#8B9086")}>현재 재검토 항목이 없습니다.</div>}
+        {values.topCases.slice(0, 5).map((c) => <button key={c.id} type="button" onClick={c.onOpen} className="watchback-queue-row" style={toReactStyle(`display:grid;grid-template-columns:105px 189px 194px minmax(233px,1fr) 131px 16px;align-items:center;gap:23px;min-height:68px;text-align:left;font-family:inherit;color:#1B1E1A;background:linear-gradient(90deg,${c.priorityDot} 0 3px,#FFFFFF 3px);border:1px solid #E3E7E1;border-radius:9px;padding:7px 14px 7px 22px;box-shadow:0 1px 2px rgba(27,30,26,.04);cursor:pointer`)}>
+          <strong style={toReactStyle(`font-size:13px;color:${c.priorityDot}`)}>{c.priorityLabel}</strong>
+          <span style={toReactStyle("font:500 13px/19px Inter,Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{c.alert.package_name}</span>
+          <span style={toReactStyle("font:500 13px/19px Inter,Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{c.repoName.split('/').at(-1)}</span>
+          <span style={toReactStyle("font-size:13px;line-height:19px;color:#515250;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:keep-all")}>{c.reviewReasonLabel}</span>
+          <span style={toReactStyle("display:flex;justify-content:flex-end;gap:4px")}>{c.evidenceTags.slice(0, 1).map((tag) => <span key={tag.label} style={toReactStyle(`${tag.style};font-size:9px;border:1px solid ${tag.label === 'KEV' ? '#FFCABD' : '#BFEBD7'};border-radius:12px;padding:3px 8px`)}>{tag.label === 'KEV' ? 'NEW KEV' : tag.label}</span>)}</span>
+          <span style={toReactStyle("color:#CBD5E1;font-size:18px")}>›</span>
+        </button>)}
+      </div>
+    </div>
   );
 }

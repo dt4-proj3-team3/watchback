@@ -12,10 +12,10 @@ from watchback_backend.api.schemas import (
     DETAIL_EXAMPLE,
     EMPTY_LIST_EXAMPLE,
     LIST_EXAMPLE,
+    CandidatePriority,
     CaseSort,
     CaseStatusFilter,
     ErrorResponse,
-    Priority,
     ReviewDashboardSummary,
     ReviewActivityCreate,
     ReviewActivityCreated,
@@ -143,12 +143,15 @@ def list_review_cases(
         CaseStatusFilter,
         Query(alias="status", description="기본값은 열린 Case만 조회합니다."),
     ] = CaseStatusFilter.OPEN,
-    priority: Annotated[Priority | None, Query()] = None,
+    priority: Annotated[
+        CandidatePriority | None,
+        Query(description="대표 Candidate의 DS 재검토 우선순위(P0~P3)"),
+    ] = None,
     change_type: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
     sort: Annotated[
         CaseSort,
         Query(
-            description="priority는 critical→high→medium→low 순이며 동률이면 updated_at 내림차순입니다."
+            description="priority는 P0→P1→P2→P3 순이며 동률이면 updated_at 내림차순입니다."
         ),
     ] = CaseSort.PRIORITY,
     order: Annotated[SortOrder, Query()] = SortOrder.DESC,
