@@ -1,12 +1,21 @@
 import { Fragment } from 'react';
 import { toReactStyle } from './style';
 
+const SCORE_MARKER_POSITION = {
+  90: { left: 106, top: 36 },
+  65: { left: 81, top: 11 },
+  40: { left: 46, top: 11 },
+  15: { left: 21, top: 36 },
+};
+
 export function ReviewCaseDetail({ values }) {
+  const scoreMarker = SCORE_MARKER_POSITION[values.selected?.rereviewScore] ?? SCORE_MARKER_POSITION[15];
+
   return (
     <>
     {values.isDetailView && (
       <>
-        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:28px 32px 96px")}>
+        <div className="watchback-page" style={toReactStyle("width:calc(100% - 64px);max-width:1120px;margin:0 auto;padding:34px 0 96px")}>
           <button type="button" aria-label="이전 화면으로" style={toReactStyle("display:flex;align-items:center;gap:6px;font:13px inherit;color:#5B6058;cursor:pointer;margin-bottom:20px;width:fit-content;background:none;border:none;padding:0")} onClick={values.backToPrevious}>
             <span>
               {"←"}
@@ -15,76 +24,43 @@ export function ReviewCaseDetail({ values }) {
               {"이전 화면으로"}
             </span>
           </button>
-          <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:24px 26px;margin-bottom:16px")}>
-            <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap")}>
-              <div>
-                <div style={toReactStyle("display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap")}>
-                  <span style={toReactStyle("font-size:19px;font-weight:700;letter-spacing:-0.01em")}>
-                    {`${values.selected.repoName}`}
-                  </span>
-                  {values.selected.isResolved && (
-                    <>
-                      <span style={toReactStyle("font-size:11px;font-weight:600;color:#8B9086;padding:3px 9px;border-radius:20px;background:#EEF0EE")}>
-                        {"해결됨"}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <div style={toReactStyle("display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap")}>
-                  <span style={toReactStyle(`${values.selected.severityBadgeStyle}`)}>
-                    {`심각도 ${values.selected.severityLabel}`}
-                  </span>
-                  <span style={toReactStyle("color:#D2D5CD;font-size:13px")}>
-                    {"×"}
-                  </span>
-                  <span style={toReactStyle("font-size:11px;font-weight:500;color:#8B9086;padding:3px 9px;border-radius:20px;border:1px solid #E4E6E1;white-space:nowrap;flex:none")}>
-                    {`중요도 ${values.selected.importanceLabel}`}
-                  </span>
-                  <span style={toReactStyle("color:#D2D5CD;font-size:13px")}>
-                    {"="}
-                  </span>
-                  <span style={toReactStyle(`${values.selected.priorityBadgeStyle}`)}>
-                    {`우선순위 ${values.selected.priorityLabel}`}
-                  </span>
-                </div>
-                <div style={toReactStyle("max-width:560px;margin-bottom:12px")}>
-                  {values.selected.reviewReasonDateLabel && (
-                    <div style={toReactStyle("font-size:11px;color:#8B9086;margin-bottom:3px")}>
-                      {`변화 감지 ${values.selected.reviewReasonDateLabel}`}
-                    </div>
-                  )}
-                  <div style={toReactStyle("font-size:14px;color:#1B1E1A;line-height:1.6")}>
-                    {`${values.selected.reviewReasonLabel}`}
-                  </div>
-                </div>
-                <div style={toReactStyle("display:flex;align-items:center;gap:16px;padding-top:12px;border-top:1px solid #F0F1EE")}>
-                  <div>
-                    <div style={toReactStyle("font-size:10.5px;color:#8B9086;margin-bottom:3px")}>
-                      {"자동조치"}
-                    </div>
-                    <span style={toReactStyle(`font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:${values.selected.automationStatusBg};color:${values.selected.automationStatusColor}`)}>
-                      {`${values.selected.automationStatusLabel}`}
-                    </span>
-                  </div>
-                  <div>
-                    <div style={toReactStyle("font-size:10.5px;color:#8B9086;margin-bottom:3px")}>
-                      {"CVSS"}
-                    </div>
-                    <span style={toReactStyle("font-size:13px;font-weight:700")}>
-                      {`${values.selected.advisory.cvss_score}`}
-                    </span>
-                  </div>
-                  <div>
-                    <div style={toReactStyle("font-size:10.5px;color:#8B9086;margin-bottom:3px")}>
-                      {"패치 버전"}
-                    </div>
-                    <span style={toReactStyle(`font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;color:${values.selected.patchColor}`)}>
-                      {`${values.selected.patchLabelShort}`}
-                    </span>
-                  </div>
-                </div>
+          <div className="watchback-case-summary" style={toReactStyle("position:relative;height:176px;background:#FFFFFF;border:1px solid #E4E6E1;border-radius:9px;margin-bottom:16px;overflow:hidden")}>
+            <div aria-label={`재검토 점수 ${values.selected.rereviewScore}점`} style={toReactStyle("position:absolute;left:22px;top:22px;width:132px;height:71px;text-align:center")}>
+              <div style={toReactStyle("position:relative;width:132px;height:70px;background:url('/watchback-meter-base.svg') center top/132px 66px no-repeat")}>
+                <strong style={toReactStyle("position:absolute;left:0;right:0;bottom:5px;font:500 22px/23px Inter,Arial,sans-serif;color:#515050")}>{values.selected.rereviewScore}</strong>
+                <span data-testid="rereview-score-marker" aria-hidden="true" style={toReactStyle(`position:absolute;left:${scoreMarker.left}px;top:${scoreMarker.top}px;width:5px;height:5px;background:url('/watchback-meter-dot.svg') center/5px 5px no-repeat`)}></span>
               </div>
-              <div style={toReactStyle("display:flex;gap:8px;flex:none")}>
+            </div>
+            <div style={toReactStyle("position:absolute;left:179px;top:29px;width:330px;display:flex;align-items:center;gap:9px") }>
+              <span style={toReactStyle("font:700 20px/28px Inter,Arial,sans-serif;color:#1B1E1A;letter-spacing:-0.01em")}>
+                {`${values.selected.alert.package_name}`}
+              </span>
+              {values.selected.isResolved && (
+                <span style={toReactStyle("font-size:11px;font-weight:600;color:#8B9086;padding:3px 9px;border-radius:20px;background:#EEF0EE")}>
+                  {"해결됨"}
+                </span>
+              )}
+            </div>
+            <div style={toReactStyle("position:absolute;left:179px;top:64px;width:540px;font:400 14px/22px Inter,Arial,sans-serif;color:#1B1E1A")}>
+              {`${values.selected.reviewReasonLabel}`}
+            </div>
+            <div style={toReactStyle("position:absolute;left:33px;top:113px;width:60px")}>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{"CVSS"}</div>
+              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A")}>{`${values.selected.advisory.cvss_score}`}</div>
+            </div>
+            <div style={toReactStyle("position:absolute;left:105px;top:113px;width:70px")}>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{"패치 버전"}</div>
+              <div style={toReactStyle(`font:400 12px/19px Inter,Arial,sans-serif;color:${values.selected.patchColor}`)}>{`${values.selected.patchLabelShort}`}</div>
+            </div>
+            <div style={toReactStyle("position:absolute;left:187px;top:113px;width:100px")}>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{"자동조치"}</div>
+              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A;white-space:nowrap")}>{values.selected.alert.first_patched_version ? 'PR 생성 대상' : values.selected.automationStatusLabel}</div>
+            </div>
+            <div style={toReactStyle("position:absolute;left:299px;top:113px;width:140px")}>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#8B9086;margin-bottom:5px")}>{"변화 감지일"}</div>
+              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A")}>{values.selected.reviewReasonDateLabel || '-'}</div>
+            </div>
+            <div style={toReactStyle("position:absolute;right:14px;top:22px;display:flex;gap:8px") }>
                 {values.actionButtons.map((btn, _index0) => (
                   <Fragment key={_index0}>
                     <button style={toReactStyle(`${btn.style}`)} onClick={btn.onClick} title={btn.title}>
@@ -92,7 +68,6 @@ export function ReviewCaseDetail({ values }) {
                     </button>
                   </Fragment>
                 ))}
-              </div>
             </div>
           </div>
           {values.showActionMenu && (

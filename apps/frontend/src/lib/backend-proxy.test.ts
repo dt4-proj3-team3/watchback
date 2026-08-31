@@ -69,6 +69,26 @@ describe('backend proxy', () => {
     expect(await response.json()).toMatchObject({ case_status: 'resolved' });
   });
 
+  it('blocks activity writes in a read-only preview without calling the backend', async () => {
+    configureBackend();
+    vi.stubEnv('WATCHBACK_READ_ONLY', 'true');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await proxyBackendPost(
+      '/api/v1/review-cases/case-id/activities',
+      { activity_type: 'risk_accepted' },
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      code: 'read_only',
+      message: '공개 미리보기에서는 검토 활동을 기록할 수 없습니다.',
+      details: null,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('sanitizes missing configuration, transport errors, and non-JSON responses', async () => {
     expect((await proxyBackendGet('/api/v1/review-cases')).status).toBe(502);
 

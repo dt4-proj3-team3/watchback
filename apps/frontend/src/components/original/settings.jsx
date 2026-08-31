@@ -6,9 +6,9 @@ export function Settings({ values }) {
     <>
     {values.isSettingsView && (
       <>
-        <div className="watchback-page" style={toReactStyle("max-width:960px;margin:0 auto;padding:40px 32px 96px")}>
+        <div className="watchback-page" style={toReactStyle("width:calc(100% - 64px);max-width:1120px;margin:0 auto;padding:46px 0 96px")}>
           <div style={toReactStyle("margin-bottom:28px")}>
-            <h1 style={toReactStyle("font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
+            <h1 style={toReactStyle("font-size:25px;line-height:36px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
               {"자동조치 정책"}
             </h1>
             <p style={toReactStyle("font-size:14px;color:#5B6058;margin:0;line-height:1.6")}>
@@ -20,7 +20,7 @@ export function Settings({ values }) {
                 : "실제 자동조치 정책은 아직 DB와 연동되지 않았습니다."}
             </p>
           </div>
-          <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
+          <div style={toReactStyle("height:80px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
             <div>
               <div style={toReactStyle("font-size:14px;font-weight:700;margin-bottom:4px")}>
                 {"데이터 소스"}
@@ -39,7 +39,7 @@ export function Settings({ values }) {
             </div>
           </div>
           {values.isDemo ? (
-            <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:20px 22px;overflow-x:auto")}>
+            <div style={toReactStyle("height:273px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:20px 22px;overflow-x:auto")}>
               <table style={toReactStyle("border-collapse:collapse;width:100%;font-size:13px")}>
               <thead>
                 <tr>
@@ -84,7 +84,7 @@ export function Settings({ values }) {
               </table>
             </div>
           ) : (
-            <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:36px 22px;text-align:center")}>
+            <div style={toReactStyle("height:273px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:91px 22px;text-align:center")}>
               <div style={toReactStyle("font-size:14px;font-weight:600;margin-bottom:6px")}>
                 {"자동조치 정책 DB 연동은 아직 구현되지 않았습니다."}
               </div>

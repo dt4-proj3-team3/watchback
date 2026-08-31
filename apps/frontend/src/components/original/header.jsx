@@ -4,13 +4,13 @@ import { toReactStyle } from './style';
 export function Header({ values }) {
   return (
     <>
-    <div className="watchback-header" style={toReactStyle("position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 32px;background:#FFFFFF;border-bottom:1px solid #E4E6E1;")}>
+    <div className="watchback-header" style={toReactStyle("position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 32px;background:#FFFFFF;border-bottom:1px solid #E6EAE5;")}>
       <div className="watchback-header-main" style={toReactStyle("display:flex;align-items:center;gap:26px")}>
         <button type="button" aria-label="Watchback 대시보드" style={toReactStyle("display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;color:inherit")} onClick={values.goToDashboard}>
-          <div style={toReactStyle("width:26px;height:26px;border-radius:7px;background:#2F8F5B;display:flex;align-items:center;justify-content:center")}>
-            <div style={toReactStyle("width:9px;height:9px;border-radius:2px;background:#FFFFFF;transform:rotate(45deg)")}></div>
+          <div style={toReactStyle("width:24px;height:24px;border-radius:5px;background:#1FAA6D;display:flex;align-items:center;justify-content:center")}>
+            <div style={toReactStyle("width:7px;height:7px;border-radius:1px;background:#FFFFFF;transform:rotate(45deg)")}></div>
           </div>
-          <span style={toReactStyle("font-size:16px;font-weight:700;letter-spacing:-0.01em")}>
+          <span style={toReactStyle("font-size:13px;font-weight:700")}>
             {"Watchback"}
           </span>
         </button>

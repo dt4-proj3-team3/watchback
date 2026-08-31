@@ -3,6 +3,15 @@ body {
   background: #fafbfa;
 }
 
+button, select, input, textarea {
+  box-sizing: border-box;
+}
+
+.watchback-queue-row:hover,
+.watchback-list-row:hover {
+  border-color: #bfc8bd !important;
+}
+
 ::selection {
   background: #cfe9db;
 }
@@ -13,6 +22,17 @@ select:focus-visible,
 a:focus-visible {
   outline: 2px solid #2f8f5b;
   outline-offset: 2px;
+}
+
+@media (max-width: 1100px) and (min-width: 641px) {
+  .watchback-list-filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .watchback-list-row {
+    grid-template-columns: minmax(170px, 1.25fr) minmax(110px, .8fr) 118px minmax(180px, 1.5fr) 104px 12px !important;
+    gap: 12px !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -35,10 +55,46 @@ a:focus-visible {
   }
 
   .watchback-page {
+    width: auto !important;
+    max-width: none !important;
     padding: 24px 16px 72px !important;
+  }
+
+  .watchback-dashboard-page {
+    width: auto !important;
+    max-width: none !important;
   }
 
   .watchback-detail-grid {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .watchback-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .watchback-sort-options {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .watchback-sort-options > button {
+    width: 100% !important;
+  }
+
+  .watchback-list-filter-grid {
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+  }
+
+  .watchback-queue-head {
+    display: none !important;
+  }
+
+  .watchback-queue-row,
+  .watchback-list-row {
+    grid-template-columns: 1fr auto !important;
+    gap: 6px 12px !important;
+    padding: 14px 16px 14px 20px !important;
   }
 }

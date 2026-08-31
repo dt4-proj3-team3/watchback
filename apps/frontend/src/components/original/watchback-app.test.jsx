@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 
 import { getDemoReviewCases } from '@/lib/demo-review-cases';
-import { WatchbackApp, buildEvidenceGroups, filterAndSortCases } from './watchback-app';
+import { WatchbackApp, buildEvidenceGroups, calculateRereviewScore, filterAndSortCases } from './watchback-app';
 
 const cases = getDemoReviewCases();
 const fmtTestDate = (iso) => iso.slice(0, 10).replaceAll('-', '.');
@@ -18,13 +18,36 @@ const baseProps = {
 };
 
 describe('Watchback review UI', () => {
+  it('maps candidate priority to the review index variants', () => {
+    expect(calculateRereviewScore({ priority: 'P0' })).toBe(90);
+    expect(calculateRereviewScore({ priority: 'P1' })).toBe(65);
+    expect(calculateRereviewScore({ priority: 'P2' })).toBe(40);
+    expect(calculateRereviewScore({ priority: 'P3' })).toBe(15);
+  });
+
+  it('moves the score marker with the selected Figma score variant', () => {
+    render(
+      <WatchbackApp
+        {...baseProps}
+        initialView="detail"
+        initialSelectedId="5cab1f43-afbd-51a1-b688-a546ad05af7c"
+        isPreview
+      />,
+    );
+
+    expect(screen.getByLabelText('재검토 점수 65점')).not.toBeNull();
+    const marker = screen.getByTestId('rereview-score-marker');
+    expect(marker.style.left).toBe('81px');
+    expect(marker.style.top).toBe('11px');
+  });
+
   it('applies the same deterministic filter and sort function to provider results', () => {
     const filters = {
-      status: 'open', priority: 'high', changeType: 'all', importance: 'all', staleOnly: false, repo: 'all', sort: 'priority',
+      status: 'open', priority: 'P1', changeType: 'all', importance: 'all', staleOnly: false, repo: 'all', sort: 'priority',
     };
     const result = filterAndSortCases(cases, filters, Date.parse('2026-08-26T00:00:00Z'));
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((item) => item.status === 'open' && item.priority === 'high')).toBe(true);
+    expect(result.every((item) => item.status === 'open' && item.latest_candidate.priority === 'P1')).toBe(true);
   });
 
   it('marks demo data on the real review list and keeps systemic change out of filters', () => {
@@ -56,21 +79,18 @@ describe('Watchback review UI', () => {
     expect(screen.queryByText(/EPSS D-30 급상승 조건/)).toBeNull();
   });
 
-  it('summarizes source-change impact using the reviewed annotations', () => {
+  it('renders the compact review summary and priority queue', () => {
     render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
 
-    const sourceImpactCard = screen.getByText('소스 변동 영향 추정').closest('div[style*="cursor"]');
-    expect(sourceImpactCard).not.toBeNull();
-    expect(screen.getByText('EPSS 모델·소스 변동일과 겹친 재검토 항목')).not.toBeNull();
-    expect(within(sourceImpactCard).getByText('지난주 대비 ▲1건')).not.toBeNull();
-    expect(screen.queryByText(/시스템성 변동 억제/)).toBeNull();
-
-    fireEvent.click(sourceImpactCard);
-    expect(screen.getByText('소스 변동 영향 추정 1건')).not.toBeNull();
-    expect(screen.getByText('2026.06.15 · EPSS 모델 v5 전환일')).not.toBeNull();
+    expect(screen.getByText('Review Summary')).not.toBeNull();
+    expect(screen.getByText('Priority Queue')).not.toBeNull();
+    expect(screen.getByRole('button', { name: /열림 \d+/ })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /조치 요청됨 \d+/ })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /해결됨 \d+/ })).not.toBeNull();
+    expect(screen.queryByText('소스 변동 영향 추정')).toBeNull();
   });
 
-  it('uses database weekly metrics and arrow icons on every dashboard KPI', () => {
+  it('uses case state for dashboard flow counts without legacy weekly KPI copy', () => {
     render(
       <WatchbackApp
         {...baseProps}
@@ -87,23 +107,18 @@ describe('Watchback review UI', () => {
       />,
     );
 
-    expect(screen.getByText('지난주 대비 ▲2건')).not.toBeNull();
-    expect(screen.getByText('지난주 대비 ▼1건')).not.toBeNull();
-    expect(screen.getByText('지난주 대비 변화 없음')).not.toBeNull();
-    expect(screen.getByText('8/21 ~ 8/28')).not.toBeNull();
-    expect(screen.queryByText('기간 비교 미연동')).toBeNull();
+    expect(screen.getByText('Review Summary')).not.toBeNull();
+    expect(screen.getByText('Priority Queue')).not.toBeNull();
+    expect(screen.queryByText(/지난주 대비/)).toBeNull();
+    expect(screen.queryByText('8/21 ~ 8/28')).toBeNull();
   });
 
-  it('shows persistent KEV status before EPSS and stale badges on the dashboard', () => {
+  it('shows one representative status badge on each priority row', () => {
     render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
 
-    const kevBadge = screen.getAllByText('KEV')[0];
-    const badgeRow = kevBadge.parentElement;
-    const labels = [...badgeRow.children].map((element) => element.textContent);
-
-    expect(labels[0]).toBe('KEV');
-    expect(labels[1]).toMatch(/^(EPSS 급등|EPSS 상위 5%)$/);
-    expect(labels[2]).toMatch(/일째 미처리$/);
+    const kevBadge = screen.getAllByText('NEW KEV')[0];
+    expect(kevBadge.parentElement.children).toHaveLength(1);
+    expect(screen.getAllByText(/^(NEW KEV|EPSS 급등|EPSS 상위 5%)$/).length).toBeGreaterThan(0);
   });
 
   it('renders candidate evidence as a dated timeline on detail', () => {
