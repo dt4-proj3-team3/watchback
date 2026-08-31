@@ -267,7 +267,13 @@ class ReviewCaseSummary(ContractModel):
         description="연결된 위험 후보의 가장 최근 KEV 근거가 등재 상태인지 여부"
     )
     status: CaseStatus
-    priority: Priority
+    priority: Priority = Field(
+        deprecated=True,
+        description=(
+            "호환용 Case 필드. Advisory severity 복사값이며 재검토 우선순위 "
+            "표시·필터·정렬에는 latest_candidate.priority를 사용합니다."
+        ),
+    )
     review_reason: str
     opened_at: datetime
     resolved_at: datetime | None

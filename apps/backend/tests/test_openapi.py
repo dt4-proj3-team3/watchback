@@ -66,6 +66,9 @@ def test_list_contract_defines_filters_sort_pagination_and_empty_example(
 ) -> None:
     operation = openapi_document["paths"]["/api/v1/review-cases"]["get"]
     assert _parameter(operation, "status")["schema"]["default"] == "open"
+    priority = _parameter(operation, "priority")["schema"]
+    priority_schema = _resolve_schema(openapi_document, priority["anyOf"][0]["$ref"])
+    assert priority_schema["enum"] == ["P0", "P1", "P2", "P3"]
     assert _parameter(operation, "sort")["schema"]["default"] == "priority"
     assert _parameter(operation, "order")["schema"]["default"] == "desc"
     assert _parameter(operation, "page")["schema"]["minimum"] == 1
