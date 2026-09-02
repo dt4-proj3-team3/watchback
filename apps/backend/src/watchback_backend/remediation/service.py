@@ -346,6 +346,16 @@ def build_remediation_groups(
                 )
                 is not None
             ]
+            has_open_alert = any(
+                row.alert_state == "open" for row in target_alerts.values()
+            )
+            manifest_was_removed = bool(version_snapshots) and all(
+                snapshot.status == "unavailable"
+                and snapshot.reason == "lockfile_not_found"
+                for snapshot in version_snapshots
+            )
+            if not has_open_alert and manifest_was_removed:
+                continue
             current_versions = sorted(
                 {
                     version

@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.dialects import postgresql
 
 from watchback_backend.api.service import RequestContext
+from watchback_backend.db.models import DependencyVersionSnapshot
 from watchback_backend.remediation.service import (
     RemediationSourceRow,
     _load_source_rows,
@@ -105,6 +106,48 @@ def test_manifest_targets_remain_separate_without_duplicating_group_alerts() -> 
         rows[0].alert_id,
         rows[1].alert_id,
     }
+
+
+def test_removed_manifest_without_open_alert_is_hidden_from_action_targets() -> None:
+    active = source_row(1, manifest_path="package-lock.json")
+    removed = source_row(
+        2,
+        case_number=2,
+        manifest_path="transitive-override/package-lock.json",
+        case_status="resolved",
+        alert_state="fixed",
+    )
+    removed_snapshot = DependencyVersionSnapshot(
+        id=UUID("70000000-0000-0000-0000-000000000001"),
+        organization_id=ORG_ID,
+        repository_id=removed.repository_id,
+        manifest_path=removed.manifest_path,
+        commit_sha="a" * 40,
+        ecosystem="npm",
+        package_name="vite",
+        resolved_versions=[],
+        status="unavailable",
+        reason="lockfile_not_found",
+        source_path=None,
+        source_blob_sha=None,
+        observed_at=NOW,
+    )
+
+    group = build_remediation_groups(
+        [active, removed],
+        versions_by_target={
+            (
+                removed.repository_id,
+                removed.manifest_path,
+                removed.ecosystem,
+                removed.package_name,
+            ): removed_snapshot
+        },
+    ).items[0]
+
+    assert [target.project_root for target in group.targets] == [""]
+    assert group.github_alert_counts.open == 1
+    assert group.github_alert_counts.fixed == 1
 
 
 def test_manifest_and_lockfile_in_same_project_are_one_action_target() -> None:
