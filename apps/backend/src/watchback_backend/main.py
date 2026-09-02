@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 
 from watchback_backend.api.routes import router as review_cases_router
 from watchback_backend.api.service import ServiceError
+from watchback_backend.ai_agent.routes import router as ai_review_router
+from watchback_backend.remediation.routes import router as remediation_router
 
 
 app = FastAPI(
@@ -13,6 +15,8 @@ app = FastAPI(
     description="Dependabot Alert의 위험 변화 재검토 계약 API",
 )
 app.include_router(review_cases_router)
+app.include_router(remediation_router)
+app.include_router(ai_review_router)
 
 
 @app.exception_handler(ServiceError)

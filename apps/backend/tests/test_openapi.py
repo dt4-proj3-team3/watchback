@@ -49,6 +49,10 @@ def test_openapi_exposes_paths_and_required_context_headers(
         ("/api/v1/review-cases/dashboard-summary", "get"),
         ("/api/v1/review-cases/{case_id}", "get"),
         ("/api/v1/review-cases/{case_id}/activities", "post"),
+        ("/api/v1/remediation-groups", "get"),
+        ("/api/v1/remediation-groups/{group_id}/actions", "post"),
+        ("/api/v1/remediation-groups/{group_id}/pull-requests", "post"),
+        ("/api/v1/remediation-groups/{group_id}/pull-requests/merge", "post"),
     ):
         operation = paths[path][method]
         headers = {
@@ -133,6 +137,41 @@ def test_activity_contract_and_examples(openapi_document: dict[str, Any]) -> Non
         ACTIVITY_RESPONSE_EXAMPLE["activity"]["external_links"][0]["external_state"]
         is None
     )
+
+
+def test_remediation_action_contract_separates_watchback_and_github_states(
+    openapi_document: dict[str, Any],
+) -> None:
+    operation = openapi_document["paths"][
+        "/api/v1/remediation-groups/{group_id}/actions"
+    ]["post"]
+    assert operation["responses"]["201"]["content"]["application/json"][
+        "schema"
+    ]["$ref"].endswith("/RemediationActionCreated")
+    schemas = openapi_document["components"]["schemas"]
+    assert schemas["RemediationActionType"]["enum"] == [
+        "risk_accepted",
+        "remediation_requested",
+    ]
+    assert schemas["RiskAcceptanceReason"]["enum"] == [
+        "compatibility_blocked",
+        "low_current_impact",
+        "other",
+    ]
+    assert schemas["WatchbackActionState"]["enum"] == [
+        "accepted",
+        "requested",
+        "pr_open",
+        "pr_merged",
+            "verification_pending",
+            "completed",
+            "cancelled",
+            "failed",
+    ]
+    target = schemas["RemediationActionTargetResponse"]["properties"]
+    assert "github_alert_state_at_action" in target
+    assert "watchback_state" not in target
+    assert "/api/v1/remediation-groups/{group_id}/reopen" in openapi_document["paths"]
 
 
 def test_representative_examples_conform_to_models() -> None:

@@ -18,6 +18,8 @@ from watchback_backend.db.models import (
     GoldBatchCandidate,
     Organization,
     Repository,
+    RemediationAction,
+    RemediationActionTarget,
     ReviewActivity,
     ReviewCase,
     RiskCandidate,
@@ -910,6 +912,373 @@ def test_invalid_activity_payload_returns_422_with_valid_context(
 ) -> None:
     response = client.post(
         f"/api/v1/review-cases/{api_fixture['case']}/activities",
+        headers=headers(api_fixture),
+        json=payload,
+    )
+    assert (response.status_code, response.json()["code"]) == (
+        422,
+        "validation_error",
+    )
+
+
+def test_package_action_snapshots_current_open_alerts_without_changing_github_state(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    response = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    )
+    assert response.status_code == 200
+    group = next(
+        item
+        for item in response.json()["items"]
+        if item["package_name"] == "example-package"
+    )
+
+    created = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "low_current_impact",
+            "note": None,
+        },
+    )
+    assert created.status_code == 201
+    payload = created.json()
+    assert payload["watchback_state"] == "accepted"
+    assert payload["reason_code"] == "low_current_impact"
+    assert payload["note"] is None
+    assert len(payload["targets"]) == 2
+    assert {item["manifest_path"] for item in payload["targets"]} == {
+        "package-lock.json",
+        "uv.lock",
+    }
+    assert {item["github_alert_state_at_action"] for item in payload["targets"]} == {
+        "open"
+    }
+    assert len(group["targets"]) == 1
+    assert group["targets"][0]["project_root"] == ""
+    assert group["targets"][0]["manifest_paths"] == [
+        "package-lock.json",
+        "uv.lock",
+    ]
+
+    with Session(postgres_engine) as session:
+        action = session.get(RemediationAction, UUID(payload["id"]))
+        assert action is not None
+        assert action.watchback_state == "accepted"
+        assert session.scalar(
+            select(func.count())
+            .select_from(RemediationActionTarget)
+            .where(RemediationActionTarget.action_id == action.id)
+        ) == 2
+        review_case = session.get(ReviewCase, api_fixture["case"])
+        assert review_case is not None
+        assert review_case.status == "open"
+        assert session.get(DependabotAlert, api_fixture["alert"]).state == "open"
+
+    refreshed = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    )
+    refreshed_group = next(
+        item for item in refreshed.json()["items"] if item["id"] == group["id"]
+    )
+    assert refreshed_group["watchback_status"] == "accepted"
+    assert refreshed_group["action_history"] == [
+        {
+            "id": payload["id"],
+            "event_type": "risk_accepted",
+            "watchback_state": "accepted",
+            "reason_code": "low_current_impact",
+            "note": None,
+            "actor_user_id": str(api_fixture["user"]),
+            "actor_display_name": "김서연",
+                "occurred_at": payload["occurred_at"],
+                "target_count": 1,
+                "pull_requests": [],
+            }
+    ]
+    assert {target["watchback_status"] for target in refreshed_group["targets"]} == {
+        "accepted"
+    }
+    assert refreshed_group["github_alert_counts"]["open"] == 2
+
+    duplicate = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "compatibility_blocked",
+            "note": None,
+        },
+    )
+    assert (duplicate.status_code, duplicate.json()["code"]) == (
+        409,
+        "duplicate_remediation_action",
+    )
+    reopened = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/reopen",
+        headers=headers(api_fixture),
+        json={},
+    )
+    assert reopened.status_code == 200
+    assert reopened.json()["revoked_action_ids"] == [payload["id"]]
+    with Session(postgres_engine) as session:
+        action = session.get(RemediationAction, UUID(payload["id"]))
+        assert action is not None
+        assert action.revoked_at is not None
+        assert action.revoked_by_user_id == api_fixture["user"]
+    reopened_group = next(
+        item
+        for item in client.get(
+            "/api/v1/remediation-groups", headers=headers(api_fixture)
+        ).json()["items"]
+        if item["id"] == group["id"]
+    )
+    assert reopened_group["watchback_status"] == "needs_review"
+    assert [item["event_type"] for item in reopened_group["action_history"]] == [
+        "risk_acceptance_revoked",
+        "risk_accepted",
+    ]
+    accepted_again = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "compatibility_blocked",
+            "note": None,
+        },
+    )
+    assert accepted_again.status_code == 201
+    forbidden = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture, other_user=True),
+        json={"action_type": "remediation_requested", "note": "다른 조직"},
+    )
+    assert (forbidden.status_code, forbidden.json()["code"]) == (
+        403,
+        "organization_scope_violation",
+    )
+
+
+def test_package_action_snapshots_only_current_open_alerts(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    with Session(postgres_engine) as session:
+        fixed = session.get(DependabotAlert, api_fixture["alert_lockfile"])
+        assert fixed is not None
+        fixed.state = "fixed"
+        fixed.fixed_at = NOW
+        session.commit()
+
+    group = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    ).json()["items"][0]
+    created = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "other",
+            "note": "Open 범위만 수용",
+        },
+    )
+    assert created.status_code == 201
+    assert [
+        target["alert_id"] for target in created.json()["targets"]
+    ] == [str(api_fixture["alert"])]
+
+
+def test_package_risk_acceptance_and_reopen_target_one_dependency_project(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+) -> None:
+    group = next(
+        item
+        for item in client.get(
+            "/api/v1/remediation-groups", headers=headers(api_fixture)
+        ).json()["items"]
+        if item["package_name"] == "example-package"
+    )
+    assert len(group["targets"]) == 1
+    selected = group["targets"][0]
+    assert selected["manifest_paths"] == ["package-lock.json", "uv.lock"]
+    accepted = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "target_ids": [selected["id"]],
+            "reason_code": "compatibility_blocked",
+            "note": None,
+        },
+    )
+    assert accepted.status_code == 201
+    assert {target["manifest_path"] for target in accepted.json()["targets"]} == {
+        "package-lock.json",
+        "uv.lock",
+    }
+
+    partially_accepted = next(
+        item
+        for item in client.get(
+            "/api/v1/remediation-groups", headers=headers(api_fixture)
+        ).json()["items"]
+        if item["id"] == group["id"]
+    )
+    assert partially_accepted["watchback_status"] == "accepted"
+    assert [
+        target["watchback_status"] for target in partially_accepted["targets"]
+    ] == ["accepted"]
+
+    reopened = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/reopen",
+        headers=headers(api_fixture),
+        json={"target_ids": [selected["id"]]},
+    )
+    assert reopened.status_code == 200
+    assert reopened.json()["revoked_action_ids"] == [accepted.json()["id"]]
+    refreshed = next(
+        item
+        for item in client.get(
+            "/api/v1/remediation-groups", headers=headers(api_fixture)
+        ).json()["items"]
+        if item["id"] == group["id"]
+    )
+    assert {target["watchback_status"] for target in refreshed["targets"]} == {
+        "needs_review"
+    }
+
+
+def test_package_action_rejects_missing_group_or_group_without_open_alerts(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    missing = client.post(
+        f"/api/v1/remediation-groups/{'f' * 64}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "other",
+            "note": "없는 그룹",
+        },
+    )
+    assert (missing.status_code, missing.json()["code"]) == (
+        404,
+        "remediation_group_not_found",
+    )
+
+    with Session(postgres_engine) as session:
+        for alert_id in (api_fixture["alert"], api_fixture["alert_lockfile"]):
+            alert = session.get(DependabotAlert, alert_id)
+            assert alert is not None
+            alert.state = "fixed"
+            alert.fixed_at = NOW
+        session.commit()
+
+    group_id = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    ).json()["items"][0]["id"]
+    response = client.post(
+        f"/api/v1/remediation-groups/{group_id}/actions",
+        headers=headers(api_fixture),
+        json={
+            "action_type": "risk_accepted",
+            "reason_code": "other",
+            "note": "조치 대상 없음",
+        },
+    )
+    assert (response.status_code, response.json()["code"]) == (
+        409,
+        "no_actionable_targets",
+    )
+
+
+def test_new_alert_creates_a_new_action_scope_instead_of_inheriting_old_decision(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    postgres_engine: Engine,
+) -> None:
+    group = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    ).json()["items"][0]
+    first = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={"action_type": "remediation_requested", "note": "현재 범위 조치"},
+    )
+    assert first.status_code == 201
+    assert len(first.json()["targets"]) == 2
+
+    new_alert_id = uuid4()
+    with Session(postgres_engine) as session:
+        session.add(
+            DependabotAlert(
+                id=new_alert_id,
+                organization_id=api_fixture["org"],
+                repository_id=api_fixture["repo"],
+                advisory_id=api_fixture["advisory"],
+                github_alert_number=99,
+                state="open",
+                package_name="example-package",
+                ecosystem="npm",
+                manifest_path="apps/admin/package-lock.json",
+                dependency_scope="runtime",
+                dependency_relationship="direct",
+                vulnerable_version_range="<2",
+                first_patched_version="2.0.0",
+                html_url=(
+                    "https://github.com/example/repo/security/dependabot/99"
+                ),
+                github_created_at=NOW,
+                github_updated_at=NOW,
+                last_synced_at=NOW,
+            )
+        )
+        session.flush()
+        session.add(
+            AlertCandidateMatch(
+                organization_id=api_fixture["org"],
+                alert_id=new_alert_id,
+                candidate_id=api_fixture["candidate_latest"],
+                matched_at=NOW,
+            )
+        )
+        session.commit()
+
+    second = client.post(
+        f"/api/v1/remediation-groups/{group['id']}/actions",
+        headers=headers(api_fixture),
+        json={"action_type": "remediation_requested", "note": "확장 범위 조치"},
+    )
+    assert second.status_code == 201
+    assert second.json()["watchback_state"] == "requested"
+    assert len(second.json()["targets"]) == 3
+    assert first.json()["id"] != second.json()["id"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"action_type": "note_added", "note": "지원하지 않음"},
+        {"action_type": "risk_accepted", "reason_code": "other", "note": "   "},
+    ],
+)
+def test_package_action_contract_rejects_unsupported_or_blank_decisions(
+    client: TestClient,
+    api_fixture: dict[str, UUID],
+    payload: dict[str, str],
+) -> None:
+    group_id = client.get(
+        "/api/v1/remediation-groups", headers=headers(api_fixture)
+    ).json()["items"][0]["id"]
+    response = client.post(
+        f"/api/v1/remediation-groups/{group_id}/actions",
         headers=headers(api_fixture),
         json=payload,
     )
