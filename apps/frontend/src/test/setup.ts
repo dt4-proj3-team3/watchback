@@ -24,6 +24,7 @@ afterEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 

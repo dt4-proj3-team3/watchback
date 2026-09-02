@@ -3,6 +3,7 @@
 import { Component } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dashboard } from './dashboard';
+import { AiAssistantPreview } from './ai-assistant-preview';
 import { Header } from './header';
 import { Repositories } from './repositories';
 import { ReviewCaseDetail } from './review-case-detail';
@@ -114,6 +115,10 @@ export function calculateRereviewScore(candidate) {
   return ({ P0: 90, P1: 65, P2: 40, P3: 15 })[
     String(candidate?.priority ?? '').trim().toUpperCase()
   ] ?? 15;
+}
+
+function reviewPriorityCandidate(reviewCase) {
+  return reviewCase.review_priority_candidate ?? reviewCase.latest_candidate;
 }
 
 export function buildEvidenceGroups(candidates = []) {
@@ -260,14 +265,20 @@ function latestCandidateTags(candidate, isKev = false) {
 
 export function filterAndSortCases(cases, filters, now = Date.now()) {
   let list = cases.filter(c => filters.status === 'all' || c.status === filters.status);
-  if (filters.priority !== 'all') list = list.filter(c => c.latest_candidate.priority === filters.priority);
+  if (filters.priority !== 'all') list = list.filter(c => reviewPriorityCandidate(c).priority === filters.priority);
   if (filters.changeType !== 'all') list = list.filter(c => c.latest_candidate.change_type === filters.changeType);
-  if (filters.importance && filters.importance !== 'all') list = list.filter(c => c.repository.importance === filters.importance);
+  if (filters.importance && filters.importance !== 'all') list = list.filter(c => (
+    c.affected_repositories?.some(repository => repository.importance === filters.importance) ??
+    c.repository.importance === filters.importance
+  ));
   if (filters.staleOnly) list = list.filter(c => (now - new Date(c.opened_at)) / 86400000 >= 3);
-  if (filters.repo && filters.repo !== 'all') list = list.filter(c => c.repository.full_name === filters.repo);
+  if (filters.repo && filters.repo !== 'all') list = list.filter(c => (
+    c.affected_repositories?.some(repository => repository.full_name === filters.repo) ??
+    c.repository.full_name === filters.repo
+  ));
 
   const order = { P0: 0, P1: 1, P2: 2, P3: 3 };
-  if (filters.sort === 'priority') return [...list].sort((a, b) => order[a.latest_candidate.priority] - order[b.latest_candidate.priority] || new Date(b.updated_at) - new Date(a.updated_at));
+  if (filters.sort === 'priority') return [...list].sort((a, b) => order[reviewPriorityCandidate(a).priority] - order[reviewPriorityCandidate(b).priority] || new Date(b.updated_at) - new Date(a.updated_at));
   if (filters.sort === 'updated_at') return [...list].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
   return [...list].sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at));
 }
@@ -318,13 +329,15 @@ class WatchbackAppView extends Component {
   }
 
   enrich(c) {
-    const pm = CANDIDATE_PRIORITY_META[c.latest_candidate.priority];
+    const priorityCandidate = reviewPriorityCandidate(c);
+    const pm = CANDIDATE_PRIORITY_META[priorityCandidate.priority];
     const im = PRIORITY_META[c.repository.importance];
     const sm = PRIORITY_META[c.advisory.severity];
     const reviewReason = formatReviewReason(c.review_reason);
     const detailedEvidenceTags = evidenceTags(c.evidence, c.is_kev);
     return {
       ...c,
+      isVulnerabilityGroup: !!c.is_vulnerability_group,
       repoName: c.repository.display_name,
       repositoryUrl: `https://github.com/${c.repository.full_name}`,
       priorityLabel: pm.label,
@@ -335,6 +348,7 @@ class WatchbackAppView extends Component {
       severityLabel: sm.label,
       severityBadgeStyle: badgeStyle(sm),
       changeTypeLabel: formatChangeType(c.latest_candidate.change_type),
+      reviewPriorityCandidate: priorityCandidate,
       evidenceTags: detailedEvidenceTags.length > 0
         ? detailedEvidenceTags
         : latestCandidateTags(c.latest_candidate, c.is_kev),
@@ -346,6 +360,18 @@ class WatchbackAppView extends Component {
       openedLabel: fmtDate(c.opened_at),
       updatedLabel: fmtDate(c.updated_at),
       hasDistinctUpdatedDate: fmtDate(c.opened_at) !== fmtDate(c.updated_at),
+      affectedRepositoryLabel: `${c.affected_repository_count ?? 1}개 저장소`,
+      alertCountLabel: `${c.alert_counts?.total ?? 1}개 Alert`,
+      openAlertCount: c.alert_counts?.open ?? (c.alert.state === 'open' ? 1 : 0),
+      fixedAlertCount: c.alert_counts?.fixed ?? (c.alert.state === 'fixed' ? 1 : 0),
+      packageNames: [...new Set((c.alerts ?? [c.alert]).map(alert => alert.package_name))],
+      packageSummaryLabel: [...new Set((c.alerts ?? [c.alert])
+        .map(alert => `${alert.package_name} · ${alert.ecosystem}`))].join(', '),
+      groupStatusLabel: c.group_status === 'partially_resolved'
+        ? '일부 해결'
+        : c.status === 'resolved'
+        ? '해결됨'
+        : '검토 필요',
       onOpen: () => this.openCase(c.id),
     };
   }
@@ -500,49 +526,39 @@ class WatchbackAppView extends Component {
       { key: 'dashboard', label: '대시보드', onClick: () => this.props.router.push('/dashboard') },
       { key: 'list', label: '재검토 목록', onClick: () => this.props.router.push('/review-cases') },
       { key: 'repos', label: '저장소', onClick: () => this.props.router.push('/repositories') },
-      { key: 'settings', label: '설정', onClick: () => this.props.router.push('/settings') },
     ].map(t => {
       const active = (t.key === 'dashboard' && view === 'dashboard') || (t.key === 'list' && (view === 'list' || view === 'detail')) || (t.key === 'repos' && view === 'repos') || (t.key === 'settings' && view === 'settings');
       return { ...t, style: `font-size:13px;font-weight:600;padding:8px 12px;border-radius:7px;cursor:pointer;color:${active ? '#1B1E1A' : '#8B9086'};background:${active ? '#EEF0EE' : 'transparent'}` };
     });
 
-    const MODE_COLOR = { fully_auto: '#2F8F5B', click_to_merge: '#1F6FBF', pr_only: '#9A5A16' };
-    const MODE_BG = { fully_auto: '#E7F3EC', click_to_merge: '#E6EFFA', pr_only: '#FCEFE1' };
     const importanceLevels = ['critical', 'high', 'medium', 'low'];
     const repoMap = new Map();
     cases.forEach(c => {
       const key = c.repository.full_name;
-      if (!repoMap.has(key)) repoMap.set(key, { ...c.repository, openCount: 0, p0OpenCount: 0 });
+      if (!repoMap.has(key)) repoMap.set(key, { ...c.repository, openCount: 0, criticalOpenCount: 0 });
       const r = repoMap.get(key);
       if (c.status === 'open') {
         r.openCount += 1;
-        if (c.latest_candidate.priority === 'P0') r.p0OpenCount += 1;
+        if (c.advisory.severity === 'critical') r.criticalOpenCount += 1;
       }
     });
     const repoRows = Array.from(repoMap.values()).map(r => {
       const currentImportance = this.state.repoImportanceOverrides[r.full_name] || r.importance;
-      const im = PRIORITY_META[currentImportance];
-      const exceptions = importanceLevels
-        .map(sev => ({ sev, sevLabel: PRIORITY_META[sev].label, mode: this.state.policyMatrix[`${currentImportance}_${sev}`] }))
-        .filter(p => p.mode !== 'fully_auto');
-      const allModes = importanceLevels.map(sev => this.state.policyMatrix[`${currentImportance}_${sev}`]);
-      const demoPolicySummary = allModes.every(mode => mode === 'pr_only')
-        ? { label: '전체 PR 생성만', color: MODE_COLOR.pr_only, bg: MODE_BG.pr_only }
-        : exceptions.length === 0
-        ? { label: '전체 자동조치', color: MODE_COLOR.fully_auto, bg: MODE_BG.fully_auto }
-        : { label: `${exceptions.map(e => e.sevLabel).join('·')} 심각도는 승인 필요`, color: MODE_COLOR[exceptions[0].mode], bg: MODE_BG[exceptions[0].mode] };
-      const policySummary = isDemo
-        ? demoPolicySummary
-        : { label: '정책 DB 연동 미구현', color: '#8B9086', bg: '#EEF0EE' };
+      const displayImportance = currentImportance === 'critical' ? 'high' : currentImportance;
+      const displayImportanceMeta = PRIORITY_META[displayImportance];
+      const policySummary = displayImportance === 'high'
+        ? { label: 'High/Medium PR 자동 생성 · Low PR 자동 병합', color: '#687066', bg: '#EEF0EE' }
+        : displayImportance === 'medium'
+          ? { label: 'High PR 자동 생성 · Medium/Low PR 자동 병합', color: '#687066', bg: '#EEF0EE' }
+          : { label: 'Critical/High PR 자동 생성 · Medium/Low PR 자동 병합', color: '#687066', bg: '#EEF0EE' };
       return {
         ...r,
         importance: currentImportance,
-        importanceLabel: im.label,
-        importanceBadgeStyle: badgeStyle(im),
+        importanceLabel: displayImportanceMeta.label,
+        importanceBadgeStyle: badgeStyle(displayImportanceMeta),
         policySummary,
         onOpen: () => {
-          this.setState({ filters: { ...filters, repo: r.full_name, status: 'all', importance: 'all', staleOnly: false } });
-          this.props.router.push('/review-cases');
+          this.props.router.push(`/review-cases?repository=${encodeURIComponent(r.full_name)}`);
         },
         onImportanceChange: () => this.showPreviewNotice(),
       };
@@ -563,7 +579,7 @@ class WatchbackAppView extends Component {
 
     const topCases = cases
       .filter(c => c.status === 'open')
-      .sort((a, b) => candidateOrder[a.latest_candidate.priority] - candidateOrder[b.latest_candidate.priority] || new Date(b.updated_at) - new Date(a.updated_at))
+      .sort((a, b) => candidateOrder[reviewPriorityCandidate(a).priority] - candidateOrder[reviewPriorityCandidate(b).priority] || new Date(b.updated_at) - new Date(a.updated_at))
       .slice(0, 5)
       .map(c => {
         const e = this.enrich(c);
@@ -691,6 +707,15 @@ class WatchbackAppView extends Component {
       );
       const e = this.enrich(raw);
       const relatedAlerts = raw.alerts?.length ? raw.alerts : [raw.alert];
+      const scopeLabels = [...new Set(relatedAlerts
+        .map(alert => SCOPE_LABEL[alert.dependency_scope])
+        .filter(Boolean))];
+      const vulnerableVersionLabels = [...new Set(relatedAlerts
+        .map(alert => alert.vulnerable_version_range)
+        .filter(Boolean))];
+      const patchedVersionLabels = [...new Set(relatedAlerts
+        .map(alert => alert.first_patched_version)
+        .filter(Boolean))];
       const sourceAnnotations = raw.candidates.flatMap(candidate => (
         (candidate.deliveries ?? []).flatMap(delivery => delivery.source_annotations ?? [])
       ));
@@ -711,9 +736,13 @@ class WatchbackAppView extends Component {
         reviewReasonDateLabel: latestObservedAt
           ? fmtDate(latestObservedAt)
           : e.reviewReasonDateLabel,
-        rereviewScore: calculateRereviewScore(raw.latest_candidate),
+        rereviewScore: calculateRereviewScore(reviewPriorityCandidate(raw)),
         automation,
-        scopeLabel: SCOPE_LABEL[raw.alert.dependency_scope] || '-',
+        packageLabel: [...new Set(relatedAlerts
+          .map(alert => `${alert.package_name} · ${alert.ecosystem}`))].join(', '),
+        scopeLabel: scopeLabels.join(', ') || '-',
+        vulnerableVersionLabel: vulnerableVersionLabels.join(', ') || '-',
+        firstPatchedVersionLabel: patchedVersionLabels.join(', ') || '없음',
         relationshipLabel: REL_LABEL[raw.alert.dependency_relationship] || '-',
         hasKnownRelationship: raw.alert.dependency_relationship !== 'unknown',
         systemicLabel: sourceAnnotations.length > 0 ? '소스 변동 주의' : '개별 변화로 확인됨',
@@ -727,11 +756,18 @@ class WatchbackAppView extends Component {
         patchLabelShort: raw.alert.first_patched_version || '패치 없음',
         patchColor: raw.alert.first_patched_version ? '#2F8F5B' : '#8B9086',
         relatedAlerts,
+        affectedRepositories: raw.affected_repositories ?? [{
+          ...raw.repository,
+          source_kind: 'actual',
+          alerts: relatedAlerts,
+        }],
         manifestLabel: relatedAlerts
           .map(alert => alert.manifest_path)
           .filter(Boolean)
           .join(', ') || '-',
-        evidenceGroups: buildEvidenceGroups(raw.candidates),
+        evidenceGroups: buildEvidenceGroups(raw.candidates).map((group) => (
+          raw.is_vulnerability_group ? { ...group, selectedLabel: null } : group
+        )),
         activityTimeline: reviewActivities.map((act, i) => ({
           typeLabel: ACTIVITY_LABEL[act.activity_type] || act.activity_type,
           actorLabel: act.actor ? act.actor.display_name : 'System',
@@ -862,6 +898,7 @@ class WatchbackAppView extends Component {
             <ReviewCaseDetail values={values} />
           </>
         )}
+        <AiAssistantPreview values={values} />
       </div>
     );
   }

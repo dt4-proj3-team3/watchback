@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DATA_SOURCE_STORAGE_KEY } from '@/lib/review-case-data';
@@ -65,7 +65,7 @@ describe('review page data source selection', () => {
     localStorage.setItem(DATA_SOURCE_STORAGE_KEY, 'demo');
     render(<DemoWatchbackPage view="dashboard" />);
     expect(await screen.findByText('Demo 데이터')).not.toBeNull();
-    expect(screen.getAllByText('customer-fe').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^CVE-\d{4}-\d+$/).length).toBeGreaterThan(0);
   });
 
   it('stores demo risk acceptance and PR links in page memory without an API call', async () => {
@@ -102,12 +102,6 @@ describe('review page data source selection', () => {
     expect(await screen.findByText('Backend에 연결할 수 없습니다.')).not.toBeNull();
     expect(screen.queryByText('Demo 데이터')).toBeNull();
     expect(localStorage.getItem(DATA_SOURCE_STORAGE_KEY)).toBeNull();
-  });
-
-  it('persists only a settings choice made by the user', async () => {
-    render(<DemoWatchbackPage view="settings" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Demo' }));
-    await waitFor(() => expect(localStorage.getItem(DATA_SOURCE_STORAGE_KEY)).toBe('demo'));
   });
 
   it('refetches server truth after recording an activity', async () => {

@@ -1,5 +1,5 @@
-import { DemoWatchbackPage } from '@/components/demo-watchback-page';
+import { redirect } from 'next/navigation';
 
 export default function SettingsPage() {
-  return <DemoWatchbackPage view="settings" />;
+  redirect('/repositories');
 }

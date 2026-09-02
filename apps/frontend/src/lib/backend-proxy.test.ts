@@ -89,6 +89,24 @@ describe('backend proxy', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('allows a read-only AI query POST in a public preview', async () => {
+    configureBackend();
+    vi.stubEnv('WATCHBACK_READ_ONLY', 'true');
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ answer: '근거 답변' }), {
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await proxyBackendPost(
+      '/api/v1/ai/review',
+      { question: '왜 검토해야 하나요?' },
+      { allowReadOnly: true },
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it('sanitizes missing configuration, transport errors, and non-JSON responses', async () => {
     expect((await proxyBackendGet('/api/v1/review-cases')).status).toBe(502);
 

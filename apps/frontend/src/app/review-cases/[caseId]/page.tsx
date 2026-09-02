@@ -1,4 +1,4 @@
-import { DemoWatchbackPage } from '@/components/demo-watchback-page';
+import { RemediationPreviewPage } from '@/components/remediation-preview-page';
 
 export default async function ReviewCasePage({
   params,
@@ -6,5 +6,5 @@ export default async function ReviewCasePage({
   params: Promise<{ caseId: string }>;
 }) {
   const { caseId } = await params;
-  return <DemoWatchbackPage view="detail" selectedId={caseId} />;
+  return <RemediationPreviewPage view="list" initialExpandedGroupId={decodeURIComponent(caseId)} />;
 }

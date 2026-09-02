@@ -5,7 +5,6 @@ import { getDemoReviewCases } from '@/lib/demo-review-cases';
 import { WatchbackApp, buildEvidenceGroups, calculateRereviewScore, filterAndSortCases } from './watchback-app';
 
 const cases = getDemoReviewCases();
-const fmtTestDate = (iso) => iso.slice(0, 10).replaceAll('-', '.');
 const baseProps = {
   initialSelectedId: null,
   initialCases: cases,
@@ -26,11 +25,12 @@ describe('Watchback review UI', () => {
   });
 
   it('moves the score marker with the selected Figma score variant', () => {
+    const highPriorityGroup = cases.find((item) => item.review_priority_candidate.priority === 'P1');
     render(
       <WatchbackApp
         {...baseProps}
         initialView="detail"
-        initialSelectedId="5cab1f43-afbd-51a1-b688-a546ad05af7c"
+        initialSelectedId={highPriorityGroup.id}
         isPreview
       />,
     );
@@ -47,7 +47,22 @@ describe('Watchback review UI', () => {
     };
     const result = filterAndSortCases(cases, filters, Date.parse('2026-08-26T00:00:00Z'));
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((item) => item.status === 'open' && item.latest_candidate.priority === 'P1')).toBe(true);
+    expect(result.every((item) => (
+      item.status === 'open' && item.review_priority_candidate.priority === 'P1'
+    ))).toBe(true);
+  });
+
+  it('uses the highest unresolved DS candidate priority for vulnerability review', () => {
+    const criticalGroups = cases
+      .filter((item) => item.review_priority_candidate.priority === 'P0')
+      .map((item) => item.cve_id)
+      .sort();
+
+    expect(criticalGroups).toEqual([
+      'CVE-2025-31125',
+      'CVE-2025-55182',
+      'CVE-2026-42208',
+    ]);
   });
 
   it('marks demo data on the real review list and keeps systemic change out of filters', () => {
@@ -59,23 +74,74 @@ describe('Watchback review UI', () => {
     expect(screen.queryByText('치명적')).toBeNull();
   });
 
-  it('removes dates from list summaries and collapses identical case dates', () => {
+  it('counts repository Critical items by advisory severity instead of DS priority', () => {
+    const p0Case = cases.find((item) => item.review_priority_candidate.priority === 'P0');
+    const highSeverityP0Case = {
+      ...p0Case,
+      advisory: { ...p0Case.advisory, severity: 'high' },
+    };
+
+    render(
+      <WatchbackApp
+        {...baseProps}
+        initialCases={[highSeverityP0Case]}
+        initialView="repos"
+        isPreview={false}
+      />,
+    );
+
+    expect(screen.getByText('열린 항목 1건 · Critical 0건')).not.toBeNull();
+    expect(screen.getByText('High')).not.toBeNull();
+    expect(screen.queryByText(highSeverityP0Case.repository.full_name)).toBeNull();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByText(/저장소 목록과 건수는 DB 기준/)).toBeNull();
+    expect(screen.queryByText(/P0/)).toBeNull();
+  });
+
+  it('adds a selected repository through the repository mock UI', () => {
+    render(<WatchbackApp {...baseProps} initialView="repos" isPreview={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '+ 저장소 추가' }));
+    const dialog = screen.getByRole('dialog', { name: '저장소 추가' });
+    expect(within(dialog).queryByLabelText('자동조치 방식')).toBeNull();
+    fireEvent.click(within(dialog).getByLabelText('novalink/security-portal'));
+    fireEvent.change(within(dialog).getByLabelText('저장소 중요도'), { target: { value: 'medium' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: '저장소 추가' }));
+
+    expect(screen.queryByRole('dialog', { name: '저장소 추가' })).toBeNull();
+    expect(screen.getByText('novalink/security-portal')).not.toBeNull();
+    expect(screen.getAllByText('Medium').length).toBeGreaterThan(0);
+  });
+
+  it('shows the organization policy matrix from the repository page', () => {
+    render(<WatchbackApp {...baseProps} initialView="repos" isPreview={false} />);
+
+    expect(screen.queryByRole('button', { name: '설정' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '자동조치 기본 정책' }));
+    const dialog = screen.getByRole('dialog', { name: '자동조치 기본 정책' });
+    expect(within(dialog).getAllByRole('combobox')).toHaveLength(12);
+    fireEvent.change(within(dialog).getByRole('combobox', { name: 'High 저장소 Critical 취약점 정책' }), { target: { value: 'auto_merge_pr' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: '자동조치 기본 정책 닫기' }));
+    expect(screen.getAllByText('High/Medium PR 자동 생성 · Critical/Low PR 자동 병합').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '자동조치 기본 정책' }));
+    expect(screen.getByRole('combobox', { name: 'High 저장소 Critical 취약점 정책' }).value).toBe('auto_merge_pr');
+  });
+
+  it('renders organization-CVE scope counts instead of repository case summaries', () => {
     render(<WatchbackApp {...baseProps} initialView="list" isPreview={false} />);
 
     expect(screen.queryByText(/^\d{4}-\d{2}-\d{2} EPSS/)).toBeNull();
-    expect(screen.getAllByText('EPSS 급상승 조건을 충족했습니다.').length).toBeGreaterThan(0);
-    const sameDateCase = cases.find((item) => (
-      item.opened_at.slice(0, 10) === item.updated_at.slice(0, 10)
-    ));
-    const matchingCard = screen.getAllByText(sameDateCase.repository.display_name)[0].closest('[role="button"]');
-    expect(within(matchingCard).getByText(`생성 ${fmtTestDate(sameDateCase.opened_at)}`)).not.toBeNull();
-    expect(within(matchingCard).queryByText(`업데이트 ${fmtTestDate(sameDateCase.updated_at)}`)).toBeNull();
+    expect(screen.getByText('3개 저장소 · Open Alert 2건')).not.toBeNull();
+    expect(screen.queryByText('3개 Alert')).toBeNull();
+    expect(screen.queryByText('Fixed 1 · 일부 해결')).toBeNull();
+    expect(screen.queryByText('GHSA-f82v-jwr5-mffw')).toBeNull();
+    expect(screen.queryByText(/최근 변화/)).toBeNull();
   });
 
-  it('removes the internal D-30 term from dashboard summaries only', () => {
+  it('shows natural change labels without internal D-30 terms on the dashboard', () => {
     render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
 
-    expect(screen.getAllByText('EPSS 급상승 조건을 충족했습니다.').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^(NEW KEV|EPSS 급등|EPSS 상위 5%)$/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/EPSS D-30 급상승 조건/)).toBeNull();
   });
 
@@ -88,6 +154,20 @@ describe('Watchback review UI', () => {
     expect(screen.getByRole('button', { name: /조치 요청됨 \d+/ })).not.toBeNull();
     expect(screen.getByRole('button', { name: /해결됨 \d+/ })).not.toBeNull();
     expect(screen.queryByText('소스 변동 영향 추정')).toBeNull();
+  });
+
+  it('renders the dashboard priority queue with vulnerability-level minimum fields', () => {
+    render(<WatchbackApp {...baseProps} initialView="dashboard" isPreview={false} />);
+
+    const queue = screen.getByTestId('priority-queue');
+    expect(screen.getByText('Vulnerability')).not.toBeNull();
+    expect(screen.getByText('Package')).not.toBeNull();
+    expect(screen.getByText('Impact')).not.toBeNull();
+    expect(screen.getByText('Change')).not.toBeNull();
+    expect(within(queue).getAllByText(/^CVE-\d{4}-\d+$/).length).toBeGreaterThan(0);
+    expect(within(queue).getAllByText(/개 저장소 · Open Alert \d+건$/).length).toBeGreaterThan(0);
+    expect(within(queue).queryByText('Repository')).toBeNull();
+    expect(within(queue).queryByText('Reason')).toBeNull();
   });
 
   it('uses case state for dashboard flow counts without legacy weekly KPI copy', () => {
@@ -124,7 +204,8 @@ describe('Watchback review UI', () => {
   it('renders candidate evidence as a dated timeline on detail', () => {
     render(<WatchbackApp {...baseProps} initialView="detail" initialSelectedId={cases[0].id} isPreview={false} />);
     expect(screen.getByRole('button', { name: '이전 화면으로' })).not.toBeNull();
-    expect(screen.getAllByText(/후보 선정/).length).toBeGreaterThan(0);
+    expect(screen.queryByText('검토 회차')).toBeNull();
+    expect(screen.queryByText('위험 변화 재선정')).toBeNull();
     expect(screen.getByText('향후 30일 악용 가능성')).not.toBeNull();
   });
 
@@ -270,7 +351,7 @@ describe('Watchback review UI', () => {
     expect(screen.queryByText('소스 변동 주의')).toBeNull();
   });
 
-  it('renders Gold change types naturally without raw sources or duplicate dates', () => {
+  it('renders Gold change types naturally without raw source names', () => {
     const kevCase = cases.find((item) => item.advisory.cve_id === 'CVE-2026-42208');
     render(<WatchbackApp {...baseProps} initialView="detail" initialSelectedId={kevCase.id} isPreview={false} />);
 
@@ -278,8 +359,39 @@ describe('Watchback review UI', () => {
     expect(screen.queryByText('kev_new')).toBeNull();
     expect(screen.queryByText('cisa_kev')).toBeNull();
     expect(screen.queryByText('first_epss')).toBeNull();
-    expect(screen.getAllByText(/2026\.05\.08/)).toHaveLength(1);
     expect(screen.getByText('CISA에서 실제 악용 사례가 확인되었습니다.')).not.toBeNull();
+  });
+
+  it('shows repositories and alert states without review-cycle or dependency labels', () => {
+    const multiRepository = cases.find((item) => item.advisory.cve_id === 'CVE-2025-29927');
+    render(<WatchbackApp {...baseProps} initialView="detail" initialSelectedId={multiRepository.id} isPreview={false} />);
+
+    expect(screen.getByText('novalink/customer-fe ↗')).not.toBeNull();
+    expect(screen.getByText('novalink/commerce-web')).not.toBeNull();
+    expect(screen.getByText('novalink/admin-console')).not.toBeNull();
+    expect(screen.getAllByText('Demo 합성')).toHaveLength(2);
+    expect(screen.getByText('처리 상태')).not.toBeNull();
+    expect(screen.getByText('일부 해결')).not.toBeNull();
+    expect(screen.queryByText('1건 · 일부 해결')).toBeNull();
+    expect(screen.getByText('next · npm')).not.toBeNull();
+    expect(screen.getByText('런타임')).not.toBeNull();
+    expect(screen.getByText('>= 15.0.0, < 15.2.3')).not.toBeNull();
+    expect(screen.getByText('15.2.3')).not.toBeNull();
+    expect(screen.getByTestId('vulnerability-info-card')).not.toBe(
+      screen.getByTestId('affected-repositories-card'),
+    );
+    expect(screen.queryByText('검토 회차')).toBeNull();
+    expect(screen.queryByText('간접 의존성')).toBeNull();
+    expect(screen.queryByText('직접 의존성')).toBeNull();
+  });
+
+  it('keeps two manifests from one repository inside one vulnerability detail', () => {
+    const multiManifest = cases.find((item) => item.advisory.cve_id === 'CVE-2026-39363');
+    render(<WatchbackApp {...baseProps} initialView="detail" initialSelectedId={multiManifest.id} isPreview={false} />);
+
+    expect(screen.getByText('package-lock.json')).not.toBeNull();
+    expect(screen.getByText('transitive-override/package-lock.json')).not.toBeNull();
+    expect(screen.getAllByText('Open')).toHaveLength(2);
   });
 
   it('aligns evidence values to the right and expresses percentile as top percentage', () => {
@@ -326,21 +438,19 @@ describe('Watchback review UI', () => {
     expect(screen.getByText('상위 5% 구간에 진입했습니다.')).not.toBeNull();
   });
 
-  it('changes only the selected source and disables preview mutations', () => {
+  it('keeps the settings page on DB and renders a three-by-four policy table', async () => {
     const onDataSourceChange = vi.fn();
-    render(<WatchbackApp {...baseProps} initialView="settings" dataSource="db" onDataSourceChange={onDataSourceChange} isPreview />);
-    fireEvent.click(screen.getByRole('button', { name: 'Demo' }));
-    expect(onDataSourceChange).toHaveBeenCalledWith('demo');
-    expect(screen.getByText('자동조치 정책 DB 연동은 아직 구현되지 않았습니다.')).not.toBeNull();
-    expect(screen.getByText('실제 자동조치 정책은 아직 DB와 연동되지 않았습니다.')).not.toBeNull();
-    expect(screen.queryByText('현재 모든 위험도 조합은 자동 병합 없이 업데이트 PR 생성까지만 허용합니다.')).toBeNull();
-    expect(screen.queryByTitle('UI Preview · 후속 구현')).toBeNull();
-  });
-
-  it('shows the synthetic policy matrix only in demo mode', () => {
-    render(<WatchbackApp {...baseProps} initialView="settings" isPreview />);
-    const policySelects = screen.getAllByTitle('UI Preview · 후속 구현');
-    expect(policySelects.every((element) => element.disabled)).toBe(true);
+    render(<WatchbackApp {...baseProps} initialView="settings" dataSource="demo" onDataSourceChange={onDataSourceChange} isPreview />);
+    await waitFor(() => expect(onDataSourceChange).toHaveBeenCalledWith('db'));
+    expect(screen.queryByRole('button', { name: 'Demo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'DB' })).toBeNull();
+    expect(screen.queryByText('데이터 소스')).toBeNull();
+    expect(screen.queryByText('실제 운영 데이터를 사용합니다.')).toBeNull();
+    expect(screen.getAllByRole('combobox')).toHaveLength(12);
+    expect(screen.getByRole('combobox', { name: 'High 저장소 Critical 취약점 정책' }).value).toBe('manual_review');
+    expect(screen.getByRole('combobox', { name: 'High 저장소 Medium 취약점 정책' }).value).toBe('auto_create_pr');
+    expect(screen.getByRole('combobox', { name: 'Medium 저장소 Medium 취약점 정책' }).value).toBe('auto_merge_pr');
+    expect(screen.getByRole('combobox', { name: 'Low 저장소 Critical 취약점 정책' }).value).toBe('auto_create_pr');
   });
 
   it('renders retryable and not-found states without demo fallback', () => {
@@ -501,5 +611,111 @@ describe('Watchback review UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /업데이트 PR 생성/ }));
     expect(screen.getByRole('status').textContent).toContain('업데이트 PR 생성 API는 아직 구현되지 않았습니다.');
+  });
+
+  it('keeps the contextual AI panel read-only outside DB mode', () => {
+    render(
+      <WatchbackApp
+        {...baseProps}
+        initialView="detail"
+        initialSelectedId={cases[0].id}
+        isPreview={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    const aiPanel = screen.getByLabelText('Watchback AI 도우미');
+    expect(aiPanel).not.toBeNull();
+    expect(document.body.classList.contains('watchback-ai-docked')).toBe(true);
+    expect(within(aiPanel).getByText(new RegExp(cases[0].advisory.cve_id))).not.toBeNull();
+    const detailQuestions = [
+      '이 취약점들은 어떤 조건에서 문제가 되나요?',
+      '우리 저장소에서 이 취약점들의 발생 조건이 확인되나요?',
+      '이 업데이트로 어떤 문제가 해결되나요?',
+      '업데이트할 때 확인할 변경사항이 있나요?',
+    ];
+    detailQuestions.forEach((question) => {
+      expect(within(aiPanel).getByRole('button', { name: question })).not.toBeNull();
+    });
+    expect(within(aiPanel).getAllByRole('button')
+      .map((button) => button.textContent)
+      .filter((label) => detailQuestions.includes(label))).toEqual(detailQuestions);
+
+    fireEvent.click(screen.getByRole('button', { name: '이 취약점들은 어떤 조건에서 문제가 되나요?' }));
+    expect(screen.getByRole('alert').textContent).toContain('실제 DB 모드');
+
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 닫기' }));
+    expect(screen.queryByLabelText('Watchback AI 도우미')).toBeNull();
+    expect(document.body.classList.contains('watchback-ai-docked')).toBe(false);
+  });
+
+  it('renders AI markdown and clears conversation after remount', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      answer: '**KEV** 등재 근거를 확인했습니다. [1]\n\n**Python `>=3.10,<3.14` 조건**을 확인하세요.',
+      model: 'gpt-5.6-luna',
+      sources: [{
+        citation: '1',
+        source_id: 'evidence:1',
+        source_type: 'evidence',
+        title: 'CISA KEV 등재',
+        observed_at: '2026-05-08T00:00:00Z',
+        source_url: null,
+      }],
+    }), { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = render(
+      <WatchbackApp
+        {...baseProps}
+        dataSource="db"
+        initialView="detail"
+        initialSelectedId={cases[0].id}
+        isPreview={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    const aiPanel = screen.getByLabelText('Watchback AI 도우미');
+    fireEvent.change(screen.getByLabelText('AI 질문'), { target: { value: '핵심 근거는?' } });
+    fireEvent.click(screen.getByRole('button', { name: '질문 보내기' }));
+    expect(screen.getByText('핵심 근거는?')).not.toBeNull();
+    expect(screen.getByRole('status').textContent).toContain('근거를 확인하고 있습니다');
+    const emphasized = await screen.findByText('KEV', {}, { timeout: 3000 });
+    expect(emphasized.parentElement.tagName).toBe('STRONG');
+    await waitFor(() => {
+      expect(aiPanel.textContent).toContain('KEV 등재 근거를 확인했습니다. [1]');
+    });
+    const inlineCitation = screen.getAllByText('[1]').find((element) => element.tagName === 'SUP');
+    expect(inlineCitation).not.toBeNull();
+    expect(inlineCitation.style.color).toBe('rgb(154, 159, 151)');
+    const nestedMarkdown = await screen.findByText('>=3.10,<3.14', { selector: 'strong code' });
+    expect(nestedMarkdown).not.toBeNull();
+    expect(screen.queryByText('이어서 질문')).toBeNull();
+    expect(screen.getByRole('button', { name: '업데이트할 때 확인할 변경사항이 있나요?' })).not.toBeNull();
+    first.unmount();
+
+    const sameContext = render(
+      <WatchbackApp
+        {...baseProps}
+        dataSource="db"
+        initialView="detail"
+        initialSelectedId={cases[0].id}
+        isPreview={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    expect(screen.queryByText(/KEV 등재 근거를 확인했습니다/)).toBeNull();
+    sameContext.unmount();
+
+    render(
+      <WatchbackApp
+        {...baseProps}
+        dataSource="db"
+        initialView="detail"
+        initialSelectedId={cases[1].id}
+        isPreview={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    expect(screen.queryByText(/KEV 등재 근거를 확인했습니다/)).toBeNull();
   });
 });

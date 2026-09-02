@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { EvidenceCard } from './evidence-card';
 import { toReactStyle } from './style';
 
 const SCORE_MARKER_POSITION = {
@@ -33,7 +34,9 @@ export function ReviewCaseDetail({ values }) {
             </div>
             <div style={toReactStyle("position:absolute;left:179px;top:29px;width:330px;display:flex;align-items:center;gap:9px") }>
               <span style={toReactStyle("font:700 20px/28px Inter,Arial,sans-serif;color:#1B1E1A;letter-spacing:-0.01em")}>
-                {`${values.selected.alert.package_name}`}
+                {values.selected.isVulnerabilityGroup
+                  ? values.selected.advisory.cve_id
+                  : values.selected.alert.package_name}
               </span>
               {values.selected.isResolved && (
                 <span style={toReactStyle("font-size:11px;font-weight:600;color:#8B9086;padding:3px 9px;border-radius:20px;background:#EEF0EE")}>
@@ -49,16 +52,16 @@ export function ReviewCaseDetail({ values }) {
               <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A")}>{`${values.selected.advisory.cvss_score}`}</div>
             </div>
             <div style={toReactStyle("position:absolute;left:105px;top:113px;width:70px")}>
-              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{"패치 버전"}</div>
-              <div style={toReactStyle(`font:400 12px/19px Inter,Arial,sans-serif;color:${values.selected.patchColor}`)}>{`${values.selected.patchLabelShort}`}</div>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{values.selected.isVulnerabilityGroup ? "영향 저장소" : "패치 버전"}</div>
+              <div style={toReactStyle(`font:400 12px/19px Inter,Arial,sans-serif;color:${values.selected.isVulnerabilityGroup ? '#1B1E1A' : values.selected.patchColor}`)}>{values.selected.isVulnerabilityGroup ? values.selected.affectedRepositoryLabel : values.selected.patchLabelShort}</div>
             </div>
             <div style={toReactStyle("position:absolute;left:187px;top:113px;width:100px")}>
-              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{"자동조치"}</div>
-              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A;white-space:nowrap")}>{values.selected.alert.first_patched_version ? 'PR 생성 대상' : values.selected.automationStatusLabel}</div>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#7C8379;margin-bottom:5px")}>{values.selected.isVulnerabilityGroup ? "Open Alert" : "자동조치"}</div>
+              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A;white-space:nowrap")}>{values.selected.isVulnerabilityGroup ? `${values.selected.openAlertCount}건` : (values.selected.alert.first_patched_version ? 'PR 생성 대상' : values.selected.automationStatusLabel)}</div>
             </div>
             <div style={toReactStyle("position:absolute;left:299px;top:113px;width:140px")}>
-              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#8B9086;margin-bottom:5px")}>{"변화 감지일"}</div>
-              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A")}>{values.selected.reviewReasonDateLabel || '-'}</div>
+              <div style={toReactStyle("font:400 11px/15px Inter,Arial,sans-serif;color:#8B9086;margin-bottom:5px")}>{values.selected.isVulnerabilityGroup ? "처리 상태" : "변화 감지일"}</div>
+              <div style={toReactStyle("font:400 12px/19px Inter,Arial,sans-serif;color:#1B1E1A")}>{values.selected.isVulnerabilityGroup ? values.selected.groupStatusLabel : (values.selected.reviewReasonDateLabel || '-')}</div>
             </div>
             <div style={toReactStyle("position:absolute;right:14px;top:22px;display:flex;gap:8px") }>
                 {values.actionButtons.map((btn, _index0) => (
@@ -145,32 +148,14 @@ export function ReviewCaseDetail({ values }) {
                       ))}
                       <div style={toReactStyle("display:flex;flex-direction:column;gap:8px")}>
                       {group.evidence.map((ev) => (
-                      <div key={ev.id} style={toReactStyle("padding:11px 14px;background:#F5F6F3;border-radius:8px")}>
-                        <div style={toReactStyle("display:flex;align-items:center;gap:12px;flex-wrap:wrap")}>
-                          <span style={toReactStyle("font-size:12px;font-weight:600;color:#1B1E1A;width:170px;flex:none;white-space:nowrap")}>
-                            {`${ev.signalLabel}`}
-                          </span>
-                          <span className="watchback-evidence-values" style={toReactStyle("display:flex;align-items:center;gap:12px;margin-left:auto;white-space:nowrap")}>
-                            <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#8B9086")}>
-                              {`${ev.previousValueLabel}`}
-                            </span>
-                            <span style={toReactStyle("color:#D2D5CD")}>
-                              {"→"}
-                            </span>
-                            <span style={toReactStyle("font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1B1E1A;font-weight:600")}>
-                              {`${ev.currentValueLabel}`}
-                            </span>
-                          </span>
-                        </div>
-                        {ev.observedLabel && (
-                          <div style={toReactStyle("font-size:11px;color:#8B9086;margin-top:3px")}>
-                            {`관찰일 ${ev.observedLabel}`}
-                          </div>
-                        )}
-                        <div style={toReactStyle(`font-size:12.5px;color:#5B6058;line-height:1.5;margin-top:${ev.observedLabel ? '5px' : '6px'}`)}>
-                          {`${ev.reasonSummary}`}
-                        </div>
-                      </div>
+                      <EvidenceCard
+                        key={ev.id}
+                        signalLabel={ev.signalLabel}
+                        previousValueLabel={ev.previousValueLabel}
+                        currentValueLabel={ev.currentValueLabel}
+                        observedLabel={ev.observedLabel}
+                        reasonSummary={ev.reasonSummary}
+                      />
                       ))}
                       </div>
                     </div>
@@ -258,7 +243,8 @@ export function ReviewCaseDetail({ values }) {
                 </div>
               </div>
             </div>
-            <div style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;font-size:12.5px;height:fit-content")}>
+            <div style={toReactStyle("display:flex;flex-direction:column;gap:16px;min-width:0")}>
+            <div data-testid="vulnerability-info-card" style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;font-size:12.5px;height:fit-content")}>
               <div>
                 <div style={toReactStyle("font-size:11px;font-weight:700;color:#8B9086;letter-spacing:.02em;margin-bottom:8px")}>
                   {"취약점 정보"}
@@ -269,7 +255,7 @@ export function ReviewCaseDetail({ values }) {
                       {"패키지"}
                     </span>
                     <span style={toReactStyle("font-family:ui-monospace,monospace;font-size:12.5px;font-weight:600;line-height:18px;min-width:0;text-align:right;overflow-wrap:anywhere")}>
-                      {`${values.selected.alert.package_name} · ${values.selected.alert.ecosystem}`}
+                      {values.selected.packageLabel}
                     </span>
                   </div>
                   <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px")}>
@@ -296,7 +282,7 @@ export function ReviewCaseDetail({ values }) {
                       {`${values.selected.scopeLabel}`}
                     </span>
                   </div>
-                  {values.selected.hasKnownRelationship && (
+                  {!values.selected.isVulnerabilityGroup && values.selected.hasKnownRelationship && (
                     <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px")}>
                       <span style={toReactStyle("color:#8B9086;line-height:18px")}>
                         {"의존 관계"}
@@ -306,20 +292,20 @@ export function ReviewCaseDetail({ values }) {
                       </span>
                     </div>
                   )}
-                  <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-height:18px")}>
+                  {!values.selected.isVulnerabilityGroup && <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-height:18px")}>
                     <span style={toReactStyle("color:#8B9086;line-height:18px;white-space:nowrap")}>
                       {"영향 파일"}
                     </span>
                     <span style={toReactStyle("font-family:ui-monospace,monospace;font-size:11px;line-height:18px;text-align:right;overflow-wrap:anywhere")}>
                       {values.selected.manifestLabel}
                     </span>
-                  </div>
+                  </div>}
                   <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px")}>
                     <span style={toReactStyle("color:#8B9086;line-height:18px")}>
                       {"영향 버전"}
                     </span>
                     <span style={toReactStyle("font-family:ui-monospace,monospace;font-size:11px;line-height:18px;text-align:right")}>
-                      {`${values.selected.alert.vulnerable_version_range}`}
+                      {`${values.selected.vulnerableVersionLabel}`}
                     </span>
                   </div>
                   <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px")}>
@@ -327,7 +313,7 @@ export function ReviewCaseDetail({ values }) {
                       {"수정 버전"}
                     </span>
                     <span style={toReactStyle("font-family:ui-monospace,monospace;font-size:11px;line-height:18px;text-align:right")}>
-                      {`${values.selected.alert.first_patched_version || '없음'}`}
+                      {`${values.selected.firstPatchedVersionLabel}`}
                     </span>
                   </div>
                 </div>
@@ -344,9 +330,9 @@ export function ReviewCaseDetail({ values }) {
                         {"CVE 상세 보기 ↗"}
                       </a>
                     )}
-                    <a href={values.selected.alert.html_url} target="_blank" rel="noreferrer" style={toReactStyle("font-size:12px;color:#2F8F5B;text-decoration:none")}>
+                    {!values.selected.isVulnerabilityGroup && <a href={values.selected.alert.html_url} target="_blank" rel="noreferrer" style={toReactStyle("font-size:12px;color:#2F8F5B;text-decoration:none")}>
                       {"GitHub Alert 보기 ↗"}
-                    </a>
+                    </a>}
                   </div>
                 </div>
               </div>
@@ -359,7 +345,7 @@ export function ReviewCaseDetail({ values }) {
                   </div>
                 </>
               )}
-              <div style={toReactStyle("padding-top:12px;border-top:1px solid #F0F1EE")}>
+              {!values.selected.isVulnerabilityGroup && <div style={toReactStyle("padding-top:12px;border-top:1px solid #F0F1EE")}>
                 <div style={toReactStyle("font-size:11px;font-weight:700;color:#8B9086;letter-spacing:.02em;margin-bottom:8px")}>
                   {"REPOSITORY"}
                 </div>
@@ -379,7 +365,39 @@ export function ReviewCaseDetail({ values }) {
                     {`${values.selected.importanceLabel}`}
                   </span>
                 </div>
+              </div>}
+            </div>
+            {values.selected.isVulnerabilityGroup && <div data-testid="affected-repositories-card" style={toReactStyle("background:#FFFFFF;border:1px solid #E4E6E1;border-radius:12px;padding:18px 20px;font-size:12.5px;height:fit-content")}>
+              <div style={toReactStyle("font-size:11px;font-weight:700;color:#8B9086;letter-spacing:.02em;margin-bottom:10px")}>
+                {"영향 저장소"}
               </div>
+              <div style={toReactStyle("display:flex;flex-direction:column;gap:10px") }>
+                {values.selected.affectedRepositories.map((repository) => (
+                  <div key={repository.id} style={toReactStyle("border:1px solid #E4E6E1;border-radius:8px;padding:10px 11px") }>
+                    <div style={toReactStyle("display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px") }>
+                      <div style={toReactStyle("min-width:0") }>
+                        {repository.source_kind === 'actual' ? <a href={`https://github.com/${repository.full_name}`} target="_blank" rel="noreferrer" style={toReactStyle("display:block;font-size:12px;font-weight:700;color:#1B1E1A;text-decoration:none;overflow-wrap:anywhere")}>{repository.display_name} ↗</a> : <span style={toReactStyle("display:block;font-size:12px;font-weight:700;color:#1B1E1A;overflow-wrap:anywhere")}>{repository.display_name}</span>}
+                        <span style={toReactStyle("font-size:10px;color:#8B9086")}>{repository.importance} · {repository.alerts.length} Alert</span>
+                      </div>
+                      {repository.source_kind === 'synthetic' && <span style={toReactStyle("font-size:9px;font-weight:600;color:#8B9086;background:#EEF0EE;border-radius:20px;padding:2px 6px;white-space:nowrap")}>Demo 합성</span>}
+                    </div>
+                    <div style={toReactStyle("display:flex;flex-direction:column;gap:6px") }>
+                      {repository.alerts.map((alert) => (
+                        <div key={alert.id} style={toReactStyle("background:#F5F6F3;border-radius:6px;padding:7px 8px") }>
+                          <div style={toReactStyle("display:flex;align-items:center;justify-content:space-between;gap:8px") }>
+                            <span style={toReactStyle("font:10.5px/16px ui-monospace,monospace;color:#5B6058;overflow-wrap:anywhere")}>{alert.manifest_path}</span>
+                            <span style={toReactStyle("display:flex;align-items:center;gap:8px;white-space:nowrap") }>
+                              <span style={toReactStyle(`font-size:9px;font-weight:700;color:${alert.state === 'open' ? '#A6321B' : '#2F8F5B'}`)}>{alert.state === 'open' ? 'Open' : 'Fixed'}</span>
+                              {alert.html_url && <a href={alert.html_url} target="_blank" rel="noreferrer" style={toReactStyle("font-size:10px;color:#2F8F5B;text-decoration:none")}>Alert ↗</a>}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>}
             </div>
           </div>
         </div>
