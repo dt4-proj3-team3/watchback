@@ -50,7 +50,7 @@ def resolve(
     )
 
 
-def test_package_lock_preserves_multiple_resolved_versions():
+def test_package_lock_prefers_root_direct_dependency_version():
     github = FakeGitHub(
         {
             "package-lock.json": """
@@ -72,11 +72,37 @@ def test_package_lock_preserves_multiple_resolved_versions():
         package_name="vite",
     )
 
-    assert result.status == "multiple"
+    assert result.status == "resolved"
     assert result.reason is None
-    assert result.resolved_versions == ("5.4.0", "6.4.1")
+    assert result.resolved_versions == ("6.4.1",)
     assert result.source_path == "package-lock.json"
     assert result.source_blob_sha == "blob-package-lock.json"
+
+
+def test_package_lock_preserves_nested_versions_without_root_dependency():
+    github = FakeGitHub(
+        {
+            "package-lock.json": """
+            {
+              "lockfileVersion": 3,
+              "packages": {
+                "node_modules/example/node_modules/vite": {"version": "5.4.0"},
+                "node_modules/other/node_modules/vite": {"version": "6.4.1"}
+              }
+            }
+            """
+        }
+    )
+
+    result = resolve(
+        github,
+        manifest_path="package-lock.json",
+        ecosystem="npm",
+        package_name="vite",
+    )
+
+    assert result.status == "multiple"
+    assert result.resolved_versions == ("5.4.0", "6.4.1")
 
 
 @pytest.mark.parametrize(
