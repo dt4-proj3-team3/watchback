@@ -94,9 +94,14 @@ def _package_lock_versions(content: str, package_name: str) -> set[str]:
     packages = payload.get("packages")
     if isinstance(packages, dict):
         suffix = f"node_modules/{package_name}"
+        root_package = packages.get(suffix)
+        if isinstance(root_package, dict) and isinstance(
+            root_package.get("version"), str
+        ):
+            return {root_package["version"]}
         for path, item in packages.items():
             if not isinstance(path, str) or not (
-                path == suffix or path.endswith(f"/{suffix}")
+                path.endswith(f"/{suffix}")
             ):
                 continue
             if isinstance(item, dict) and isinstance(item.get("version"), str):
