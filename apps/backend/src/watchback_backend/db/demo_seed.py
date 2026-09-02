@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from watchback_backend.db.models import Organization, Repository, User
 
 
-REFERENCE_DATA_AS_OF = datetime(2026, 8, 20, 7, 30, tzinfo=UTC)
+REFERENCE_DATA_AS_OF = datetime(2026, 9, 1, 14, 12, 20, tzinfo=UTC)
 
 ORGANIZATION = {
     "id": uuid5(NAMESPACE_URL, "watchback:demo:organization:github:dt4-proj3-team3"),
@@ -52,6 +52,24 @@ REPOSITORIES = (
         "default_branch": "main",
         "importance": "high",
         "github_updated_at": datetime(2026, 8, 20, 7, 29, 53, tzinfo=UTC),
+    },
+    {
+        "id": uuid5(NAMESPACE_URL, "watchback:demo:repository:github:1353650380"),
+        "github_repository_id": 1353650380,
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-admin-fe-lab",
+        "display_name": "novalink/admin-fe",
+        "default_branch": "main",
+        "importance": "high",
+        "github_updated_at": datetime(2026, 9, 1, 14, 12, 14, tzinfo=UTC),
+    },
+    {
+        "id": uuid5(NAMESPACE_URL, "watchback:demo:repository:github:1353650477"),
+        "github_repository_id": 1353650477,
+        "full_name": "dt4-proj3-team3/watchback-vulnerable-reporting-be-lab",
+        "display_name": "novalink/reporting-api",
+        "default_branch": "main",
+        "importance": "medium",
+        "github_updated_at": datetime(2026, 9, 1, 14, 12, 20, tzinfo=UTC),
     },
 )
 

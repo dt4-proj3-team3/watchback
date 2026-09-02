@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -7,13 +8,18 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from .config import ORGANIZATION_GITHUB_ID, ORGANIZATION_LOGIN, REPOSITORIES
 from .errors import PersistenceError
 from .models import AdvisoryPayload, AlertPayload, RepositoryPayload
+from .versions import DependencyVersionResult
 
 
 LOCK_KEY = 890089
+FIRST_PATCHED_VERSION_OVERRIDES = {
+    "CVE-2026-40217": "1.83.11",
+}
 
 
 def normalize_database_url(url: str) -> str:
@@ -31,6 +37,31 @@ def alert_uuid(repository_github_id: int, alert_number: int) -> UUID:
         NAMESPACE_URL,
         f"watchback:dependabot-alert:{repository_github_id}:{alert_number}",
     )
+
+
+def dependency_version_uuid(
+    repository_github_id: int, result: DependencyVersionResult
+) -> UUID:
+    identity = json.dumps(
+        [
+            repository_github_id,
+            result.manifest_path,
+            result.commit_sha,
+            result.ecosystem,
+            result.package_name,
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return uuid5(NAMESPACE_URL, f"watchback:dependency-version:{identity}")
+
+
+def _first_patched_version(alert: AlertPayload) -> str | None:
+    overridden = FIRST_PATCHED_VERSION_OVERRIDES.get(alert.security_advisory.cve_id)
+    if overridden is not None:
+        return overridden
+    patched = alert.security_vulnerability.first_patched_version
+    return patched.identifier if patched else None
 
 
 @dataclass(frozen=True)
@@ -193,9 +224,7 @@ def _alert_values(
         alert.dependency.scope,
         alert.dependency.relationship,
         vulnerability.vulnerable_version_range,
-        vulnerability.first_patched_version.identifier
-        if vulnerability.first_patched_version
-        else None,
+        _first_patched_version(alert),
         str(alert.html_url),
         alert.created_at,
         alert.updated_at,
@@ -276,15 +305,93 @@ def _increment(counts: ChangeCounts, action: str) -> None:
     setattr(counts, action, getattr(counts, action) + 1)
 
 
+def _upsert_dependency_version(
+    cursor: psycopg.Cursor[Any],
+    result: DependencyVersionResult,
+    reference: RepositoryReference,
+) -> str:
+    cursor.execute(
+        """
+        SELECT id, resolved_versions, status, reason, source_path, source_blob_sha
+          FROM dependency_version_snapshots
+         WHERE repository_id = %s
+           AND manifest_path IS NOT DISTINCT FROM %s
+           AND commit_sha = %s
+           AND ecosystem = %s
+           AND package_name = %s
+        """,
+        (
+            reference.id,
+            result.manifest_path,
+            result.commit_sha,
+            result.ecosystem,
+            result.package_name,
+        ),
+    )
+    existing = cursor.fetchone()
+    values = (
+        list(result.resolved_versions),
+        result.status,
+        result.reason,
+        result.source_path,
+        result.source_blob_sha,
+    )
+    if existing is None:
+        cursor.execute(
+            """
+            INSERT INTO dependency_version_snapshots
+                (id, organization_id, repository_id, manifest_path, commit_sha,
+                 ecosystem, package_name, resolved_versions, status, reason,
+                 source_path, source_blob_sha, observed_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                dependency_version_uuid(reference.github_repository_id, result),
+                reference.organization_id,
+                reference.id,
+                result.manifest_path,
+                result.commit_sha,
+                result.ecosystem,
+                result.package_name,
+                Jsonb(values[0]),
+                *values[1:],
+                result.observed_at,
+            ),
+        )
+        return "created"
+    stored_values = (
+        existing["resolved_versions"],
+        existing["status"],
+        existing["reason"],
+        existing["source_path"],
+        existing["source_blob_sha"],
+    )
+    if values == stored_values:
+        return "unchanged"
+    cursor.execute(
+        """
+        UPDATE dependency_version_snapshots
+           SET resolved_versions = %s, status = %s, reason = %s,
+               source_path = %s, source_blob_sha = %s, observed_at = %s,
+               updated_at = now()
+         WHERE id = %s
+        """,
+        (Jsonb(values[0]), *values[1:], result.observed_at, existing["id"]),
+    )
+    return "updated"
+
+
 def persist_snapshot(
     database_url: str,
     repositories: dict[str, RepositoryPayload],
     alerts: dict[str, list[AlertPayload]],
     advisories: dict[str, AdvisoryPayload],
     synced_at: datetime,
+    dependency_versions: dict[str, list[DependencyVersionResult]] | None = None,
 ) -> dict[str, dict[str, int]]:
     advisory_counts = ChangeCounts()
     alert_counts = ChangeCounts()
+    dependency_version_counts = ChangeCounts()
     try:
         with psycopg.connect(
             normalize_database_url(database_url), row_factory=dict_row
@@ -297,6 +404,14 @@ def persist_snapshot(
                         "다른 Dependabot 동기화가 실행 중입니다.",
                     )
                 references = _load_references(cursor)
+                version_results = dependency_versions or {}
+                unknown_repositories = set(version_results) - set(references)
+                if unknown_repositories:
+                    raise PersistenceError(
+                        "dependency_version_repository_unknown",
+                        "실제 사용 버전 결과에 알 수 없는 저장소가 있습니다.",
+                        context={"repositories": sorted(unknown_repositories)},
+                    )
 
                 advisory_ids: dict[str, UUID] = {}
                 for ghsa_id in sorted(advisories):
@@ -344,7 +459,22 @@ def persist_snapshot(
                             synced_at,
                         )
                         _increment(alert_counts, action)
-        return {"advisories": advisory_counts.as_dict(), "alerts": alert_counts.as_dict()}
+                    for result in version_results.get(full_name, []):
+                        if result.repository != full_name:
+                            raise PersistenceError(
+                                "dependency_version_repository_mismatch",
+                                "실제 사용 버전 결과의 저장소가 일치하지 않습니다.",
+                                context={"repository": full_name},
+                            )
+                        action = _upsert_dependency_version(
+                            cursor, result, reference
+                        )
+                        _increment(dependency_version_counts, action)
+        return {
+            "advisories": advisory_counts.as_dict(),
+            "alerts": alert_counts.as_dict(),
+            "dependency_versions": dependency_version_counts.as_dict(),
+        }
     except PersistenceError:
         raise
     except psycopg.Error as exc:

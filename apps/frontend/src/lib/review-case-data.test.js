@@ -54,13 +54,13 @@ describe('review case data providers', () => {
     expect(cases.every((item) => item.evidence.length === 0)).toBe(true);
   });
 
-  it('shows one review item for the same repository and CVE', async () => {
+  it('loads one demo review item per organization and CVE', async () => {
     const summaries = getDemoReviewCaseSummaries();
     const grouped = await loadReviewCases('demo');
-    expect(summaries).toHaveLength(10);
+    expect(summaries).toHaveLength(9);
     expect(grouped).toHaveLength(9);
     expect(new Set(grouped.map((item) => (
-      `${item.repository.full_name}:${item.advisory.cve_id}`
+      `${item.organization.id}:${item.advisory.cve_id}`
     ))).size).toBe(9);
   });
 

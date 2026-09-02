@@ -7,11 +7,22 @@ RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-4dt_3rdproject_team_3}"
 ACR_NAME="${AZURE_ACR_NAME:-acrwatchbackdevbaursz7}"
 BACKEND_APP="${AZURE_BACKEND_APP:-ca-watchback-api-dev}"
 FRONTEND_APP="${AZURE_FRONTEND_APP:-ca-watchback-web-dev}"
+AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://oai-watchback-dev-baursz7.openai.azure.com/}"
+AZURE_OPENAI_DEPLOYMENT="${AZURE_OPENAI_DEPLOYMENT:-gpt-5.6-luna}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-300}"
 
 registry_server="$ACR_NAME.azurecr.io"
 backend_image="$registry_server/watchback-backend:$IMAGE_TAG"
 frontend_image="$registry_server/watchback-frontend:$IMAGE_TAG"
+runtime_client_id="$(az containerapp identity show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_APP" \
+  --query 'userAssignedIdentities.*.clientId | [0]' \
+  --output tsv)"
+if [[ -z "$AZURE_OPENAI_ENDPOINT" || -z "$AZURE_OPENAI_DEPLOYMENT" || -z "$runtime_client_id" ]]; then
+  echo "Azure OpenAI 배포 또는 Backend 관리 ID 정보를 확인하지 못했습니다." >&2
+  exit 1
+fi
 old_backend_image="$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP" --query 'properties.template.containers[0].image' --output tsv)"
 old_frontend_image="$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP" --query 'properties.template.containers[0].image' --output tsv)"
 rollback_required=false
@@ -26,6 +37,15 @@ rollback() {
   exit "$exit_code"
 }
 trap rollback EXIT
+
+az containerapp update \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_APP" \
+  --set-env-vars \
+    "AZURE_CLIENT_ID=$runtime_client_id" \
+    "AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT" \
+    "AZURE_OPENAI_DEPLOYMENT=$AZURE_OPENAI_DEPLOYMENT" \
+  --output none
 
 wait_for_revision() {
   local app_name="$1"
@@ -83,6 +103,16 @@ backend_url="https://$(az containerapp show --resource-group "$RESOURCE_GROUP" -
 frontend_url="https://$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP" --query properties.configuration.ingress.fqdn --output tsv)"
 curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 "$backend_url/openapi.json" >/dev/null
 curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 "$frontend_url/dashboard" >/dev/null
+ai_response="$(curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 5 \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{"question":"현재 우선 확인할 재검토 근거 한 가지를 알려줘","history":[]}' \
+  "$frontend_url/api/ai/review")"
+if [[ "$(jq -r '.model // empty' <<<"$ai_response")" != "$AZURE_OPENAI_DEPLOYMENT" ]] || \
+  [[ -z "$(jq -r '.answer // empty' <<<"$ai_response")" ]]; then
+  echo "배포 후 AI 검토 도우미 응답 계약이 올바르지 않습니다." >&2
+  exit 1
+fi
 
 rollback_required=false
 printf '{"image_tag":"%s","backend":"%s","frontend":"%s"}\n' "$IMAGE_TAG" "$backend_url" "$frontend_url"

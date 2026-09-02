@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import base64
 import email.utils
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import quote, urlencode
 
 import httpx
 from pydantic import ValidationError
@@ -18,6 +21,13 @@ RETRYABLE_STATUSES = {408, 429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 4
 MAX_PAGES = 100
 MAX_WAIT_SECONDS = 300.0
+
+
+@dataclass(frozen=True)
+class RepositoryFile:
+    path: str
+    blob_sha: str
+    content: str
 
 
 class GitHubClient:
@@ -75,12 +85,18 @@ class GitHubClient:
             or "Retry-After" in response.headers
         )
 
-    def _get(self, url: str, *, context: dict[str, Any]) -> httpx.Response:
+    def _get(
+        self,
+        url: str,
+        *,
+        context: dict[str, Any],
+        allowed_statuses: frozenset[int] = frozenset(),
+    ) -> httpx.Response:
         for attempt in range(1, MAX_ATTEMPTS + 1):
             response: httpx.Response | None = None
             try:
                 response = self._client.get(url)
-                if response.is_success:
+                if response.is_success or response.status_code in allowed_statuses:
                     return response
                 retryable = (
                     response.status_code in RETRYABLE_STATUSES
@@ -212,3 +228,70 @@ class GitHubClient:
             url = next_link.get("url") if next_link else None
 
         return alerts, page
+
+    def get_commit_sha(self, full_name: str, ref: str) -> str:
+        encoded_ref = quote(ref, safe="")
+        response = self._get(
+            f"/repos/{full_name}/commits/{encoded_ref}",
+            context={"repository": full_name, "ref": ref},
+        )
+        try:
+            value = response.json()
+            sha = value["sha"]
+            if not isinstance(sha, str) or not sha:
+                raise TypeError("commit sha is missing")
+            return sha
+        except (ValueError, TypeError, KeyError) as exc:
+            raise ContractError(
+                "invalid_commit_payload",
+                "GitHub Commit 응답이 계약과 다릅니다.",
+                context={"repository": full_name, "ref": ref},
+            ) from exc
+
+    def get_repository_file(
+        self, full_name: str, path: str, *, ref: str
+    ) -> RepositoryFile | None:
+        encoded_path = quote(path.strip("/"), safe="/")
+        query = urlencode({"ref": ref})
+        response = self._get(
+            f"/repos/{full_name}/contents/{encoded_path}?{query}",
+            context={"repository": full_name, "path": path, "ref": ref},
+            allowed_statuses=frozenset({404}),
+        )
+        if response.status_code == 404:
+            return None
+        try:
+            value = response.json()
+            if not isinstance(value, dict) or value.get("type") != "file":
+                raise TypeError("contents response is not a file")
+            blob_sha = value["sha"]
+            encoding = value.get("encoding")
+            content = value.get("content")
+            if not isinstance(blob_sha, str) or not blob_sha:
+                raise TypeError("blob sha is missing")
+            if encoding != "base64" or not isinstance(content, str):
+                blob = self._get(
+                    f"/repos/{full_name}/git/blobs/{quote(blob_sha, safe='')}",
+                    context={
+                        "repository": full_name,
+                        "path": path,
+                        "ref": ref,
+                        "blob_sha": blob_sha,
+                    },
+                ).json()
+                if not isinstance(blob, dict):
+                    raise TypeError("blob response is not an object")
+                encoding = blob.get("encoding")
+                content = blob.get("content")
+            if encoding != "base64" or not isinstance(content, str):
+                raise TypeError("file content is not base64")
+            decoded = base64.b64decode(
+                "".join(content.split()), validate=True
+            ).decode("utf-8")
+            return RepositoryFile(path=path, blob_sha=blob_sha, content=decoded)
+        except (ValueError, TypeError, KeyError, UnicodeDecodeError) as exc:
+            raise ContractError(
+                "invalid_repository_file_payload",
+                "GitHub 저장소 파일 응답이 계약과 다릅니다.",
+                context={"repository": full_name, "path": path, "ref": ref},
+            ) from exc

@@ -21,11 +21,14 @@ param databaseName string = 'watchback'
 param frontendOrganizationId string = 'ff178e49-d218-50b7-bf56-ac3513330b99'
 @description('S1 Frontend가 Backend 요청 헤더로 전달할 개발 사용자 ID')
 param frontendUserId string = '7889d975-3d64-536f-8740-3d0a28ee3a1d'
+@description('AI 검토 도우미가 사용하는 Azure OpenAI deployment 이름')
+param azureOpenAIDeploymentName string = 'gpt-5.6-luna'
 
 var suffix = substring(uniqueString(subscription().subscriptionId, resourceGroup().id, 'watchback-${environmentName}'), 0, 7)
 var registryName = 'acrwatchback${environmentName}${suffix}'
 var keyVaultName = 'kv-watchback-${environmentName}-${suffix}'
 var postgresName = 'pg-watchback-${environmentName}-${suffix}'
+var openAIAccountName = 'oai-watchback-${environmentName}-${suffix}'
 var commonTags = {
   project: 'watchback'
   environment: environmentName
@@ -39,10 +42,8 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing =
   name: registryName
 }
 
-resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: 'id-watchback-${environmentName}'
-  location: location
-  tags: commonTags
 }
 
 resource registryPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -80,6 +81,10 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
+}
+
+resource openAIAccount 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = {
+  name: openAIAccountName
 }
 
 resource keyVaultRead 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -211,6 +216,11 @@ resource backend 'Microsoft.App/containerApps@2025-01-01' = {
           keyVaultUrl: databaseUrlSecret.properties.secretUri
           identity: identity.id
         }
+        {
+          name: 'github-token'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/github-token'
+          identity: identity.id
+        }
       ]
     }
     template: {
@@ -224,8 +234,24 @@ resource backend 'Microsoft.App/containerApps@2025-01-01' = {
               secretRef: 'database-url'
             }
             {
+              name: 'GITHUB_REMEDIATION_TOKEN'
+              secretRef: 'github-token'
+            }
+            {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               value: appInsights.properties.ConnectionString
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: identity.properties.clientId
+            }
+            {
+              name: 'AZURE_OPENAI_ENDPOINT'
+              value: openAIAccount.properties.endpoint
+            }
+            {
+              name: 'AZURE_OPENAI_DEPLOYMENT'
+              value: azureOpenAIDeploymentName
             }
           ]
           probes: [

@@ -11,6 +11,7 @@ from .errors import ContractError, SyncError
 from .github import GitHubClient
 from .models import AdvisoryPayload, AlertPayload, RepositoryPayload
 from .persistence import persist_snapshot, verify_reference_data
+from .versions import collect_dependency_versions
 
 
 def _canonical_advisory(advisory: AdvisoryPayload) -> str:
@@ -85,7 +86,9 @@ def run_sync(settings: Settings, *, client: GitHubClient | None = None) -> dict[
     )
     repositories: dict[str, RepositoryPayload] = {}
     alerts_by_repository: dict[str, list[AlertPayload]] = {}
+    dependency_versions_by_repository = {}
     summaries: dict[str, dict[str, Any]] = {}
+    version_observed_at = datetime.now(UTC)
     try:
         try:
             for full_name, expected_id in REPOSITORIES.items():
@@ -97,9 +100,29 @@ def run_sync(settings: Settings, *, client: GitHubClient | None = None) -> dict[
                         context={"repository": full_name},
                     )
                 alerts, pages = github.get_alerts(full_name)
+                if not repository.default_branch:
+                    raise ContractError(
+                        "missing_default_branch",
+                        "GitHub 저장소의 기본 브랜치가 없습니다.",
+                        context={"repository": full_name},
+                    )
+                commit_sha = github.get_commit_sha(
+                    full_name, repository.default_branch
+                )
+                dependency_versions = collect_dependency_versions(
+                    github,
+                    full_name,
+                    commit_sha,
+                    alerts,
+                    version_observed_at,
+                )
                 repositories[full_name] = repository
                 alerts_by_repository[full_name] = alerts
+                dependency_versions_by_repository[full_name] = dependency_versions
                 summaries[full_name] = repository_summary(alerts, pages)
+                summaries[full_name]["dependency_versions"] = [
+                    result.as_dict() for result in dependency_versions
+                ]
         except SyncError as exc:
             stage = "validation" if isinstance(exc, ContractError) else "fetch"
             exc.context = {"stage": stage, **exc.context}
@@ -120,6 +143,7 @@ def run_sync(settings: Settings, *, client: GitHubClient | None = None) -> dict[
             alerts_by_repository,
             advisories,
             datetime.now(UTC),
+            dependency_versions_by_repository,
         )
     except SyncError as exc:
         exc.context = {"stage": "persist", **exc.context}

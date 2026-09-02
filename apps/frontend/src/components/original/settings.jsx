@@ -1,102 +1,68 @@
-import { Fragment } from 'react';
+import { useEffect } from 'react';
 import { toReactStyle } from './style';
 
+const POLICY_OPTIONS = [
+  { value: 'manual_review', label: '수동 검토' },
+  { value: 'auto_create_pr', label: 'PR 자동 생성' },
+  { value: 'auto_merge_pr', label: 'PR 자동 병합' },
+];
+
+const DEFAULT_POLICY_MATRIX = {
+  High: ['manual_review', 'auto_create_pr', 'auto_create_pr', 'auto_merge_pr'],
+  Medium: ['manual_review', 'auto_create_pr', 'auto_merge_pr', 'auto_merge_pr'],
+  Low: ['auto_create_pr', 'auto_create_pr', 'auto_merge_pr', 'auto_merge_pr'],
+};
+
 export function Settings({ values }) {
+  const { dataSource, isSettingsView, onDataSourceChange } = values;
+
+  useEffect(() => {
+    if (isSettingsView && dataSource !== 'db') {
+      onDataSourceChange('db');
+    }
+  }, [dataSource, isSettingsView, onDataSourceChange]);
+
   return (
     <>
     {values.isSettingsView && (
       <>
         <div className="watchback-page" style={toReactStyle("width:calc(100% - 64px);max-width:1120px;margin:0 auto;padding:46px 0 96px")}>
           <div style={toReactStyle("margin-bottom:28px")}>
-            <h1 style={toReactStyle("font-size:25px;line-height:36px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em")}>
+            <h1 style={toReactStyle("font-size:25px;line-height:36px;font-weight:700;margin:0;letter-spacing:-0.01em")}>
               {"자동조치 정책"}
             </h1>
-            <p style={toReactStyle("font-size:14px;color:#5B6058;margin:0;line-height:1.6")}>
-              {"저장소 중요도와 취약점 심각도 조합에 따라 조직 전체에 적용되는 자동조치 방식을 관리합니다."}
-            </p>
-            <p style={toReactStyle("font-size:12.5px;color:#8B9086;margin:6px 0 0;line-height:1.6")}>
-              {values.isDemo
-                ? "현재 모든 위험도 조합은 자동 병합 없이 업데이트 PR 생성까지만 허용합니다."
-                : "실제 자동조치 정책은 아직 DB와 연동되지 않았습니다."}
-            </p>
           </div>
-          <div style={toReactStyle("height:80px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
-            <div>
-              <div style={toReactStyle("font-size:14px;font-weight:700;margin-bottom:4px")}>
-                {"데이터 소스"}
-              </div>
-              <div style={toReactStyle("font-size:12.5px;color:#8B9086;line-height:1.5")}>
-                {"대시보드, 재검토 목록·상세와 저장소에서 사용할 데이터 소스를 선택합니다. DB 오류 시 Demo로 자동 전환하지 않습니다."}
-              </div>
-            </div>
-            <div style={toReactStyle("display:flex;align-items:center;gap:8px")}>
-              <button type="button" onClick={() => values.onDataSourceChange('demo')} aria-pressed={values.dataSource === 'demo'} style={toReactStyle(`font-size:12.5px;font-weight:600;font-family:inherit;color:${values.dataSource === 'demo' ? '#FFFFFF' : '#5B6058'};background:${values.dataSource === 'demo' ? '#2F8F5B' : '#FFFFFF'};border:1px solid ${values.dataSource === 'demo' ? '#2F8F5B' : '#D2D5CD'};border-radius:7px;padding:7px 12px;cursor:pointer`)}>
-                {"Demo"}
-              </button>
-              <button type="button" onClick={() => values.onDataSourceChange('db')} aria-pressed={values.dataSource === 'db'} style={toReactStyle(`font-size:12.5px;font-weight:600;font-family:inherit;color:${values.dataSource === 'db' ? '#FFFFFF' : '#5B6058'};background:${values.dataSource === 'db' ? '#2F8F5B' : '#FFFFFF'};border:1px solid ${values.dataSource === 'db' ? '#2F8F5B' : '#D2D5CD'};border-radius:7px;padding:7px 12px;cursor:pointer`)}>
-                {"DB"}
-              </button>
-            </div>
-          </div>
-          {values.isDemo ? (
-            <div style={toReactStyle("height:273px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:20px 22px;overflow-x:auto")}>
-              <table style={toReactStyle("border-collapse:collapse;width:100%;font-size:13px")}>
+          <div style={toReactStyle("box-sizing:border-box;background:#FFFFFF;border:1px solid #DDE1DB;border-radius:10px;overflow:hidden")}>
+            <table style={toReactStyle("width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px")}>
               <thead>
-                <tr>
-                  <th style={toReactStyle("text-align:left;padding:8px 12px;color:#8B9086;font-size:11px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid #E4E6E1")}>
-                    {"저장소 중요도 ＼ 취약점 심각도"}
+                <tr style={toReactStyle("height:32px;background:#F3F5F2")}>
+                  <th style={toReactStyle("width:24%;box-sizing:border-box;text-align:left;padding:0 16px;border-right:1px solid #D9DED7;border-bottom:1px solid #D9DED7;color:#687066;font-size:11px;font-weight:700")}>
+                    <span style={toReactStyle("display:flex;align-items:center;gap:8px;white-space:nowrap")}>
+                      <span>저장소 중요도</span>
+                      <span aria-hidden="true" style={toReactStyle("display:block;width:1px;height:17px;background:#B8BEB6;transform:rotate(-35deg)")} />
+                      <span>취약점 심각도</span>
+                    </span>
                   </th>
-                  {values.importanceLevelOptions.map((opt, _index0) => (
-                    <Fragment key={_index0}>
-                      <th style={toReactStyle("text-align:left;padding:8px 12px;color:#8B9086;font-size:11px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid #E4E6E1")}>
-                        {`${opt.label}`}
-                      </th>
-                    </Fragment>
+                  {['Critical', 'High', 'Medium', 'Low'].map((severity) => (
+                    <th key={severity} style={toReactStyle("box-sizing:border-box;text-align:center;padding:0 10px;border-right:1px solid #D9DED7;border-bottom:1px solid #D9DED7;color:#687066;font-size:11px;font-weight:700;letter-spacing:.01em")}>{severity}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {values.policyMatrixRows.map((row, _index0) => (
-                  <Fragment key={_index0}>
-                    <tr>
-                      <td style={toReactStyle("padding:10px 12px;font-weight:600;border-bottom:1px solid #F0F1EE")}>
-                        {`${row.importanceLabel}`}
+                {values.policyMatrixRows.filter((row) => ['High', 'Medium', 'Low'].includes(row.importanceLabel)).map((row) => (
+                  <tr key={row.importanceLabel} style={toReactStyle("height:50px")}>
+                    <th style={toReactStyle(`box-sizing:border-box;text-align:left;padding:0 16px;border-right:1px solid #D9DED7;border-bottom:1px solid #D9DED7;font-size:12px;font-weight:700;color:${row.importanceLabel === 'High' ? '#A76613' : '#666D64'}`)}>{row.importanceLabel}</th>
+                    {row.cells.map((cell, index) => (
+                      <td key={`${row.importanceLabel}-${index}`} style={toReactStyle("box-sizing:border-box;padding:8px 10px;border-right:1px solid #D9DED7;border-bottom:1px solid #D9DED7")}>
+                        <select disabled aria-label={`${row.importanceLabel} 저장소 ${['Critical', 'High', 'Medium', 'Low'][index]} 취약점 정책`} value={DEFAULT_POLICY_MATRIX[row.importanceLabel][index]} onChange={cell.onChange} style={toReactStyle("width:100%;height:34px;box-sizing:border-box;padding:0 30px 0 12px;border:1px solid #D5DAD3;border-radius:7px;background-color:#FFFFFF;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='m1 1 3 3 3-3' fill='none' stroke='%238B9086' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 11px center;background-size:8px 5px;color:#1B1E1A;font-family:inherit;font-size:12px;font-weight:600;opacity:1;appearance:none;-webkit-text-fill-color:#1B1E1A")}>
+                          {POLICY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
                       </td>
-                      {row.cells.map((cell, _index1) => (
-                        <Fragment key={_index1}>
-                          <td style={toReactStyle("padding:8px 10px;border-bottom:1px solid #F0F1EE")}>
-                            <select disabled title="UI Preview · 후속 구현" style={toReactStyle("font-size:12.5px;font-family:inherit;background:#F5F6F3;border:1px solid #E4E6E1;border-radius:7px;padding:6px 8px;cursor:not-allowed;width:100%;color:#8B9086")} value={cell.value} onChange={cell.onChange}>
-                              {values.modeSelectOptions.map((opt, _index2) => (
-                                <Fragment key={_index2}>
-                                  <option value={opt.value}>
-                                    {`${opt.label}`}
-                                  </option>
-                                </Fragment>
-                              ))}
-                            </select>
-                          </td>
-                        </Fragment>
-                      ))}
-                    </tr>
-                  </Fragment>
+                    ))}
+                  </tr>
                 ))}
               </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={toReactStyle("height:273px;box-sizing:border-box;background:#FFFFFF;border:1px solid #E3E7E1;border-radius:9px;padding:91px 22px;text-align:center")}>
-              <div style={toReactStyle("font-size:14px;font-weight:600;margin-bottom:6px")}>
-                {"자동조치 정책 DB 연동은 아직 구현되지 않았습니다."}
-              </div>
-              <div style={toReactStyle("font-size:12.5px;color:#8B9086;line-height:1.6")}>
-                {"DB 모드에서는 합성 정책을 표시하지 않습니다."}
-              </div>
-            </div>
-          )}
-          <div style={toReactStyle("font-size:12px;color:#8B9086;margin-top:12px")}>
-            {values.isDemo
-              ? "자동조치 정책은 UI Preview이며 이 화면에서 변경되지 않습니다."
-              : "실제 정책 조회·변경은 후속 구현 범위입니다."}
+            </table>
           </div>
         </div>
       </>

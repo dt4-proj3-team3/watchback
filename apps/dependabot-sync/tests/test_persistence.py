@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from types import SimpleNamespace
 
 import psycopg
 import pytest
@@ -15,11 +17,13 @@ from watchback_dependabot_sync.models import (
 )
 from watchback_dependabot_sync.persistence import (
     LOCK_KEY,
+    _first_patched_version,
     normalize_database_url,
     persist_snapshot,
     verify_reference_data,
 )
 from watchback_dependabot_sync.service import collect_advisories
+from watchback_dependabot_sync.versions import DependencyVersionResult
 
 
 def repository_payloads():
@@ -34,10 +38,26 @@ def repository_payloads():
     }
 
 
+def test_litellm_advisory_patch_version_override() -> None:
+    alert = SimpleNamespace(
+        security_advisory=SimpleNamespace(cve_id="CVE-2026-40217"),
+        security_vulnerability=SimpleNamespace(
+            first_patched_version=SimpleNamespace(identifier="1.83.10")
+        ),
+    )
+
+    assert _first_patched_version(alert) == "1.83.11"
+
+
 def source_snapshot(raw_alerts):
     parsed = [AlertPayload.model_validate(item) for item in raw_alerts]
     names = list(REPOSITORIES)
-    return {names[0]: parsed[:4], names[1]: parsed[4:]}
+    return {
+        names[0]: parsed[:4],
+        names[1]: parsed[4:],
+        names[2]: [],
+        names[3]: [],
+    }
 
 
 @pytest.mark.integration
@@ -192,7 +212,7 @@ def test_stale_payload_and_missing_alert_do_not_overwrite_or_delete(
 
 
 @pytest.mark.integration
-def test_invalid_write_rolls_back_both_repositories(seeded_database_url, raw_alerts):
+def test_invalid_write_rolls_back_all_repositories(seeded_database_url, raw_alerts):
     alerts = source_snapshot(raw_alerts)
     second_repo = list(REPOSITORIES)[1]
     alerts[second_repo][0].dependency.package.name = "x" * 300
@@ -234,3 +254,87 @@ def test_reference_mismatch_and_concurrent_lock_are_rejected(seeded_database_url
         )
     with pytest.raises(PersistenceError, match="식별자"):
         verify_reference_data(seeded_database_url)
+
+
+@pytest.mark.integration
+def test_dependency_versions_are_persisted_idempotently(
+    seeded_database_url, raw_alerts
+):
+    alerts = source_snapshot(raw_alerts)
+    repositories = repository_payloads()
+    full_name = list(REPOSITORIES)[0]
+    observed_at = datetime.now(UTC)
+    resolved = DependencyVersionResult(
+        repository=full_name,
+        manifest_path="package-lock.json",
+        commit_sha="a" * 40,
+        ecosystem="npm",
+        package_name="vite",
+        resolved_versions=("5.4.0", "6.4.1"),
+        status="multiple",
+        reason=None,
+        source_path="package-lock.json",
+        source_blob_sha="b" * 40,
+        observed_at=observed_at,
+    )
+    unavailable = DependencyVersionResult(
+        repository=full_name,
+        manifest_path=None,
+        commit_sha="a" * 40,
+        ecosystem="npm",
+        package_name="unknown-package",
+        resolved_versions=(),
+        status="unavailable",
+        reason="unsupported_manifest",
+        source_path=None,
+        source_blob_sha=None,
+        observed_at=observed_at,
+    )
+    versions = {full_name: [resolved, unavailable]}
+
+    first = persist_snapshot(
+        seeded_database_url,
+        repositories,
+        alerts,
+        collect_advisories(alerts),
+        observed_at,
+        versions,
+    )
+    assert first["dependency_versions"]["created"] == 2
+
+    with psycopg.connect(normalize_database_url(seeded_database_url)) as connection:
+        before = connection.execute(
+            """
+            SELECT id, manifest_path, resolved_versions, status, reason, observed_at
+              FROM dependency_version_snapshots
+             ORDER BY package_name
+            """
+        ).fetchall()
+    assert len(before) == 2
+    assert before[1][2] == ["5.4.0", "6.4.1"]
+
+    repeated_at = observed_at + timedelta(minutes=1)
+    repeated = persist_snapshot(
+        seeded_database_url,
+        repositories,
+        alerts,
+        collect_advisories(alerts),
+        repeated_at,
+        {
+            full_name: [
+                replace(resolved, observed_at=repeated_at),
+                replace(unavailable, observed_at=repeated_at),
+            ]
+        },
+    )
+    assert repeated["dependency_versions"]["unchanged"] == 2
+
+    with psycopg.connect(normalize_database_url(seeded_database_url)) as connection:
+        after = connection.execute(
+            """
+            SELECT id, manifest_path, resolved_versions, status, reason, observed_at
+              FROM dependency_version_snapshots
+             ORDER BY package_name
+            """
+        ).fetchall()
+    assert after == before

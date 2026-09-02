@@ -16,9 +16,26 @@ Sprint 1 데모는 한 회사가 운영하는 여러 저장소에서 실제 Depe
 | 파일 | 내용 |
 | --- | --- |
 | [`vulnerabilities.json`](vulnerabilities.json) | Lab의 CVE 16개와 실제 Dependabot Alert 31건 |
-| [`review-cases.json`](review-cases.json) | 확인된 S1 위험 신호가 있는 실제 Alert로 만든 목록·빈 목록·상세 화면용 응답 |
+| [`review-cases.json`](review-cases.json) | 확인된 S1 위험 신호가 있는 실제 Alert로 만든 현재 `저장소+CVE` 기준 A 화면의 목록·빈 목록·상세 응답 |
+| [`vulnerability-review-groups.json`](vulnerability-review-groups.json) | 기존 Case를 `조직+CVE` 기준으로 투영한 B안의 로컬 비교 검증용 목록·상세 Fixture |
 
-`vulnerabilities.json`이 취약점과 Alert 정보의 기준이고, `review-cases.json`은 그중 일부를 사용한 파생 데이터다.
+`vulnerabilities.json`이 취약점과 Alert 정보의 기준이고, 나머지 두 파일은 그중 일부를 서로 다른 재검토 단위로 표현한 파생 데이터다.
+
+## 재검토 단위 A/B Fixture
+
+기존 A Fixture인 `review-cases.json`은 하나의 `저장소+CVE`를 하나의 Case로 취급하며 회귀 비교를 위해 그대로 보존한다.
+
+B안인 `vulnerability-review-groups.json`은 같은 10개 Case를 조직 내 9개 고유 CVE 그룹으로 투영한다. Candidate·Evidence·소스 주석은 취약점 그룹에 한 번만 저장하고, 영향 범위는 `affected_repositories[].alerts[]`에서 저장소·manifest·Alert 단위로 유지한다. `review_cycles`는 Candidate 선정과 이후 영향 범위 확장을 별도 회차로 표현한다. 목록의 대표 우선순위는 미해결 Review Cycle이 참조하는 Candidate 중 가장 높은 DS 우선순위(`P0` → `P3`)를 사용하고, `latest_candidate`는 가장 최근의 변화를 표시하는 용도로 유지한다.
+
+현재 개발 브랜치의 Frontend Demo 모드는 기존 `/review-cases` 목록·상세 경로에서 B Fixture를 사용한다. DB 모드는 기존 Backend Case API를 계속 사용하므로 Backend 계약과 DB Migration이 추가되기 전까지 A 단위로 동작한다.
+
+패키지 단위 화면은 B Fixture를 별도로 복제하지 않고 `조직+ecosystem+package` 기준으로 투영한다. 같은 패키지의 조치 대상은 `저장소+ecosystem+dependency project root`로 묶으며, 같은 루트의 선언 파일과 lockfile은 한 대상 안에서 원본 Alert와 함께 보존한다. `/dashboard`와 `/review-cases`의 기본 UI는 이 Fixture 기반 Preview를 사용한다.
+
+`CVE-2025-29927`은 다중 저장소·부분 해결 상태를 비교하기 위한 대표 사례다. 실제 `novalink/customer-fe` Alert와 검증된 CVE·GHSA·EPSS Evidence는 그대로 사용하고, `novalink/commerce-web`과 `novalink/admin-console` 저장소 및 그 Alert만 Demo 전용으로 합성했다. 합성 저장소와 Alert에는 `source_kind=synthetic`을 명시하며 실제 GitHub Snapshot, 실제 Dependabot Alert 또는 실제 E2E 결과로 설명하지 않는다.
+
+`CVE-2026-39363`은 같은 저장소에서 루트와 전이 의존성 검증용 manifest에 각각 발생한 실제 Alert 2건을 하나의 취약점 그룹 안에 보존한다. 이를 통해 여러 저장소에 걸친 영향과 한 저장소 안의 여러 manifest 영향을 구분한다.
+
+B안의 합성 저장소·Alert와 그 집계는 화면 구조 비교만을 위한 데이터이며 실제 Dependabot E2E 건수나 프로젝트 KPI에 포함하지 않는다.
 
 ## FE Lab
 
@@ -56,7 +73,7 @@ BE는 EPSS 변화만 있는 사례와 KEV·EPSS가 함께 변한 사례를 모�
 | `bentoml` | `1.4.2` | `CVE-2025-27520`<br>`GHSA-33xw-247w-6hmc` | Critical | `1.4.3` | 2025-05-05 EPSS 급상승과 상위 5% 진입 |
 | `bentoml` | `1.4.2` | `CVE-2025-32375`<br>`GHSA-7v4r-c989-xh26` | Critical | `1.4.8` | 2025-05-10 EPSS 급상승과 상위 5% 진입 |
 | `litellm` | `1.81.16` | `CVE-2026-35029`<br>`GHSA-53mr-6c8q-9789` | High | `1.83.0` | 2026-05-07 EPSS 급상승, 2026-05-18 상위 5% 진입 |
-| `litellm` | `1.81.16` | `CVE-2026-40217`<br>`GHSA-wxxx-gvqv-xp7p` | High | `1.83.10` | 2026-07-01 EPSS 급상승 |
+| `litellm` | `1.81.16` | `CVE-2026-40217`<br>`GHSA-wxxx-gvqv-xp7p` | High | `1.83.11` | 2026-07-01 EPSS 급상승 |
 | `litellm` | `1.81.16` | `CVE-2026-42208`<br>`GHSA-r75f-5x8p-qvmc` | Critical | `1.83.7` | 2026-05-08 KEV 신규 등재, 2026-06-07 EPSS 급상승과 상위 5% 진입 |
 | `litellm` | `1.81.16` | `CVE-2026-42271`<br>`GHSA-v4p8-mg3p-g94g` | High | `1.83.7` | 2026-06-08 KEV 신규 등재, 2026-06-09 EPSS 급상승과 상위 5% 진입 |
 
@@ -64,7 +81,7 @@ BE Snapshot에는 고유 CVE 7개와 Open Alert 14건이 있다.
 
 확인된 개별 위험 변화는 FE 9개와 BE 7개로 총 16개 CVE다. 현재 Open Alert와 연결하면 FE 11건과 BE 14건으로 최대 25개 Case를 구성할 수 있다.
 
-`review-cases.json`은 이 중 FE의 `CVE-2025-29927`, `CVE-2026-44578`, `CVE-2025-31125`, `CVE-2026-39363`, `CVE-2025-55182`와 BE의 `CVE-2026-1207`, `CVE-2025-27520`, `CVE-2026-35029`, `CVE-2026-42208`을 사용한다. FE 6건과 BE 4건, 총 10개 Case로 구성했으며 EPSS 단독 변화와 KEV·EPSS 복합 변화를 모두 포함한다. 모두 High·Critical이며, `CVE-2025-31125`만 실제 KEV 등재가 확인된 Medium 예외다.
+`review-cases.json`은 이 중 FE의 `CVE-2025-29927`, `CVE-2025-31486`, `CVE-2025-31125`, `CVE-2026-39363`, `CVE-2025-55182`와 BE의 `CVE-2026-1207`, `CVE-2025-27520`, `CVE-2026-35029`, `CVE-2026-42208`을 사용한다. FE 6건과 BE 4건, 총 10개 Case로 구성했으며 EPSS 단독 변화와 KEV·EPSS 복합 변화를 모두 포함한다. 대부분 High·Critical이며, `CVE-2025-31125`와 `CVE-2025-31486`은 실제 Advisory severity가 Medium인 예외다.
 
 ## 실제 값과 합성 값
 

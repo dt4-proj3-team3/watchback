@@ -1,5 +1,5 @@
-import { DemoWatchbackPage } from '@/components/demo-watchback-page';
+import { RemediationPreviewPage } from '@/components/remediation-preview-page';
 
 export default function DashboardPage() {
-  return <DemoWatchbackPage view="dashboard" />;
+  return <RemediationPreviewPage view="dashboard" />;
 }

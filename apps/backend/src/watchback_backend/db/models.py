@@ -20,7 +20,9 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -209,6 +211,302 @@ class DependabotAlert(IdMixin, TimestampMixin, Base):
     fixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     auto_dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_synced_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class DependencyVersionSnapshot(IdMixin, TimestampMixin, Base):
+    __tablename__ = "dependency_version_snapshots"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["organization_id", "repository_id"],
+            ["repositories.organization_id", "repositories.id"],
+        ),
+        CheckConstraint(
+            "status IN ('resolved', 'multiple', 'unavailable', 'invalid')",
+            name="status_values",
+        ),
+        CheckConstraint(
+            "reason IS NULL OR reason IN ("
+            "'unsupported_manifest', 'lockfile_not_found', "
+            "'package_not_found', 'invalid_lockfile')",
+            name="reason_values",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(resolved_versions) = 'array'",
+            name="resolved_versions_array",
+        ),
+        CheckConstraint(
+            "(status = 'resolved' AND jsonb_array_length(resolved_versions) = 1 "
+            "AND reason IS NULL) OR "
+            "(status = 'multiple' AND jsonb_array_length(resolved_versions) > 1 "
+            "AND reason IS NULL) OR "
+            "(status = 'unavailable' AND jsonb_array_length(resolved_versions) = 0 "
+            "AND reason IN ('unsupported_manifest', 'lockfile_not_found', "
+            "'package_not_found')) OR "
+            "(status = 'invalid' AND jsonb_array_length(resolved_versions) = 0 "
+            "AND reason = 'invalid_lockfile')",
+            name="resolution_consistency",
+        ),
+        Index(
+            "uq_dependency_version_snapshots_identity",
+            "repository_id",
+            "manifest_path",
+            "commit_sha",
+            "ecosystem",
+            "package_name",
+            unique=True,
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index(
+            "ix_dependency_version_snapshots_repository_observed",
+            "repository_id",
+            "observed_at",
+        ),
+        {"comment": "저장소 commit 기준 의존성 실제 사용 버전 수집 결과"},
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    repository_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    manifest_path: Mapped[str | None] = mapped_column(String(500))
+    commit_sha: Mapped[str] = mapped_column(String(64), nullable=False)
+    ecosystem: Mapped[str] = mapped_column(String(50), nullable=False)
+    package_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    resolved_versions: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(50))
+    source_path: Mapped[str | None] = mapped_column(String(500))
+    source_blob_sha: Mapped[str | None] = mapped_column(String(64))
+    observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class RemediationAction(IdMixin, CreatedAtMixin, Base):
+    __tablename__ = "remediation_actions"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "id"),
+        ForeignKeyConstraint(
+            ["organization_id", "actor_user_id"],
+            ["users.organization_id", "users.id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "revoked_by_user_id"],
+            ["users.organization_id", "users.id"],
+        ),
+        CheckConstraint(
+            "action_type IN ('risk_accepted', 'remediation_requested')",
+            name="action_type_values",
+        ),
+        CheckConstraint(
+            "watchback_state IN ('accepted', 'requested', 'pr_open', 'pr_merged', "
+            "'verification_pending', 'completed', 'cancelled', 'failed')",
+            name="watchback_state_values",
+        ),
+        CheckConstraint(
+            "(action_type = 'risk_accepted' AND watchback_state = 'accepted') OR "
+            "(action_type = 'remediation_requested' AND watchback_state IN ("
+            "'requested', 'pr_open', 'pr_merged', 'verification_pending', "
+            "'completed', 'cancelled', 'failed'))",
+            name="type_state_consistency",
+        ),
+        CheckConstraint(
+            "reason_code IS NULL OR reason_code IN "
+            "('compatibility_blocked', 'low_current_impact', 'other')",
+            name="reason_code_values",
+        ),
+        CheckConstraint(
+            "(action_type = 'risk_accepted' AND reason_code IS NOT NULL) OR "
+            "(action_type = 'remediation_requested' AND reason_code IS NULL)",
+            name="risk_reason_required",
+        ),
+        CheckConstraint(
+            "reason_code <> 'other' OR "
+            "(note IS NOT NULL AND length(trim(note)) > 0)",
+            name="other_note_required",
+        ),
+        CheckConstraint(
+            "(revoked_at IS NULL AND revoked_by_user_id IS NULL) OR "
+            "(revoked_at IS NOT NULL AND revoked_by_user_id IS NOT NULL)",
+            name="revocation_consistency",
+        ),
+        Index(
+            "uq_remediation_actions_active_target_fingerprint",
+            "organization_id",
+            "group_key",
+            "action_type",
+            "target_fingerprint",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+        Index(
+            "ix_remediation_actions_organization_package_occurred",
+            "organization_id",
+            "ecosystem",
+            "package_name",
+            "occurred_at",
+        ),
+        {"comment": "패키지 조치 그룹에 사용자가 기록한 Watchback 조치"},
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    actor_user_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    group_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    ecosystem: Mapped[str] = mapped_column(String(50), nullable=False)
+    package_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    action_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    watchback_state: Mapped[str] = mapped_column(String(30), nullable=False)
+    target_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(
+        String(40), comment="위험 수용의 구조화된 사유 코드"
+    )
+    note: Mapped[str | None] = mapped_column(
+        Text, comment="위험 수용 기타 사유 또는 조치 요청 메모"
+    )
+    result: Mapped[dict | None] = mapped_column(
+        JSONB, comment="자동조치 실행 결과와 생성된 GitHub PR 정보"
+    )
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), comment="위험 수용을 취소하고 재검토를 연 시각"
+    )
+    revoked_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, comment="위험 수용을 취소한 사용자 식별자"
+    )
+    revocation_note: Mapped[str | None] = mapped_column(
+        Text, comment="위험 수용 취소 시 남긴 선택 메모"
+    )
+
+
+class RemediationActionTarget(IdMixin, CreatedAtMixin, Base):
+    __tablename__ = "remediation_action_targets"
+    __table_args__ = (
+        UniqueConstraint(
+            "action_id",
+            "review_case_id",
+            "candidate_id",
+            "alert_id",
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "action_id"],
+            ["remediation_actions.organization_id", "remediation_actions.id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "revoked_by_user_id"],
+            ["users.organization_id", "users.id"],
+        ),
+        CheckConstraint(
+            "(revoked_at IS NULL AND revoked_by_user_id IS NULL) OR "
+            "(revoked_at IS NOT NULL AND revoked_by_user_id IS NOT NULL)",
+            name="revocation_consistency",
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "review_case_id"],
+            ["review_cases.organization_id", "review_cases.id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "alert_id"],
+            ["dependabot_alerts.organization_id", "dependabot_alerts.id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "repository_id"],
+            ["repositories.organization_id", "repositories.id"],
+        ),
+        CheckConstraint(
+            "github_alert_state_at_action IN "
+            "('open', 'dismissed', 'fixed', 'auto_dismissed')",
+            name="github_alert_state_values",
+        ),
+        Index("ix_remediation_action_targets_action_id", "action_id"),
+        {"comment": "패키지 조치 시점에 고정한 Case·Candidate·Alert 대상"},
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    action_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    review_case_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    candidate_id: Mapped[UUID] = mapped_column(
+        ForeignKey("risk_candidates.id"), nullable=False
+    )
+    alert_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    repository_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    repository_full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    manifest_path: Mapped[str | None] = mapped_column(String(500))
+    github_alert_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    github_alert_state_at_action: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), comment="개별 조치 대상의 위험 수용을 취소한 시각"
+    )
+    revoked_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, comment="개별 조치 대상의 위험 수용을 취소한 사용자"
+    )
+    revocation_note: Mapped[str | None] = mapped_column(
+        Text, comment="개별 조치 대상의 위험 수용 취소 메모"
+    )
+
+
+class RemediationAISummary(IdMixin, TimestampMixin, Base):
+    __tablename__ = "remediation_ai_summaries"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "group_key"),
+        ForeignKeyConstraint(["organization_id"], ["organizations.id"]),
+        Index(
+            "ix_remediation_ai_summaries_organization_package",
+            "organization_id",
+            "ecosystem",
+            "package_name",
+        ),
+        {"comment": "패키지 조치 그룹별로 일괄 생성해 영구 저장한 AI 요약"},
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    group_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    ecosystem: Mapped[str] = mapped_column(String(50), nullable=False)
+    package_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    risk_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    action_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    interpretation_note: Mapped[str | None] = mapped_column(
+        Text,
+        comment="검토된 EPSS 모델·소스 변동과 겹치는 요약의 해석 주의 문구",
+    )
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class AIContextDocument(IdMixin, TimestampMixin, Base):
+    __tablename__ = "ai_context_documents"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "group_key", "document_type"),
+        ForeignKeyConstraint(["organization_id"], ["organizations.id"]),
+        CheckConstraint(
+            "document_type IN ('usage_indicators', 'upgrade_notes')",
+            name="document_type_values",
+        ),
+        Index(
+            "ix_ai_context_documents_organization_package",
+            "organization_id",
+            "ecosystem",
+            "package_name",
+        ),
+        {"comment": "패키지 조치 판단을 위해 백필한 저장소 단서와 업데이트 정보"},
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    group_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    ecosystem: Mapped[str] = mapped_column(String(50), nullable=False)
+    package_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    document_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    content: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    source_revision: Mapped[str] = mapped_column(String(255), nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    generated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
 
@@ -533,6 +831,81 @@ COLUMN_COMMENTS: dict[str, dict[str, str]] = {
         "last_synced_at": "GitHub Alert를 마지막으로 동기화한 시각",
         "created_at": "운영 DB에 Alert를 생성한 시각",
         "updated_at": "운영 DB에서 Alert를 마지막으로 수정한 시각",
+    },
+    "dependency_version_snapshots": {
+        "id": "실제 사용 버전 Snapshot 내부 식별자",
+        "organization_id": "Snapshot이 속한 조직 식별자",
+        "repository_id": "버전을 수집한 저장소 식별자",
+        "manifest_path": "Dependabot Alert가 가리킨 manifest 경로",
+        "commit_sha": "파일을 조회한 저장소 commit SHA",
+        "ecosystem": "패키지 생태계 이름",
+        "package_name": "실제 버전을 확인한 패키지 이름",
+        "resolved_versions": "lockfile에서 확인한 실제 사용 버전 목록",
+        "status": "단일·복수 버전 확인 또는 확인 불가 상태",
+        "reason": "확인 불가 또는 파싱 실패의 상세 사유",
+        "source_path": "실제 버전을 읽은 lockfile 경로",
+        "source_blob_sha": "실제 버전을 읽은 Git blob SHA",
+        "observed_at": "GitHub에서 실제 버전을 수집한 시각",
+        "created_at": "운영 DB에 Snapshot을 생성한 시각",
+        "updated_at": "운영 DB에서 Snapshot을 마지막으로 수정한 시각",
+    },
+    "remediation_actions": {
+        "id": "패키지 조치 내부 식별자",
+        "organization_id": "조치가 속한 조직 식별자",
+        "actor_user_id": "조치를 기록한 사용자 식별자",
+        "group_key": "조직·ecosystem·패키지로 계산한 조치 그룹 키",
+        "ecosystem": "조치 대상 패키지 생태계",
+        "package_name": "조치 대상 패키지 이름",
+        "action_type": "위험 수용 또는 조치 요청 유형",
+        "watchback_state": "GitHub 상태와 분리한 Watchback 조치 상태",
+        "target_fingerprint": "조치 시점 대상 집합의 SHA-256",
+        "note": "사용자가 남긴 조치 판단 근거",
+        "result": "자동조치 실행 결과와 생성된 GitHub PR 정보",
+        "occurred_at": "사용자가 조치를 기록한 시각",
+        "created_at": "운영 DB에 패키지 조치를 생성한 시각",
+    },
+    "remediation_action_targets": {
+        "id": "조치 대상 Snapshot 내부 식별자",
+        "organization_id": "조치 대상이 속한 조직 식별자",
+        "action_id": "대상을 고정한 패키지 조치 식별자",
+        "review_case_id": "조치 시점의 재검토 Case 식별자",
+        "candidate_id": "조치 시점 Case의 대표 Candidate 식별자",
+        "alert_id": "조치 시점의 Open Dependabot Alert 식별자",
+        "repository_id": "조치 시점 Alert 저장소 식별자",
+        "repository_full_name": "조치 시점 저장소 전체 이름",
+        "manifest_path": "조치 시점 Alert manifest 경로",
+        "github_alert_number": "조치 시점 GitHub Alert 번호",
+        "github_alert_state_at_action": "조치 시점에 관찰한 GitHub Alert 상태",
+        "created_at": "운영 DB에 조치 대상을 생성한 시각",
+    },
+    "remediation_ai_summaries": {
+        "id": "AI 요약 내부 식별자",
+        "organization_id": "AI 요약이 속한 조직 식별자",
+        "group_key": "조직·ecosystem·패키지로 계산한 조치 그룹 키",
+        "ecosystem": "요약 대상 패키지 생태계",
+        "package_name": "요약 대상 패키지 이름",
+        "prompt_version": "요약 생성에 사용한 프롬프트 버전",
+        "risk_summary": "사용자에게 표시할 핵심 위험 요약",
+        "action_summary": "사용자에게 표시할 권장 조치 요약",
+        "model": "요약 생성에 사용한 Azure OpenAI 배포 모델",
+        "source_ids": "요약 생성에 사용한 Watchback 근거 식별자 목록",
+        "generated_at": "AI 요약을 생성한 시각",
+        "created_at": "운영 DB에 AI 요약을 최초 저장한 시각",
+        "updated_at": "운영 DB에서 AI 요약을 마지막으로 갱신한 시각",
+    },
+    "ai_context_documents": {
+        "id": "AI 분석 문서 내부 식별자",
+        "organization_id": "AI 분석 문서가 속한 조직 식별자",
+        "group_key": "조직·ecosystem·패키지로 계산한 조치 그룹 키",
+        "ecosystem": "분석 대상 패키지 생태계",
+        "package_name": "분석 대상 패키지 이름",
+        "document_type": "저장소 사용 단서 또는 업데이트 변경 정보 구분",
+        "content": "근거와 한계를 보존한 구조화 분석 결과",
+        "source_revision": "분석에 사용한 저장소 commit 또는 패키지 버전 식별자",
+        "source_url": "공식 원문 또는 릴리스 정보 URL",
+        "generated_at": "분석 문서를 생성한 시각",
+        "created_at": "운영 DB에 분석 문서를 최초 저장한 시각",
+        "updated_at": "운영 DB에서 분석 문서를 마지막으로 갱신한 시각",
     },
     "gold_batches": {
         "id": "Gold Batch 내부 식별자",

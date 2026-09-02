@@ -34,8 +34,11 @@ bash scripts/run-azure-dev-db.sh --reload
 ```
 
 기본 Key Vault는 `kv-watchback-dev-baursz7`, 기본 포트는 `8000`이다.
+스크립트는 `watchback-dev-ai-agent` 배포 출력에서 Azure OpenAI endpoint와 모델 deployment 이름도 조회한다. API 키는 저장하지 않으며 로컬 Azure CLI 로그인으로 Entra 인증한다.
+GitHub 조치 API용 토큰은 Key Vault의 `github-token`을 `GITHUB_REMEDIATION_TOKEN`으로 주입한다. 토큰 값은 출력하거나 파일에 저장하지 않는다.
 다른 환경을 사용할 때만 `WATCHBACK_KEY_VAULT_NAME`,
-`WATCHBACK_DATABASE_SECRET_NAME`, `WATCHBACK_BACKEND_PORT`를 지정한다.
+`WATCHBACK_DATABASE_SECRET_NAME`, `WATCHBACK_GITHUB_SECRET_NAME`,
+`WATCHBACK_BACKEND_PORT`를 지정한다.
 스크립트는 DB 접속 문자열을 출력하거나 파일에 저장하지 않는다.
 
 재검토 API는 `DATABASE_URL`의 PostgreSQL 운영 DB를 조회하고 활동을 저장한다. 애플리케이션 import와 OpenAPI 문서 조회에는 DB 연결이 필요하지 않지만 실제 API 요청에는 연결 가능한 DB가 필요하다.
@@ -63,6 +66,41 @@ python -m pytest
 
 스키마 통합 테스트는 Testcontainers로 PostgreSQL 16 컨테이너를 실행하므로 로컬 Docker가 실행 중이어야 한다.
 
+## 패키지 AI 요약 백필
+
+패키지 상세의 AI 요약은 화면 조회 시 생성하지 않는다. 버전 관리된 프롬프트로 현재 조직의 모든 패키지 그룹을 일괄 생성해 `remediation_ai_summaries`에 영구 저장하고, 목록 API는 저장된 값만 반환한다.
+
+`DATABASE_URL`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`를 프로세스 환경에 주입한 뒤 다음 명령을 실행한다.
+
+```bash
+PYTHONPATH=src python -m watchback_backend.ai_agent.backfill_cli \
+  --organization-id ORGANIZATION_UUID \
+  --user-id USER_UUID
+```
+
+재실행하면 같은 `(organization_id, group_key)` 행을 중복 생성하지 않고 현재 프롬프트 버전의 결과로 갱신한다. 프롬프트와 출력 파서는 `ai_agent/remediation_summary_prompt.py`에서 버전 관리한다.
+
+LiteLLM 상세 질문용 저장소 조건 단서와 업데이트 검토 정보는 별도 백필로
+`ai_context_documents`에 저장한다. 저장소 소스 원문은 저장하지 않고 일치한 조건·경로·행과
+분석 한계만 보존한다.
+
+```bash
+PYTHONPATH=src python -m watchback_backend.ai_agent.litellm_backfill_cli \
+  --organization-id ORGANIZATION_UUID \
+  --user-id USER_UUID
+```
+
+이 명령에는 `GITHUB_REMEDIATION_TOKEN`이 필요하며, 같은 그룹의 문서 2종을 갱신한다.
+
+기존 저장 요약의 선두 패키지명만 제거할 때는 LLM을 다시 호출하지 않는다.
+
+```bash
+PYTHONPATH=src python -m watchback_backend.ai_agent.backfill_cli \
+  --organization-id ORGANIZATION_UUID \
+  --user-id USER_UUID \
+  --normalize-existing
+```
+
 ## Database Migration
 
 Alembic은 `DATABASE_URL` 환경변수를 우선 사용한다.
@@ -87,7 +125,7 @@ export DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:PORT/DATABASE'
 PYTHONPATH=src python -m watchback_backend.db.demo_seed
 ```
 
-기준 시점은 `2026-08-20T07:30:00Z`이며, 실행 결과로 생성·갱신·변경 없음 건수와 내부 UUID를 출력한다. 같은 DB에 다시 실행해도 행을 중복 생성하지 않는다.
+기준 시점은 `2026-09-01T14:12:20Z`이며, 실행 결과로 생성·갱신·변경 없음 건수와 내부 UUID를 출력한다. 같은 DB에 다시 실행해도 행을 중복 생성하지 않는다.
 
 재실행 시 조직 표시명, 사용자 정보, 저장소 표시명·중요도는 기준값으로 복구한다. 저장소 `full_name`, 기본 브랜치와 GitHub 시각은 최초 생성 후 동기화 작업이 관리하므로 덮어쓰지 않는다. 외부 식별자가 서로 다른 기존 행을 가리키면 전체 작업을 롤백한다.
 
@@ -100,6 +138,8 @@ PYTHONPATH=src python -m watchback_backend.db.demo_seed
 | 사용자 | 박준호 | `junho.park@novalink.example` | 조치 담당자 |
 | 저장소 | `novalink/customer-fe` | GitHub repository `1329314801` | `critical`, 고객 금융 포털 |
 | 저장소 | `novalink/ai-platform-api` | GitHub repository `1340408606` | `high`, AI 모델 서빙·LLM 게이트웨이 API |
+| 저장소 | `novalink/admin-fe` | GitHub repository `1353650380` | `high`, 관리자 Frontend |
+| 저장소 | `novalink/reporting-api` | GitHub repository `1353650477` | `medium`, 리포트 생성 API |
 
 사용자 역할과 저장소의 업무 설명은 시연 시나리오용 설명이며 현재 DB 컬럼으로 저장하지 않는다. 이 시드는 Alert·Advisory·Gold Candidate·Evidence·Case를 만들지 않는다. 해당 데이터는 각 동기화 경로에서 적재한다.
 

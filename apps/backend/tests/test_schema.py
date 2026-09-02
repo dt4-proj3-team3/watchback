@@ -15,14 +15,19 @@ from watchback_backend.db.models import Base
 
 
 EXPECTED_TABLES = {
+    "ai_context_documents",
     "alert_candidate_matches",
     "candidate_evidence",
+    "dependency_version_snapshots",
     "dependabot_alerts",
     "external_links",
     "gold_batch_candidates",
     "gold_batches",
     "organizations",
     "repositories",
+    "remediation_action_targets",
+    "remediation_actions",
+    "remediation_ai_summaries",
     "review_activities",
     "review_cases",
     "risk_candidates",
@@ -95,6 +100,55 @@ def test_metadata_contains_the_operational_schema() -> None:
     assert evidence.columns["current_value"].nullable is True
     assert evidence.columns["evidence_summary"].nullable is False
 
+    dependency_versions = Base.metadata.tables["dependency_version_snapshots"]
+    assert dependency_versions.columns["manifest_path"].nullable is True
+    assert dependency_versions.columns["resolved_versions"].nullable is False
+    identity_index = next(
+        index
+        for index in dependency_versions.indexes
+        if index.name == "uq_dependency_version_snapshots_identity"
+    )
+    assert identity_index.unique is True
+    assert identity_index.dialect_options["postgresql"]["nulls_not_distinct"] is True
+
+    remediation_action = Base.metadata.tables["remediation_actions"]
+    assert remediation_action.columns["watchback_state"].nullable is False
+    assert remediation_action.columns["reason_code"].nullable is True
+    assert remediation_action.columns["note"].nullable is True
+    assert remediation_action.columns["revoked_at"].nullable is True
+    assert remediation_action.columns["revoked_by_user_id"].nullable is True
+    remediation_target = Base.metadata.tables["remediation_action_targets"]
+    assert remediation_target.columns["manifest_path"].nullable is True
+    assert remediation_target.columns["revoked_at"].nullable is True
+    assert remediation_target.columns["revoked_by_user_id"].nullable is True
+    assert {
+        "review_case_id",
+        "candidate_id",
+        "alert_id",
+        "repository_id",
+    }.issubset(remediation_target.columns.keys())
+
+    remediation_ai_summary = Base.metadata.tables["remediation_ai_summaries"]
+    assert remediation_ai_summary.columns["prompt_version"].nullable is False
+    assert remediation_ai_summary.columns["source_ids"].nullable is False
+    assert remediation_ai_summary.columns["interpretation_note"].nullable is True
+    assert any(
+        {column.name for column in constraint.columns}
+        == {"organization_id", "group_key"}
+        for constraint in remediation_ai_summary.constraints
+        if constraint.__class__.__name__ == "UniqueConstraint"
+    )
+
+    ai_context_document = Base.metadata.tables["ai_context_documents"]
+    assert ai_context_document.columns["content"].nullable is False
+    assert ai_context_document.columns["source_url"].nullable is True
+    assert any(
+        {column.name for column in constraint.columns}
+        == {"organization_id", "group_key", "document_type"}
+        for constraint in ai_context_document.constraints
+        if constraint.__class__.__name__ == "UniqueConstraint"
+    )
+
     uncommented_columns = [
         f"{table.name}.{column.name}"
         for table in Base.metadata.tables.values()
@@ -113,6 +167,262 @@ def test_migration_is_current(postgres_engine: Engine) -> None:
         == "Dependabot Alert와 Gold 위험 후보의 CVE 매칭 결과"
     )
     command.check(Config(Path(__file__).parents[1] / "alembic.ini"))
+
+
+def test_dependency_version_snapshot_migration_and_null_manifest_identity(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    tables = Base.metadata.tables
+    now = datetime.now(UTC)
+    organization_id = uuid4()
+    repository_id = uuid4()
+    first_snapshot_id = uuid4()
+
+    command.downgrade(config, "0008")
+    try:
+        assert "dependency_version_snapshots" not in inspect(
+            postgres_engine
+        ).get_table_names()
+        command.upgrade(config, "0009")
+        assert "dependency_version_snapshots" in inspect(
+            postgres_engine
+        ).get_table_names()
+
+        with postgres_engine.begin() as connection:
+            connection.execute(
+                tables["organizations"].insert(),
+                {
+                    "id": organization_id,
+                    "github_organization_id": 9001,
+                    "github_login": "dependency-version-migration",
+                    "display_name": "Dependency Version Migration",
+                },
+            )
+            connection.execute(
+                tables["repositories"].insert(),
+                {
+                    "id": repository_id,
+                    "organization_id": organization_id,
+                    "github_repository_id": 9002,
+                    "full_name": "dependency-version-migration/example",
+                    "display_name": "Dependency Version Migration/example",
+                    "importance": "high",
+                    "last_synced_at": now,
+                },
+            )
+            connection.execute(
+                tables["dependency_version_snapshots"].insert(),
+                {
+                    "id": first_snapshot_id,
+                    "organization_id": organization_id,
+                    "repository_id": repository_id,
+                    "manifest_path": None,
+                    "commit_sha": "a" * 40,
+                    "ecosystem": "npm",
+                    "package_name": "vite",
+                    "resolved_versions": [],
+                    "status": "unavailable",
+                    "reason": "unsupported_manifest",
+                    "observed_at": now,
+                },
+            )
+
+        with expect_integrity_error(postgres_engine) as connection:
+            connection.execute(
+                tables["dependency_version_snapshots"].insert(),
+                {
+                    "id": uuid4(),
+                    "organization_id": organization_id,
+                    "repository_id": repository_id,
+                    "manifest_path": None,
+                    "commit_sha": "a" * 40,
+                    "ecosystem": "npm",
+                    "package_name": "vite",
+                    "resolved_versions": [],
+                    "status": "unavailable",
+                    "reason": "unsupported_manifest",
+                    "observed_at": now,
+                },
+            )
+
+        command.downgrade(config, "0008")
+        assert "dependency_version_snapshots" not in inspect(
+            postgres_engine
+        ).get_table_names()
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_remediation_action_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0009")
+    try:
+        table_names = set(inspect(postgres_engine).get_table_names())
+        assert "remediation_actions" not in table_names
+        assert "remediation_action_targets" not in table_names
+
+        command.upgrade(config, "0010")
+        table_names = set(inspect(postgres_engine).get_table_names())
+        assert "remediation_actions" in table_names
+        assert "remediation_action_targets" in table_names
+
+        command.downgrade(config, "0009")
+        table_names = set(inspect(postgres_engine).get_table_names())
+        assert "remediation_actions" not in table_names
+        assert "remediation_action_targets" not in table_names
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_remediation_ai_summary_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0010")
+    try:
+        assert "remediation_ai_summaries" not in inspect(
+            postgres_engine
+        ).get_table_names()
+        command.upgrade(config, "0011")
+        assert "remediation_ai_summaries" in inspect(
+            postgres_engine
+        ).get_table_names()
+        command.downgrade(config, "0010")
+        assert "remediation_ai_summaries" not in inspect(
+            postgres_engine
+        ).get_table_names()
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_ai_summary_interpretation_note_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0013")
+    try:
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_ai_summaries"
+            )
+        }
+        assert "interpretation_note" not in columns
+        command.upgrade(config, "0014")
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_ai_summaries"
+            )
+        }
+        assert "interpretation_note" in columns
+        command.downgrade(config, "0013")
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_ai_summaries"
+            )
+        }
+        assert "interpretation_note" not in columns
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_ai_context_document_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0016")
+    try:
+        assert "ai_context_documents" not in inspect(
+            postgres_engine
+        ).get_table_names()
+        command.upgrade(config, "0017")
+        assert "ai_context_documents" in inspect(
+            postgres_engine
+        ).get_table_names()
+        command.downgrade(config, "0016")
+        assert "ai_context_documents" not in inspect(
+            postgres_engine
+        ).get_table_names()
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_risk_acceptance_lifecycle_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0011")
+    try:
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_actions"
+            )
+        }
+        assert "reason_code" not in columns
+        command.upgrade(config, "0012")
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_actions"
+            )
+        }
+        assert {
+            "reason_code",
+            "revoked_at",
+            "revoked_by_user_id",
+            "revocation_note",
+        }.issubset(columns)
+        command.downgrade(config, "0011")
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_actions"
+            )
+        }
+        assert "reason_code" not in columns
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_remediation_target_lifecycle_migration_upgrade_and_downgrade(
+    postgres_engine: Engine,
+) -> None:
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+
+    command.downgrade(config, "0012")
+    try:
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_action_targets"
+            )
+        }
+        assert "revoked_at" not in columns
+        command.upgrade(config, "0013")
+        columns = {
+            column["name"]
+            for column in inspect(postgres_engine).get_columns(
+                "remediation_action_targets"
+            )
+        }
+        assert {
+            "revoked_at",
+            "revoked_by_user_id",
+            "revocation_note",
+        }.issubset(columns)
+    finally:
+        command.upgrade(config, "head")
 
 
 def test_gold_contract_migration_rejects_existing_gold_rows(

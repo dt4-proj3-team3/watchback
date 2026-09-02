@@ -63,8 +63,12 @@ export function proxyBackendGet(path: string, search = ''): Promise<Response> {
   return proxyBackend(path, { search });
 }
 
-export function proxyBackendPost(path: string, body: unknown): Promise<Response> {
-  if (process.env.WATCHBACK_READ_ONLY === 'true') {
+export function proxyBackendPost(
+  path: string,
+  body: unknown,
+  { allowReadOnly = false }: { allowReadOnly?: boolean } = {},
+): Promise<Response> {
+  if (!allowReadOnly && process.env.WATCHBACK_READ_ONLY === 'true') {
     return Promise.resolve(Response.json(READ_ONLY_BODY, { status: 403 }));
   }
   return proxyBackend(path, { method: 'POST', body });

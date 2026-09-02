@@ -56,7 +56,7 @@ def test_seed_creates_only_demo_reference_data(clean_database: Engine) -> None:
 
         assert result.organization.created == 1
         assert result.users.created == 2
-        assert result.repositories.created == 2
+        assert result.repositories.created == 4
         assert organization is not None
         assert organization.id == ORGANIZATION["id"]
         assert organization.github_organization_id == 314105294
@@ -105,6 +105,26 @@ def test_seed_creates_only_demo_reference_data(clean_database: Engine) -> None:
                 REPOSITORIES[1]["github_updated_at"],
                 REFERENCE_DATA_AS_OF,
             ),
+            (
+                REPOSITORIES[2]["id"],
+                1353650380,
+                "dt4-proj3-team3/watchback-vulnerable-admin-fe-lab",
+                "novalink/admin-fe",
+                "main",
+                "high",
+                REPOSITORIES[2]["github_updated_at"],
+                REFERENCE_DATA_AS_OF,
+            ),
+            (
+                REPOSITORIES[3]["id"],
+                1353650477,
+                "dt4-proj3-team3/watchback-vulnerable-reporting-be-lab",
+                "novalink/reporting-api",
+                "main",
+                "medium",
+                REPOSITORIES[3]["github_updated_at"],
+                REFERENCE_DATA_AS_OF,
+            ),
         ]
 
         for model in (
@@ -127,7 +147,7 @@ def test_seed_is_idempotent_and_preserves_sync_owned_repository_fields(
 
         assert second.organization.unchanged == 1
         assert second.users.unchanged == 2
-        assert second.repositories.unchanged == 2
+        assert second.repositories.unchanged == 4
         assert second.organization_id == first.organization_id
         assert second.user_ids == first.user_ids
         assert second.repository_ids == first.repository_ids
@@ -160,7 +180,7 @@ def test_seed_is_idempotent_and_preserves_sync_owned_repository_fields(
         assert repaired.users.updated == 1
         assert repaired.users.unchanged == 1
         assert repaired.repositories.updated == 1
-        assert repaired.repositories.unchanged == 1
+        assert repaired.repositories.unchanged == 3
         assert organization.display_name == "노바링크"
         assert (user.display_name, user.github_user_id, user.is_demo) == ("김서연", None, True)
         assert repository.importance == "critical"
