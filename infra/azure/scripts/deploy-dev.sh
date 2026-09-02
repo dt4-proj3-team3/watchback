@@ -7,6 +7,7 @@ LOCATION="${AZURE_LOCATION:-koreacentral}"
 FOUNDATION_DEPLOYMENT="watchback-dev-foundation"
 MAIN_DEPLOYMENT="${AZURE_DEPLOYMENT_NAME:-watchback-dev}"
 APP_CD_DEPLOYMENT="${AZURE_APP_CD_DEPLOYMENT_NAME:-watchback-dev-app-cd}"
+AI_AGENT_DEPLOYMENT="${AZURE_AI_AGENT_DEPLOYMENT_NAME:-watchback-dev-ai-agent}"
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
 frontend_context=""
@@ -84,6 +85,13 @@ if [[ -n "${GITHUB_TOKEN:-}" ]]; then
 else
   echo "GITHUB_TOKEN이 없어 Dependabot Sync Job 배포와 Live 검증을 생략합니다." >&2
 fi
+
+az deployment group create \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$AI_AGENT_DEPLOYMENT" \
+  --template-file "$REPOSITORY_ROOT/infra/azure/ai-agent.bicep" \
+  --parameters location="$LOCATION" \
+  --output none
 
 az acr build --registry "$registry_name" --image "watchback-backend:$IMAGE_TAG" \
   --file "$REPOSITORY_ROOT/apps/backend/Dockerfile" "$REPOSITORY_ROOT/apps/backend"

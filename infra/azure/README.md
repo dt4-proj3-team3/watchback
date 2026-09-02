@@ -15,10 +15,13 @@ Watchback의 개발용 PostgreSQL, Container Apps와 수동 Job을 Bicep으로 �
 - Azure Container Registry Basic
 - Azure Key Vault와 런타임·CD용 사용자 할당 Managed Identity
 - Azure Container Apps Frontend·Backend
+- Azure OpenAI `gpt-5.6-luna`와 Backend Managed Identity RBAC
 - DB 초기화 및 Dependabot 동기화 Container Apps Job
 - Log Analytics Workspace와 Application Insights
 
-Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 사용한다. Bicep은 S1 기준 조직·사용자 ID를 Frontend Route Handler에 전달하며, 설정에서 명시적으로 Demo를 선택할 수 있다. 대시보드·저장소·자동조치 정책은 계속 Demo 기반 읽기 전용 `UI Preview`다. Gold Sync Job은 별도 배포 범위이며 `modules/container-app-job.bicep`을 재사용한다.
+Frontend의 대시보드·재검토 목록·상세는 기본 `db` 모드에서 Backend API를 사용한다. Bicep은 S1 기준 조직·사용자 ID를 Frontend Route Handler에 전달하며, 설정에서 명시적으로 Demo를 선택할 수 있다. Gold Sync Job은 별도 배포 범위이며 `modules/container-app-job.bicep`을 재사용한다.
+
+AI 검토 도우미는 Watchback DB의 조직 범위 근거만 사용하며 Responses API 요청을 `store: false`로 전송한다. 실시간 웹 검색과 위험 수용·PR 생성 같은 쓰기 동작은 허용하지 않는다.
 
 ## 사전 조건
 
@@ -32,7 +35,7 @@ Frontend의 재검토 목록·상세는 기본 `db` 모드에서 Backend API를 
 
 ## 애플리케이션 자동 배포
 
-`main`에서 Backend, Frontend 또는 데모 데이터가 변경되면 GitHub Actions가 두 이미지를 전체 커밋 SHA 태그로 ACR에 게시하고 기존 Container Apps를 갱신한다. DB Migration, Seed와 Sync Job은 자동 실행하지 않는다.
+`main`에서 Backend, Frontend 또는 데모 데이터가 변경되면 GitHub Actions가 두 이미지를 전체 커밋 SHA 태그로 ACR에 게시하고 기존 Container Apps를 갱신한다. CD는 개발 환경의 Azure OpenAI endpoint·deployment 설정과 Backend 관리 ID를 사용해 AI 환경변수를 함께 설정한다. 다른 AI 배포를 사용할 때는 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`를 명시한다. DB Migration, Seed와 Sync Job은 자동 실행하지 않는다.
 
 Azure 로그인에는 장기 Client Secret 대신 `main` 브랜치만 신뢰하는 OIDC와 전용 Managed Identity를 사용한다. Federated Credential은 GitHub가 발급하는 조직·저장소 불변 ID 기반 subject prefix를 사용한다. GitHub의 OIDC subject 정책이 변경되면 `app-cd.bicep`의 `githubSubjectPrefix`를 실제 발급값과 맞춘다. 최초 Bicep 배포 후 다음 Repository variables를 설정한다.
 
@@ -56,7 +59,7 @@ gh variable set AZURE_SUBSCRIPTION_ID \
   --body "$(jq -r '.subscriptionId.value' <<<"$deployment_outputs")"
 ```
 
-Workflow는 새 Revision이 `Provisioned`, `Healthy`, `RunningAtMaxScale`인지 확인하고 Backend `/openapi.json`과 Frontend `/dashboard`를 호출한다. 실패하면 두 앱을 직전 이미지로 롤백한다. GitHub Actions의 `Deploy development apps`에서 수동 재실행할 수 있다.
+Workflow는 새 Revision이 `Provisioned`, `Healthy`, `RunningAtMaxScale`인지 확인하고 Backend `/openapi.json`, Frontend `/dashboard`와 Frontend 프록시를 통한 AI 응답을 호출한다. 실패하면 두 앱을 직전 이미지로 롤백한다. GitHub Actions의 `Deploy development apps`에서 수동 재실행할 수 있다.
 
 특정 ACR 태그로 수동 배포하거나 롤백할 때는 Azure 로그인 후 같은 스크립트를 사용한다.
 
@@ -79,7 +82,21 @@ IMAGE_TAG='<commit-sha-or-previous-tag>' infra/azure/scripts/deploy-app-images.s
 az bicep build --file infra/azure/foundation.bicep
 az bicep build --file infra/azure/main.bicep
 az bicep build --file infra/azure/app-cd.bicep
+az bicep build --file infra/azure/ai-agent.bicep
 ```
+
+Azure OpenAI는 앱 이미지와 별도로 먼저 배포한다. 이 작업은 기존 Container Apps Revision을 변경하지 않는다.
+
+```bash
+az deployment group create \
+  --resource-group 4dt_3rdproject_team_3 \
+  --name watchback-dev-ai-agent \
+  --template-file infra/azure/ai-agent.bicep
+```
+
+이후 `main.bicep` 배포 또는 앱 CD 실행 시 Backend에 `AZURE_CLIENT_ID`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`가 주입된다. 앱 이미지는 PR 병합 후 기존 CD가 갱신하며 수동 ACA 배포는 하지 않는다.
+
+Backend의 PR 생성·병합 API에는 Key Vault의 `github-token`이 `GITHUB_REMEDIATION_TOKEN`으로 주입된다. 토큰은 Container App 설정이나 이미지에 평문으로 저장하지 않는다.
 
 작업 트리의 검증된 커밋을 이미지 태그로 사용한다. 전체 배포는 다음 명령으로 실행한다.
 
