@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 
 import httpx
@@ -132,3 +133,70 @@ def test_rate_limit_reset_and_non_retryable_errors(raw_alerts):
         with pytest.raises(GitHubRequestError):
             github.get_alerts("example/repo")
     assert calls == 1
+
+
+def test_reads_repository_file_at_an_immutable_commit():
+    content = base64.b64encode(b'{"lockfileVersion": 3}').decode()
+
+    def handler(request):
+        if request.url.path.endswith("/commits/main"):
+            return httpx.Response(200, json={"sha": "commit-sha"})
+        assert request.url.path.endswith("/contents/apps/web/package-lock.json")
+        assert request.url.params["ref"] == "commit-sha"
+        return httpx.Response(
+            200,
+            json={
+                "type": "file",
+                "sha": "blob-sha",
+                "encoding": "base64",
+                "content": content,
+            },
+        )
+
+    with client(handler) as github:
+        commit_sha = github.get_commit_sha("example/repo", "main")
+        source = github.get_repository_file(
+            "example/repo", "apps/web/package-lock.json", ref=commit_sha
+        )
+
+    assert commit_sha == "commit-sha"
+    assert source is not None
+    assert source.blob_sha == "blob-sha"
+    assert source.content == '{"lockfileVersion": 3}'
+
+
+def test_missing_repository_file_returns_none_and_large_file_uses_blob_api():
+    calls = []
+    blob_content = base64.b64encode(b"large lockfile").decode()
+
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/contents/missing.lock"):
+            return httpx.Response(404)
+        if request.url.path.endswith("/contents/large.lock"):
+            return httpx.Response(
+                200,
+                json={
+                    "type": "file",
+                    "sha": "large-blob-sha",
+                    "encoding": "none",
+                    "content": "",
+                },
+            )
+        if request.url.path.endswith("/git/blobs/large-blob-sha"):
+            return httpx.Response(
+                200, json={"encoding": "base64", "content": blob_content}
+            )
+        raise AssertionError(request.url)
+
+    with client(handler) as github:
+        assert github.get_repository_file(
+            "example/repo", "missing.lock", ref="commit-sha"
+        ) is None
+        source = github.get_repository_file(
+            "example/repo", "large.lock", ref="commit-sha"
+        )
+
+    assert source is not None
+    assert source.content == "large lockfile"
+    assert calls[-1].endswith("/git/blobs/large-blob-sha")

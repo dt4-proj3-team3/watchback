@@ -24,3 +24,6 @@ coverage/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local Azurite state
+__azurite_db_*.json

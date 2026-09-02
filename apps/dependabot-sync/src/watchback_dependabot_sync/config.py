@@ -11,6 +11,8 @@ ORGANIZATION_GITHUB_ID = 314105294
 REPOSITORIES = {
     "dt4-proj3-team3/watchback-vulnerable-fe-lab": 1329314801,
     "dt4-proj3-team3/watchback-vulnerable-be-lab": 1340408606,
+    "dt4-proj3-team3/watchback-vulnerable-admin-fe-lab": 1353650380,
+    "dt4-proj3-team3/watchback-vulnerable-reporting-be-lab": 1353650477,
 }
 
 
